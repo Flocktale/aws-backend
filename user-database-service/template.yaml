@@ -6,16 +6,62 @@ Description: >
   Sample SAM Template for user-database-service
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+
+# Globals is a section in your SAM template to define properties common to all your Serverless Function and APIs. All the AWS::Serverless::Function and AWS::Serverless::Api resources will inherit the properties defined here
 Globals:
+  # for serverless functions
   Function:
     Timeout: 3
-
-# Parameters:
-#   IdentityNameParameter:
-#     Type: String
-#     Default: "xyz"
+    Runtime: python3.7
+  # for api
+  # Api:
 
 Resources:
+  UserProfileBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: mootclub-user-profile-bucket # if any bucket with the same name exists on AWS servers globally i.e. in any user's account, you can't use that name
+
+  UserProfileBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: "UserProfileBucket"
+      PolicyDocument:
+        Statement:
+          - Action:
+              - "s3:GetObject"
+            Effect: "Allow"
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:aws:s3:::"
+                  - Ref: "UserProfileBucket"
+                  - "/*"
+            Principal: "*"
+
+          - Action:
+              - "s3:PutObject"
+            Effect: "Allow"
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:aws:s3:::"
+                  - Ref: "UserProfileBucket"
+                  - "/*"
+            Principal: "*"
+
+          - Action:
+              - "s3:PutObjectAcl"
+            Effect: "Allow"
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:aws:s3:::"
+                  - Ref: "UserProfileBucket"
+                  - "/*"
+            Principal: "*"
+
   UserDatabaseTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -38,7 +84,7 @@ Resources:
       # codeUri points to the name of folder where it can look for desired code
       CodeUri: user-database-handler/
       Handler: handler.app
-      Runtime: python3.7
+      # Runtime: python3.7
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref UserDatabaseTable
@@ -67,13 +113,17 @@ Resources:
       # codeUri points to the name of folder where it can look for desired code
       CodeUri: user-database-handler/
       Handler: handler.app
-      Runtime: python3.7
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref UserDatabaseTable
+      Timeout: 60 #todo: find optimal value for timeout since putting an image object might take longer time
+      # Runtime: python3.7
 
       # can't use only writePolicy because it doesn't have delete permissions
       # todo: create a custom policy with write and delete permissions for dynamodb
+      # Policies:
+      #   - DynamoDBCrudPolicy:
+      #       TableName: !Ref UserDatabaseTable
+
+      # this role allows as name suggests - CUD operation for dynamodb and putObject & deleteObject permission for s3 (all resources)
+      Role: arn:aws:iam::556316647006:role/user-data-modify-dynamodb_s3-role
 
       Events:
         CreateUser:
@@ -94,6 +144,12 @@ Resources:
             Path: /users/{userId}/delete
             Method: delete
 
+        UploadProfileImage:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/uploadImage
+            Method: post
+
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
@@ -106,14 +162,13 @@ Outputs:
     Description: "UserDatabaseRead Lambda Function ARN"
     Value: !GetAtt UserDatabaseReadFunction.Arn
 
-  UserDatabaseModifyFunction:
-    Description: "UserDatabaseModify Lambda Function ARN"
-    Value: !GetAtt UserDatabaseModifyFunction.Arn
+  # UserDatabaseModifyFunction:
+  #   Description: "UserDatabaseModify Lambda Function ARN"
+  #   Value: !GetAtt UserDatabaseModifyFunction.Arn
 
   UserDatabaseReadFunctionIamRole:
     Description: "Implicit IAM Role created for UserDatabaseReadFunction"
     Value: !GetAtt UserDatabaseReadFunctionRole.Arn
-
-  UserDatabaseModifyFunctionIamRole:
-    Description: "Implicit IAM Role created for UserDatabaseModifyFunction"
-    Value: !GetAtt UserDatabaseModifyFunctionRole.Arn
+  # UserDatabaseModifyFunctionIamRole:
+  #   Description: "Implicit IAM Role created for UserDatabaseModifyFunction"
+  #   Value: !GetAtt UserDatabaseModifyFunctionRole.Arn

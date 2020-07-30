@@ -69,3 +69,32 @@ def delete_user(userId):
 
     table.delete_item(Key=keyId)
     return json_response({'message': 'user entry is deleted'})
+
+
+@app.route('/users/<string:userId>/uploadImage', methods=['POST'])
+def upload_image(userId):
+
+    print('request.json')
+    print(request.json)
+
+    # we are getting image as a base64Encoded String
+
+    s3 = boto3.resource('s3')
+    s3.Bucket('mootclub-user-profile-bucket').put_object(Key=userId,
+                                                         Body=request.json['image'])
+
+    object_acl = s3.ObjectAcl('mootclub-user-profile-bucket', userId)
+    response = object_acl.put(ACL='public-read')
+
+    print(response)
+
+    # updating user data in table
+    keyId = {'userId': userId}
+    attribute_updates = {
+        'imageUrl': {'Value': f"https://mootclub-user-profile-bucket.s3.amazonaws.com/{userId}", 'Action': 'PUT'}
+    }
+
+    table.update_item(Key=keyId,
+                      AttributeUpdates=attribute_updates)
+
+    return json_response({'message:': 'image uploaded successfully', 'imageUrl': f"https://mootclub-user-profile-bucket.s3.amazonaws.com/{userId}"})
