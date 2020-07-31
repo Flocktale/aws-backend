@@ -143,6 +143,7 @@ Resources:
       #       TableName: !Ref UserDatabaseTable
 
       # this role allows as name suggests - CUD operation for dynamodb and putObject & deleteObject permission for s3 (all resources)
+      # todo: change its permission from all resources to only this table
       Role: arn:aws:iam::556316647006:role/user-data-modify-dynamodb_s3-role
 
       Events:
@@ -169,6 +170,83 @@ Resources:
           Properties:
             Path: /users/{userId}/uploadImage
             Method: post
+
+  FollowerTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Followers
+      AttributeDefinitions:
+        - AttributeName: username
+          AttributeType: S
+        - AttributeName: followerUsername
+          AttributeType: S
+      KeySchema:
+        - AttributeName: username
+          KeyType: HASH
+        - AttributeName: followerUsername
+          KeyType: RANGE
+
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  FollowingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Following
+      AttributeDefinitions:
+        - AttributeName: username
+          AttributeType: S
+        - AttributeName: followingUsername
+          AttributeType: S
+      KeySchema:
+        - AttributeName: username
+          KeyType: HASH
+        - AttributeName: followingUsername
+          KeyType: RANGE
+
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  SocialRelationFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: user-database-handler/
+      Handler: socialRelationHandler.app
+      # Runtime: python3.8
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FollowerTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FollowingTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserDatabaseTable
+
+      Events:
+        Following:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/following/{username}
+            Method: get
+
+        Followers:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/followers/{username}
+            Method: get
+
+        AddToFollowing:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/following/add/{followingUserId}
+            Method: post
+
+        DeleteFromFollowing:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/following/delete/{followingUserId}
+            Method: delete
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
