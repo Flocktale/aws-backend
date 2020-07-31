@@ -3,6 +3,8 @@ from flask_lambda import FlaskLambda
 from flask import request
 import boto3
 
+from boto3.dynamodb.conditions import Key
+
 app = FlaskLambda(__name__)
 
 ddb = boto3.resource('dynamodb')
@@ -100,16 +102,21 @@ def upload_image(userId):
     return json_response({'message:': 'image uploaded successfully', 'imageUrl': f"https://mootclub-user-profile-bucket.s3.amazonaws.com/{userId}"})
 
 
-@app.route('/users/query/<string:username>')
+@app.route('/users/query/<string:username>', methods=['GET'])
 def get_user_by_username(username):
     items = list(table.query(IndexName='UsernameIndex',
-                             Limit=1,  # ensuring only one item is fetched anyways
-                             KeyConditionExpression='username = :username',
-                             ExpressionAttributeValues={
-                                 ':username': username
-                             })['Items'])
+                             #  Limit=1,  # ensuring only one item is fetched anyways
+                             KeyConditionExpression=Key(
+                                 'username').eq(username)
+                             )['Items'])
 
-    if items.count > 0:
+    print(items)
+
+    if len(items) > 0:
         return json_response(items[0])
     else:
         return json_response({})
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
