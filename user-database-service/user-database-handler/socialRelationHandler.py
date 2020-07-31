@@ -54,6 +54,14 @@ def add_to_following(userId, followingUserId):
     # this is the user who is followed by
     followingUser = databaseTable.get_item(
         Key={'userId': followingUserId})['Item']
+    
+    #checking if the relation already exists
+    try:
+        tmp=followerTable.get_item(Key={'username': followingUser['username'],'followerUsername': user['username']})['Item']  
+        return json_response({"message": f"You are already following {followingUser['username']}"})
+    except:
+        pass    
+
 
     time_int = int(time.time())
 
@@ -71,7 +79,7 @@ def add_to_following(userId, followingUserId):
 
     # user follow count incremented
     attribute_updates = {'followingCount': {
-        'Value': user['followingCount'] + 1, 'Action': 'Put'}}
+        'Value': user['followingCount'] + 1, 'Action': 'PUT'}}
     databaseTable.update_item(
         Key={'userId': userId}, AttributeUpdates=attribute_updates)
 
@@ -87,14 +95,14 @@ def add_to_following(userId, followingUserId):
     followerTable.put_item(Item=Item)
 
     attribute_updates = {'followerCount': {
-        'Value': followingUser['followerCount'] + 1, 'Action': 'Put'}}
+        'Value': followingUser['followerCount'] + 1, 'Action': 'PUT'}}
     databaseTable.update_item(
         Key={'userId': followingUserId}, AttributeUpdates=attribute_updates)
 
     return json_response({"message": f"You have started following {followingUser['username']}"})
 
 
-@app.route('/users/<string:userId>/following/delete/<string:followingUserId>', methods=['DELETE'])
+@app.route('/users/<string:userId>/following/delete/<string:followingUserId>', methods=['DELETE','GET'])
 def delete_data(userId, followingUserId):
     # this is the user who called this api
     user = databaseTable.get_item(Key={'userId': userId})['Item']
@@ -107,11 +115,12 @@ def delete_data(userId, followingUserId):
         'username': user['username'],
         'followingUsername': followingUser['username'],
     }
+    print(key)
     followingTable.delete_item(Key=key)
 
     # user follow count decremented
     attribute_updates = {'followingCount': {
-        'Value': user['followingCount'] - 1, 'Action': 'Put'}}
+        'Value': user['followingCount'] - 1, 'Action': 'PUT'}}
     databaseTable.update_item(
         Key={'userId': userId}, AttributeUpdates=attribute_updates)
 
@@ -119,10 +128,11 @@ def delete_data(userId, followingUserId):
         'username': followingUser['username'],
         'followerUsername': user['username'],
     }
-    followerTable.delete_item(Key=Key)
+    print(key)
+    followerTable.delete_item(Key=key)
 
     attribute_updates = {'followerCount': {
-        'Value': followingUser['followerCount'] - 1, 'Action': 'Put'}}
+        'Value': followingUser['followerCount'] - 1, 'Action': 'PUT'}}
     databaseTable.update_item(
         Key={'userId': followingUserId}, AttributeUpdates=attribute_updates)
 

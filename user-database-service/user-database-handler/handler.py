@@ -2,7 +2,7 @@ import json
 from flask_lambda import FlaskLambda
 from flask import request
 import boto3
-
+from decimal import *
 from boto3.dynamodb.conditions import Key
 
 app = FlaskLambda(__name__)
@@ -15,6 +15,20 @@ table = ddb.Table('user-database-table')
 def json_response(data, response_code=200):
     return json.dumps(data), response_code, {'Content-Type': 'application/json'}
 
+def replace_decimals(obj):
+    if isinstance(obj, list):
+        for i in range(len(obj)):
+            obj[i] = replace_decimals(obj[i])
+        return obj
+    elif isinstance(obj, dict):
+        for key,value in obj.items():
+            obj[key]=replace_decimals(value)
+        return obj
+    elif isinstance(obj, (float, int,Decimal)):
+        return int(obj)
+    else:
+        return obj
+
 
 @app.route('/')
 def index():
@@ -26,7 +40,7 @@ def list_users():
 
     # return only 10 items from table
     users = table.scan(Limit=10)['Items']
-    return json_response(users)
+    return json_response(replace_decimals(users))
 
 
 @app.route('/users/create', methods=['POST'])
@@ -46,7 +60,7 @@ def get_user(userId):
     keyId = {'userId': userId}
 
     user = table.get_item(Key=keyId)['Item']
-    return json_response(user)
+    return json_response(replace_decimals(user))
 
 
 @app.route('/users/<string:userId>/update', methods=['PATCH'])
@@ -113,7 +127,7 @@ def get_user_by_username(username):
     print(items)
 
     if len(items) > 0:
-        return json_response(items[0])
+        return json_response(replace_decimals(items[0]))
     else:
         return json_response({})
 
