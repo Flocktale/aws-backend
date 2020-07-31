@@ -98,3 +98,18 @@ def upload_image(userId):
                       AttributeUpdates=attribute_updates)
 
     return json_response({'message:': 'image uploaded successfully', 'imageUrl': f"https://mootclub-user-profile-bucket.s3.amazonaws.com/{userId}"})
+
+
+@app.route('/users/query/<string:username>')
+def get_user_by_username(username):
+    items = list(table.query(IndexName='UsernameIndex',
+                             Limit=1,  # ensuring only one item is fetched anyways
+                             KeyConditionExpression='username = :username',
+                             ExpressionAttributeValues={
+                                 ':username': username
+                             })['Items'])
+
+    if items.count > 0:
+        return json_response(items[0])
+    else:
+        return json_response({})

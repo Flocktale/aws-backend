@@ -70,9 +70,23 @@ Resources:
         - AttributeName: userId
           AttributeType: S
 
+        - AttributeName: username
+          AttributeType: S
+
       KeySchema:
         - AttributeName: userId
           KeyType: HASH
+
+      GlobalSecondaryIndexes:
+        - IndexName: UsernameIndex
+          KeySchema:
+            - AttributeName: username
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
 
       ProvisionedThroughput:
         ReadCapacityUnits: 5
@@ -105,6 +119,12 @@ Resources:
           Type: Api
           Properties:
             Path: /users/{userId}
+            Method: get
+
+        GetUserByUsername:
+          Type: Api
+          Properties:
+            Path: /users/query/{username}
             Method: get
 
   UserDatabaseModifyFunction:
