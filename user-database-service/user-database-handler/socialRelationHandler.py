@@ -39,6 +39,14 @@ def find_detail(table, username):
 def get_all_following_users(userId, username):
     return find_detail(followingTable, username)
 
+@app.route('/users/<string:userId>/follow/<string:username>/<string:followingUsername>', methods=['GET'])
+def check_follow_status(userId,username,followingUsername):
+    try:
+        followerTable.get_item(Key={'username': followingUsername,'followerUsername': username})['Item']
+        return json_response({'value':True})
+    except:
+        return json_response({'value':False})
+
 
 @app.route('/users/<string:userId>/followers/<string:username>', methods=['GET'])
 def get_all_followers(username):
@@ -57,7 +65,7 @@ def add_to_following(userId, followingUserId):
     
     #checking if the relation already exists
     try:
-        tmp=followerTable.get_item(Key={'username': followingUser['username'],'followerUsername': user['username']})['Item']  
+        followerTable.get_item(Key={'username': followingUser['username'],'followerUsername': user['username']})['Item']  
         return json_response({"message": f"You are already following {followingUser['username']}"})
     except:
         pass    

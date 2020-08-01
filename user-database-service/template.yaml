@@ -224,6 +224,11 @@ Resources:
             TableName: !Ref UserDatabaseTable
 
       Events:
+        CheckFollowing:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow/{username}/{followingUsername}
+            Method: get
         Following:
           Type: Api
           Properties:
