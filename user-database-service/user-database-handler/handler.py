@@ -2,7 +2,7 @@ import json
 from flask_lambda import FlaskLambda
 from flask import request
 import boto3
-from decimal import *
+from decimal import Decimal
 from boto3.dynamodb.conditions import Key
 
 app = FlaskLambda(__name__)
@@ -15,16 +15,17 @@ table = ddb.Table('user-database-table')
 def json_response(data, response_code=200):
     return json.dumps(data), response_code, {'Content-Type': 'application/json'}
 
+
 def replace_decimals(obj):
     if isinstance(obj, list):
         for i in range(len(obj)):
             obj[i] = replace_decimals(obj[i])
         return obj
     elif isinstance(obj, dict):
-        for key,value in obj.items():
-            obj[key]=replace_decimals(value)
+        for key, value in obj.items():
+            obj[key] = replace_decimals(value)
         return obj
-    elif isinstance(obj, (float, int,Decimal)):
+    elif isinstance(obj, (float, int, Decimal)):
         return int(obj)
     else:
         return obj
