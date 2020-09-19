@@ -5,6 +5,10 @@ import boto3
 from decimal import Decimal
 from boto3.dynamodb.conditions import Key
 
+
+import string
+import random
+
 app = FlaskLambda(__name__)
 
 ddb = boto3.resource('dynamodb')
@@ -31,6 +35,14 @@ def replace_decimals(obj):
         return obj
 
 
+def get_random_alphanumeric_string(length):
+    letters_and_digits = string.ascii_letters + string.digits
+    result_str = ''.join((random.choice(letters_and_digits)
+                          for i in range(length)))
+    print("Random alphanumeric String as new clubId:", result_str)
+    return result_str
+
+
 @app.route('/clubs', methods=['GET'])
 def list_clubs():
 
@@ -45,8 +57,7 @@ def create_club():
     print('request.json')
     print(request.json)
 
-    # todo: generate a random unique clubId for each club entry created
-    # todo:   request.json['clubId'] = generated uniqueId (or self incremental)
+    request.json['clubId'] = get_random_alphanumeric_string(8)
 
     table.put_item(Item=request.json)
 
