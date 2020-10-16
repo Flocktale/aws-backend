@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Database schema with GSIs
+
+Resources:
+  MyTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MyTable
+      AttributeDefinitions:
+        - AttributeName: P_K
+          AttributeType: S
+
+        - AttributeName: S_K
+          AttributeType: S
+
+        - AttributeName: SocialConnectionUsername # for follower/following sorted by username
+          AttributeType: S
+
+        - AttributeName: PublicSearch
+          AttributeType: N
+
+        - AttributeName: FilterDataName
+          AttributeType: S
+
+        - AttributeName: AudienceDynamicField
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: P_K
+          KeyType: HASH
+
+        - AttributeName: S_K
+          KeyType: RANGE
+
+      GlobalSecondaryIndexes:
+        - IndexName: SortedSocialRelationByUsernameIndex
+          KeySchema:
+            - AttributeName: P_K
+              KeyType: HASH
+
+            - AttributeName: SocialConnectionUsername
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+
+        - IndexName: SearchByUsernameIndex
+          KeySchema:
+            - AttributeName: PublicSearch
+              KeyType: HASH
+
+            - AttributeName: FilterDataName
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+
+        - IndexName: AudienceDynamicDataIndex # for actvie join request, particpants, kicked out people
+          KeySchema:
+            - AttributeName: P_K
+              KeyType: HASH
+
+            - AttributeName: AudienceDynamicField
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
