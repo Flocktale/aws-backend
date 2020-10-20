@@ -13,12 +13,14 @@ const CommentSchema = Joi.object({
 
     body: Joi.string().required(),
 
-    timestamp: Joi.number().default(new Date.now()),
+    timestamp: Joi.number().default(()=> Date.now()),
 });
 
 const CommentSchemaWithDatabaseKeys = CommentSchema.append({
-    PK: Joi.string().default(`CLUB#${Joi.ref('clubId')}`),
-    SK: Joi.string().equal(`COMMENT#${Joi.ref('timestamp')}#${Joi.ref('commentId')}`),
+    P_K: Joi.string().default(Joi.ref('clubId', { adjust: value => { return 'CLUB#' + value; } })),
+
+    // TODO: I have submitted an issue on github sideway/joi {https://github.com/sideway/joi/issues/2493} for multiple reference, this method don't work as I have defined below, therefore set its value in express 
+    // S_K: Joi.string().equal(`COMMENT#${Joi.ref('timestamp')}#${Joi.ref('commentId')}`),
 });
 
 exports.CommentSchema = CommentSchema;

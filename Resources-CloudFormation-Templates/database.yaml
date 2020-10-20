@@ -25,6 +25,13 @@ Resources:
 
         - AttributeName: AudienceDynamicField
           AttributeType: S
+          
+        - AttributeName: FollowRequestReceiver
+          AttributeType: S
+          
+        - AttributeName: timestamp
+          AttributeType: N
+          
 
       KeySchema:
         - AttributeName: P_K
@@ -72,6 +79,20 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
+
+        - IndexName: ReceivedFollowRequestIndex 
+          KeySchema:
+            - AttributeName: FollowRequestReceiver
+              KeyType: HASH
+
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+
 
       ProvisionedThroughput:
         ReadCapacityUnits: 2

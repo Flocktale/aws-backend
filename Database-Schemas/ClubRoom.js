@@ -16,10 +16,10 @@ const ClubInputSchema = Joi.object({
 
     category: Joi.string().required(),
 
-    createdOn: Joi.number().default(new Date.now()),
-    modifiedOn: Joi.number().default(new Date.now()),
+    createdOn: Joi.number().default(() => Date.now()),
+    modifiedOn: Joi.number().default(Joi.ref('createdOn')),
 
-    scheduleTime: Joi.number().default(new Date.now()),
+    scheduleTime: Joi.number().default(Joi.ref('createdOn')),
 
 
     //normal fields
@@ -38,12 +38,14 @@ const ClubInputSchema = Joi.object({
 });
 
 const ClubInputSchemaWithDatabaseKeys = ClubInputSchema.append({
-    PK: Joi.string().default(`USER#${Joi.ref('creatorId')}`),
-    SK: Joi.string().default(`CLUB#${Joi.ref('scheduleTime')}#${Joi.ref('clubId')}`),
+    P_K: Joi.string().default(Joi.ref('creatorId', { adjust: value => { return 'USER#' + value; } })),
+
+    // TODO: I have submitted an issue on github sideway/joi {https://github.com/sideway/joi/issues/2493} for multiple reference, this method don't work as I have defined below, therefore set its value in express 
+    // S_K: Joi.string().default(`CLUB#${Joi.ref('scheduleTime')}#${Joi.ref('clubId')}`),
 
 
-    PublicSearch: Joi.number().integer().allow(0, 1).default(1),                // GSI : SearchByUsernameIndex
-    FilterDataName: Joi.string().default(`CLUB#${Joi.ref('clubName')}`),        // GSI : SearchByUsernameIndex
+    PublicSearch: Joi.number().integer().allow(0, 1).default(1),                                                        // GSI : SearchByUsernameIndex
+    FilterDataName: Joi.string().default(Joi.ref('clubName', { adjust: value => { return 'CLUB#' + value; } })),        // GSI : SearchByUsernameIndex
 
 });
 
