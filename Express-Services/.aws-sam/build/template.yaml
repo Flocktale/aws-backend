@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'user-service-functions
+
+  SAM Template
+
+  '
+Globals:
+  Function:
+    Timeout: 3
+Resources:
+  UserServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: UserServiceFunction
+      Handler: handler.handler
+      Runtime: nodejs12.x
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: MyTable
+      Events:
+        APIRoot:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: any
+        UserServiceAPIs:
+          Type: Api
+          Properties:
+            Path: /users/{proxy+}
+            Method: any
+Outputs:
+  UserServiceAPIs:
+    Description: API Gateway endpoint URL for Prod stage
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/
+  UserServiceFunction:
+    Description: User Service  Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - UserServiceFunction
+      - Arn
+  UserServiceFunctionIamRole:
+    Description: Implicit IAM Role created for Social Events function
+    Value:
+      Fn::GetAtt:
+      - UserServiceFunction
+      - Arn
