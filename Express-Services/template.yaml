@@ -22,16 +22,82 @@ Resources:
 
       Events:
         APIRoot:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+
+        UserList:
+          Type: Api
           Properties:
             Path: /users
             Method: get
 
-        UserServiceAPIs:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+        CreateUser:
+          Type: Api
           Properties:
-            Path: /users/{proxy+}
-            Method: any
+            Path: /users/create
+            Method: post
+
+        GetUserById:
+          Type: Api
+          Properties:
+            Path: /users/{userId}
+            Method: get
+
+        UpdateUser:
+          Type: Api
+          Properties:
+            Path: /users/{userId}
+            Method: patch
+
+        SearchUserByUsername:
+          Type: Api
+          Properties:
+            Path: /users/query/{username}
+            Method: get
+
+        ListFollowing: #use headers for sorting by username
+          Type: Api
+          Properties:
+            Path: /users/{userId}/following
+            Method: get
+
+        ListFollowers: #use headers for sorting by username
+          Type: Api
+          Properties:
+            Path: /users/{userId}/followers
+            Method: get
+
+        SendFollowRequest:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests
+            Method: post
+
+        ListSentFollowRequests: #use headers for sorting by username
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests/sent
+            Method: get
+
+        ListReceivedFollowRequests:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests/received
+            Method: get
+
+        DeleteFollowRequest: #only sender can perform this action
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests/sent
+            Method: delete
+
+        ResponseToFollowRequest: # only receiver can perform this action (appropriate headers are required)
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests/received
+            Method: post
 
 Outputs:
   UserServiceAPIs:

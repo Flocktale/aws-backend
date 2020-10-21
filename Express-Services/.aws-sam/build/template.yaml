@@ -22,13 +22,68 @@ Resources:
         APIRoot:
           Type: Api
           Properties:
-            Path: /users
-            Method: any
-        UserServiceAPIs:
+            Path: /
+            Method: get
+        UserList:
           Type: Api
           Properties:
-            Path: /users/{proxy+}
-            Method: any
+            Path: /users
+            Method: get
+        CreateUser:
+          Type: Api
+          Properties:
+            Path: /users/create
+            Method: post
+        GetUserById:
+          Type: Api
+          Properties:
+            Path: /users/{userId}
+            Method: get
+        UpdateUser:
+          Type: Api
+          Properties:
+            Path: /users/{userId}
+            Method: patch
+        SearchUserByUsername:
+          Type: Api
+          Properties:
+            Path: /users/query/{username}
+            Method: get
+        ListFollowing:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/following
+            Method: get
+        ListFollowers:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/followers
+            Method: get
+        SendFollowRequest:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests
+            Method: post
+        ListSentFollowRequests:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests/sent
+            Method: get
+        ListReceivedFollowRequests:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests/received
+            Method: get
+        DeleteFollowRequest:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests/sent
+            Method: delete
+        ResponseToFollowRequest:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/follow-requests/received
+            Method: post
 Outputs:
   UserServiceAPIs:
     Description: API Gateway endpoint URL for Prod stage

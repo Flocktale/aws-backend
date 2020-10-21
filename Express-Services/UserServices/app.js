@@ -45,9 +45,7 @@ const sortedSocialRelationByUsernameIndex = 'SortedSocialRelationByUsernameIndex
 const receivedFollowRequestIndex = 'ReceivedFollowRequestIndex';
 
 app.get("/", (req, res) => {
-
     res.send("Hello from server, this is root path, nothing to find here.");
-
 });
 
 app.get("/users", (req, res) => {
@@ -78,9 +76,9 @@ app.post("/users/create", async (req, res) => {
 
 
 //! Get user by userId
-app.get("/users/:id", (req, res) => {
+app.get("/users/:userId", (req, res) => {
 
-    const userId = req.params.id;
+    const userId = req.params.userId;
     const query = {
         Key: {
             P_K: `USER#${userId}`,
@@ -97,8 +95,8 @@ app.get("/users/:id", (req, res) => {
 });
 
 //! Update profile of a user
-app.patch("/users/:id", async (req, res) => {
-    const userId = req.params.id;
+app.patch("/users/:userId", async (req, res) => {
+    const userId = req.params.userId;
     const _key = {
         P_K: `USER#${userId}`,
         S_K: `USERMETA#${userId}`
@@ -151,7 +149,7 @@ app.patch("/users/:id", async (req, res) => {
 });
 
 
-//! Get list of users by username. (paginated with limit of 10 results)
+//! Search list of users by username. (paginated with limit of 10 results)
 app.get("/users/query/:username", async (req, res) => {
 
     const username = req.params.username;
@@ -187,6 +185,7 @@ app.get("/users/query/:username", async (req, res) => {
 
 });
 
+//! Get list of following users
 app.get('/users/:userId/following', (req, res) => {
 
     const userId = req.params.userId;
@@ -227,7 +226,7 @@ app.get('/users/:userId/following', (req, res) => {
 
 });
 
-
+//! Get list of followers
 app.get('/users/:userId/followers', (req, res) => {
 
     const userId = req.params.userId;
@@ -334,7 +333,7 @@ app.get('/users/:userId/follow-requests/sent', (req, res) => {
 
 })
 
-
+// get received follow requests
 app.get('/users/:userId/follow-requests/received', (req, res) => {
     const userId = req.params.userId;
     const query = {
