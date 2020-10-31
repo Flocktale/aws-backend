@@ -13,13 +13,17 @@
 # Get follow requests i have received
 # cancel (delete) a sent follow request
 # respond to received follow requests - delete , accept
+! Upload Image
 */
 
 const express = require('express');
 const app = express();
 const cors = require('cors');
 
+const AWS = require('aws-sdk');
+
 const Joi = require('joi');
+
 const { UserBaseCompleteSchema } = require('./Schemas/UserBase');
 const { FollowRequestSchemaWithDatabaseKeys } = require('./Schemas/FollowRequest');
 const { FollowingSchemaWithDatabaseKeys } = require('./Schemas/Following');
@@ -28,7 +32,6 @@ const { FollowerSchemaWithDatabaseKeys } = require('./Schemas/Follower');
 app.use(cors());
 app.use(express.json());
 
-const AWS = require('aws-sdk');
 
 
 AWS.config.update({
@@ -61,9 +64,17 @@ app.post("/users/create", async (req, res) => {
         const query = {
             TableName: tableName,
             Item: result,
+            ConditionExpression: "P_K <> :hkey and S_K <> :skey",
+            ExpressionAttributeValues: {
+                ":hkey": result.P_K,
+                ":skey": result.S_K
+            }
         };
         dynamoClient.put(query, (err, data) => {
-            if (err) res.status(304).send('Error creating profile');
+            if (err) {
+                console.log(err);
+                res.status(304).send('Error creating profile', err);
+            }
             else res.status(201).send(data);
 
         });
@@ -88,7 +99,10 @@ app.get("/users/:userId", (req, res) => {
     };
 
     dynamoClient.get(query, (err, data) => {
-        if (err) res.status(404).send(err);
+        if (err) {
+            console.log(err);
+            res.status(404).send(err);
+        }
         else res.status(200).send(data);
     });
 
@@ -108,6 +122,7 @@ app.patch("/users/:userId", async (req, res) => {
     try {
         _oldItem = (await dynamoClient.get(_getQuery).promise()).Item;
     } catch (e) {
+        console.log(e);
         res.status(404).send(`No data exists with user id: ${userId}`);
         return;
     }
@@ -142,7 +157,10 @@ app.patch("/users/:userId", async (req, res) => {
     //! (vvimp)
 
     dynamoClient.update(_updateQuery, (err, data) => {
-        if (err) res.status(304).send("Error updating profile");
+        if (err) {
+            console.log(err);
+            res.status(304).send("Error updating profile");
+        }
         else res.status(200).send(data);
     });
 
@@ -150,11 +168,9 @@ app.patch("/users/:userId", async (req, res) => {
 
 
 //! Search list of users by username. (paginated with limit of 10 results)
-app.get("/users/query/:username", async (req, res) => {
+app.get("/users/query", async (req, res) => {
 
-    const username = req.params.username;
-
-
+    const username = req.body;
     try {
         const _schema = Joi.string().min(3).max(25).token().required();
         await _schema.validateAsync(username);
@@ -166,12 +182,15 @@ app.get("/users/query/:username", async (req, res) => {
     const query = {
         TableName: tableName,
         IndexName: searchByUsernameIndex,
-        Limit: 10,
         KeyConditionExpression: 'PublicSearch = :hkey and begins_with ( FilterDataName , :filter )',
         ExpressionAttributeValues: {
             ":hkey": 1,
             ":filter": `USER#${username}`
         },
+        AttributesToGet: [
+            'userId', 'username', 'name', 'avatar'
+        ],
+        Limit: 10,
         ReturnConsumedCapacity: "INDEXES"
     };
 
@@ -191,6 +210,9 @@ app.get('/users/:userId/following', (req, res) => {
     const userId = req.params.userId;
     const query = {
         TableName: tableName,
+        AttributesToGet: [
+            'followingUserId', 'followingUsername', 'followingName', 'followingAvatar', 'timestamp'
+        ],
         Limit: 10,
         ReturnConsumedCapacity: "INDEXES"
     };
@@ -232,6 +254,9 @@ app.get('/users/:userId/followers', (req, res) => {
     const userId = req.params.userId;
     const query = {
         TableName: tableName,
+        AttributesToGet: [
+            'followerUserId', 'followerUsername', 'followerName', 'followerAvatar', 'timestamp'
+        ],
         Limit: 10,
         ReturnConsumedCapacity: "INDEXES"
     };
@@ -272,7 +297,6 @@ app.post('/users/:userId/follow-requests', async (req, res) => {
 
     try {
         const result = await FollowRequestSchemaWithDatabaseKeys.validateAsync(req.body);
-        result['S_K'] = 'FOLLOWREQUEST#' + result.timestamp + '#' + result.requestedUserId;
 
         const _putQuery = {
             TableName: tableName,
@@ -280,9 +304,8 @@ app.post('/users/:userId/follow-requests', async (req, res) => {
         };
 
         dynamoClient.put(_putQuery, (err, data) => {
-            if (err) res.status(304).send('Error sending follow-request');
+            if (err) res.status(304).send('Error sending follow-request', err);
             else res.status(201).send(data);
-
         });
 
     } catch (e) {
@@ -298,6 +321,9 @@ app.get('/users/:userId/follow-requests/sent', (req, res) => {
     const userId = req.params.userId;
     const query = {
         TableName: tableName,
+        AttributesToGet: [
+            'requestedUserId', 'requestedUsername', 'requestedName', 'requestedAvatar', 'timestamp'
+        ],
         Limit: 10,
         ReturnConsumedCapacity: "INDEXES"
     };
@@ -338,6 +364,9 @@ app.get('/users/:userId/follow-requests/received', (req, res) => {
     const userId = req.params.userId;
     const query = {
         TableName: tableName,
+        AttributesToGet: [
+            'userId', 'username', 'name', 'avatar', 'timestamp'
+        ],
         Limit: 10,
         ReturnConsumedCapacity: "INDEXES"
     };
@@ -391,7 +420,7 @@ app.delete('users/:userId/follow-requests/sent', async (req, res) => {
     };
 
     dynamoClient.delete(_deleteQuery, (err, data) => {
-        if (err) res.status(304).send("Error deleting follow request");
+        if (err) res.status(304).send("Error deleting follow request", err);
         else res.status(204).send();
     });
 
@@ -405,7 +434,6 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
 
     try {
         body = await FollowRequestSchemaWithDatabaseKeys.validateAsync(req.body);
-        body["S_K"] = 'FOLLOWREQUEST#' + body.timestamp + '#' + body.requestedUserId;
     } catch (e) {
         res.status(400).send('Invalid Follow Request Model object');
         return;
@@ -441,7 +469,6 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
             followingAvatar: body.requestedAvatar,
             timestamp: timestamp,
 
-            S_K: 'FOLLOWING#' + timestamp + '#' + body.requestedUserId
         });
 
         const followerTableItem = await FollowerSchemaWithDatabaseKeys.validateAsync({
@@ -452,7 +479,6 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
             followerAvatar: body.avatar,
             timestamp: timestamp,
 
-            S_K: 'FOLLOWER#' + timestamp + '#' + body.userId
         });
 
 
@@ -480,7 +506,7 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
             ]
         };
         dynamoClient.transactWrite(_acceptTransactionQuery, (err, data) => {
-            if (err) res.status(304).send('Action failed !');
+            if (err) res.status(304).send('Action failed !', err);
             else res.status(200).send('Accepted follow request');
         });
 
@@ -492,7 +518,7 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
             Key: _deleteKey
         };
         dynamoClient.delete(_deleteQuery, (err, data) => {
-            if (err) res.status(304).send("Error deleting follow request");
+            if (err) res.status(304).send("Error deleting follow request", err);
             else res.status(204).send();
         });
 
@@ -504,11 +530,10 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
 });
 
 
-
+// __________________________________________________________________________________________________________________ //
+// __________________________________________________________________________________________________________________ //
 
 module.exports = app;
 
-
-
-
-
+// __________________________________________________________________________________________________________________ //
+// __________________________________________________________________________________________________________________ //

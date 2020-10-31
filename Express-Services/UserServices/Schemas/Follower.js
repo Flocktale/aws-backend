@@ -2,7 +2,7 @@ const Joi = require('joi');
 
 const FollowerSchema = Joi.object({
     userId: Joi.string().required(),
-    
+
     followerUserId: Joi.string().required(),
 
     followerUsername: Joi.string().required(),
@@ -14,12 +14,13 @@ const FollowerSchema = Joi.object({
 
 const FollowerSchemaWithDatabaseKeys = FollowerSchema.append({
 
-    P_K: Joi.string().default(Joi.ref('userId', { adjust: value => { return 'USER#' + value; } })),
+    P_K: Joi.string().default(Joi.expression('USER#{{userId}}')),
 
-    // TODO: I have submitted an issue on github sideway/joi {https://github.com/sideway/joi/issues/2493} for multiple reference, this method don't work as I have defined below, therefore set its value in express 
-    // S_K: Joi.string().default(`FOLLOWER#${Joi.ref('timestamp')}#${Joi.ref('followerUserId')}`),
+    S_K: Joi.string().default(
+        Joi.expression('FOLLOWER#{{timestamp}}#{{followerUserId}}')
+    ),
 
-    SocialConnectionUsername: Joi.string().default(Joi.ref('followerUsername', { adjust: value => { return 'Follower#' + value; } })),    //GSI: SortedSocialRelationByUsernameIndex
+    SocialConnectionUsername: Joi.string().default(Joi.expression('Follower#{{followerUsername}}')),    //GSI: SortedSocialRelationByUsernameIndex
 
 });
 

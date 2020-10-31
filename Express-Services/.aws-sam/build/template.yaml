@@ -47,7 +47,7 @@ Resources:
         SearchUserByUsername:
           Type: Api
           Properties:
-            Path: /users/query/{username}
+            Path: /users/query
             Method: get
         ListFollowing:
           Type: Api
@@ -84,6 +84,111 @@ Resources:
           Properties:
             Path: /users/{userId}/follow-requests/received
             Method: post
+  ClubServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ClubServiceFunction
+      Handler: handler.handler
+      Runtime: nodejs12.x
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: MyTable
+      Events:
+        AllClubList:
+          Type: Api
+          Properties:
+            Path: /clubs
+            Method: get
+        CreateClub:
+          Type: Api
+          Properties:
+            Path: /clubs/create
+            Method: post
+        MyOrganisedClubs:
+          Type: Api
+          Properties:
+            Path: /myclubs/{userId}/organized
+            Method: get
+        MyClubHistory:
+          Type: Api
+          Properties:
+            Path: /myclubs/{userId}/history
+            Method: get
+        GetClubDetails:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}
+            Method: get
+        SearchClubByName:
+          Type: Api
+          Properties:
+            Path: /clubs/query
+            Method: get
+        EnterClub:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/enter
+            Method: post
+        ReactOnClub:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/reactions
+            Method: post
+        GetListOfReactorsOnClub:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/reactions
+            Method: get
+        ReportClub:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/reports
+            Method: post
+        GetClubReports:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/reports
+            Method: get
+        RequestToJoinClub:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/join-request
+            Method: post
+        GetJoiningRequestsForClub:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/join-request
+            Method: get
+        DeleteJoinRequestByRequester:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/join-request
+            Method: delete
+        RespondToJoinRequest:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/join-request/{resp}
+            Method: post
+        GetActiveParticipantsOfClub:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/participants
+            Method: get
+        KickOutParticipant:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/kick
+            Method: post
+        GetKickedOutPeopleList:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/kick
+            Method: get
+        UnKickAPerson:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/un-kick
+            Method: post
 Outputs:
   UserServiceAPIs:
     Description: API Gateway endpoint URL for Prod stage
@@ -96,8 +201,24 @@ Outputs:
       - UserServiceFunction
       - Arn
   UserServiceFunctionIamRole:
-    Description: Implicit IAM Role created for Social Events function
+    Description: Implicit IAM Role created for User Service function
     Value:
       Fn::GetAtt:
       - UserServiceFunction
+      - Arn
+  ClubServiceAPIs:
+    Description: API Gateway endpoint URL for Prod stage
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/
+  ClubServiceFunction:
+    Description: Club Service  Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - ClubServiceFunction
+      - Arn
+  ClubServiceFunctionIamRole:
+    Description: Implicit IAM Role created for Club Service function
+    Value:
+      Fn::GetAtt:
+      - ClubServiceFunction
       - Arn

@@ -25,13 +25,15 @@ Resources:
 
         - AttributeName: AudienceDynamicField
           AttributeType: S
-          
+
         - AttributeName: FollowRequestReceiver
           AttributeType: S
-          
+
         - AttributeName: timestamp
           AttributeType: N
-          
+
+        - AttributeName: audienceId
+          AttributeType: S
 
       KeySchema:
         - AttributeName: P_K
@@ -67,6 +69,19 @@ Resources:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
 
+        - IndexName: AllClubsOfAudienceIndex # All the clubs entered by a user whether just attended, participated or organized (owned)
+          KeySchema:
+            - AttributeName: audienceId
+              KeyType: HASH
+
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+
         - IndexName: AudienceDynamicDataIndex # for actvie join request, particpants, kicked out people
           KeySchema:
             - AttributeName: P_K
@@ -80,7 +95,7 @@ Resources:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
 
-        - IndexName: ReceivedFollowRequestIndex 
+        - IndexName: ReceivedFollowRequestIndex
           KeySchema:
             - AttributeName: FollowRequestReceiver
               KeyType: HASH
@@ -92,7 +107,6 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
-
 
       ProvisionedThroughput:
         ReadCapacityUnits: 2

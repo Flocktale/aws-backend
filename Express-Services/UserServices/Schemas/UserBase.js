@@ -1,7 +1,5 @@
 const Joi = require('joi');
 
-
-
 const UserInputSchema = Joi.object({
     //! required fields
     userId: Joi.string().required(),
@@ -21,8 +19,6 @@ const UserInputSchema = Joi.object({
     policyAccepted: Joi.boolean().equal(true),
 
 
-
-
     //? these fields require special attention 
     lngPref: Joi.string(),
     regionCode: Joi.string(),
@@ -34,11 +30,11 @@ const UserInputSchema = Joi.object({
 });
 
 const UserInputSchemaWithDatabaseKeys = UserInputSchema.append({
-    P_K: Joi.string().default(Joi.ref('userId', { adjust: value => { return 'USER#' + value; } })),
-    S_K: Joi.string().default(Joi.ref('userId', { adjust: value => { return 'USERMETA#' + value } })),
+    P_K: Joi.string().default(Joi.expression('USER#{{userId}}')),
+    S_K: Joi.string().default(Joi.expression('USERMETA#{{userId}}')),
 
-    PublicSearch: Joi.number().integer().allow(0, 1).default(1),                                                    // GSI : SearchByUsernameIndex
-    FilterDataName: Joi.string().default(Joi.ref('username', { adjust: value => { return 'USER#' + value; } })),    // GSI : SearchByUsernameIndex
+    PublicSearch: Joi.number().integer().allow(0, 1).default(1),                        // GSI : SearchByUsernameIndex
+    FilterDataName: Joi.string().default(Joi.expression('USER#{{username}}')),          // GSI : SearchByUsernameIndex
 
 });
 
@@ -52,7 +48,6 @@ const UserBaseCompleteSchema = UserInputSchemaWithDatabaseKeys.append({
     kickedOutCount: Joi.number().integer().min(0).default(0),
     clubsJoinRequests: Joi.number().integer().min(0).default(0),
     clubsAttended: Joi.number().integer().min(0).default(0),
-
 
 });
 

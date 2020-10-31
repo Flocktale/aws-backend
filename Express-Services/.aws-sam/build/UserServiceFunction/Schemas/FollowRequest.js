@@ -17,16 +17,16 @@ const FollowRequestSchema = Joi.object({
 
 const FollowRequestSchemaWithDatabaseKeys = FollowRequestSchema.append({
 
-    P_K: Joi.string().default(Joi.ref('userId', { adjust: value => { return 'USER#' + value; } })),
+    P_K: Joi.string().default(Joi.expression('USER#{{userId}}')),
 
-    // TODO: I have submitted an issue on github sideway/joi {https://github.com/sideway/joi/issues/2493} for multiple reference, this method don't work as I have defined below, therefore set its value in express 
-    // S_K: Joi.string().default(`FOLLOWREQUEST#${Joi.ref('timestamp')}#${Joi.ref('requestedUserId')}`),
+    S_K: Joi.string().default(
+        Joi.expression('FOLLOWREQUEST#{{timestamp}}#{{requestedUserId}}')
+    ),
 
-    FollowRequestReceiver: Joi.string().default(Joi.ref('requestedUserId', { adjust: value => { return 'FOLLOWREQUEST-RECEIVED#' + value; } })), //GSI: ReceivedFollowRequestIndex
-
+    FollowRequestReceiver: Joi.string().default(Joi.expression('FOLLOWREQUEST-RECEIVED#{{requestedUserId}}')), //GSI: ReceivedFollowRequestIndex
 
     //! This GSI will only sort sent follow requests of a user but not received requests.
-    SocialConnectionUsername: Joi.string().default(Joi.ref('requestedUsername', { adjust: value => { return 'FollowRequest#' + value; } })),    //GSI: SortedSocialRelationByUsernameIndex
+    SocialConnectionUsername: Joi.string().default(Joi.expression('FollowRequest#{{requestedUsername}}')),    //GSI: SortedSocialRelationByUsernameIndex
 
 });
 

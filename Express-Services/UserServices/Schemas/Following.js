@@ -12,13 +12,15 @@ const FollowingSchema = Joi.object({
 });
 
 const FollowingSchemaWithDatabaseKeys = FollowingSchema.append({
+    P_K: Joi.string().default(Joi.expression('USER#{{userId}}')),
 
-    P_K: Joi.string().default(Joi.ref('userId', { adjust: value => { return 'USER#' + value; } })),
 
-    // TODO: I have submitted an issue on github sideway/joi {https://github.com/sideway/joi/issues/2493} for multiple reference, this method don't work as I have defined below, therefore set its value in express 
-    // S_K: Joi.string().default(`FOLLOWING#${Joi.ref('timestamp')}#${Joi.ref('followingUserId')}`),
+    S_K: Joi.string().default(
+        Joi.expression('FOLLOWING#{{timestamp}}#{{followingUserId}}')
+    ),
 
-    SocialConnectionUsername: Joi.string().default(Joi.ref('followingUsername', { adjust: value => { return 'Following#' + value; } })),    //GSI: SortedSocialRelationByUsernameIndex
+    SocialConnectionUsername: Joi.string().default(Joi.expression('Following#{{followingUsername}}')),    //GSI: SortedSocialRelationByUsernameIndex
+
 });
 
 exports.FollowingSchema = FollowingSchema;
