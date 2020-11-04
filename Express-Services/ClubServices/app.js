@@ -384,7 +384,7 @@ app.post('/clubs/:clubId/enter', async (req, res) => {
                 const responseResult = await AudienceSchema.validateAsync(crossResult['Items'][0]);
                 res.status(204).json(responseResult);
             } catch (error) {
-                res.status(204).json('User already have a entry but AudienceSchema has error', error);
+                res.status(204).json(`User already have a entry but AudienceSchema has error: ${error}`);
             }
             return;
         } else {
@@ -395,7 +395,7 @@ app.post('/clubs/:clubId/enter', async (req, res) => {
                         const responseResult = await AudienceSchema.validateAsync(result);
                         res.status(204).json(responseResult);
                     } catch (error) {
-                        res.status(204).json('User entry created but AudienceSchema has error', error);
+                        res.status(204).json(`User entry created but AudienceSchema has error: ${error}`);
                     }
                     return;
                 }
@@ -411,7 +411,7 @@ app.post('/clubs/:clubId/enter', async (req, res) => {
                     const responseResult = await AudienceSchema.validateAsync(result);
                     res.status(204).json(responseResult);
                 } catch (error) {
-                    res.status(204).json('User entry created but AudienceSchema has error', error);
+                    res.status(204).json(`User entry created but AudienceSchema has error:  ${error}`);
                 }
                 return;
             }
@@ -432,7 +432,7 @@ app.post('/clubs/:clubId/reactions', async (req, res) => {
         _temp['clubId'] = clubId;
         await ReactionSchema.validateAsync(_temp); // if successfull then req.body contains {userId,username,avatar}
     } catch (error) {
-        res.status(400).json('invalid body', error);
+        res.status(400).json(`invalid body: ${error}`);
         return;
     }
 
@@ -629,7 +629,7 @@ app.post('/clubs/:clubId/join-request', async (req, res) => {
     const clubId = req.params.clubId;
 
     if (!req.body.timestamp) {
-        res.status(400).json('Timestamp should exist in body', error);
+        res.status(400).json(`Timestamp should exist in body: ${error}`);
         return;
     }
 
@@ -805,7 +805,7 @@ app.post('/clubs/:clubId/join-request/:resp', async (req, res) => {
         try {
             result = await AudienceSchemaWithDatabaseKeys.validateAsync(req.body);
         } catch (error) {
-            res.status(400).json('Invalid body', error);
+            res.status(400).json(`Invalid body: ${error}`);
             return;
         }
         const newTimestamp = Date.now();
@@ -952,7 +952,7 @@ app.post('/clubs/:clubId/kick', async (req, res) => {
     try {
         counterDoc = await CountParticipantSchema.validateAsync({ clubId: clubId });
     } catch (error) {
-        res.status(400).json('error in  validation of CountParticipantSchema ', error);
+        res.status(400).json(`error in  validation of CountParticipantSchema: ${error}`);
     }
 
     const _counterUpdateQuery = {

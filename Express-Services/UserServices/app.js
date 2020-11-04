@@ -73,7 +73,7 @@ app.post("/users/create", async (req, res) => {
         dynamoClient.put(query, (err, data) => {
             if (err) {
                 console.log(err);
-                res.status(304).json('Error creating profile', err);
+                res.status(304).json(`Error creating profile: ${err}`);
             }
             else res.status(201).json(data);
 
@@ -304,7 +304,7 @@ app.post('/users/:userId/follow-requests', async (req, res) => {
         };
 
         dynamoClient.put(_putQuery, (err, data) => {
-            if (err) res.status(304).json('Error sending follow-request', err);
+            if (err) res.status(304).json(`Error sending follow-request : ${err}`);
             else res.status(201).json(data);
         });
 
@@ -420,7 +420,7 @@ app.delete('users/:userId/follow-requests/sent', async (req, res) => {
     };
 
     dynamoClient.delete(_deleteQuery, (err, data) => {
-        if (err) res.status(304).json("Error deleting follow request", err);
+        if (err) res.status(304).json(`Error deleting follow request: ${err}`);
         else res.status(204).json();
     });
 
@@ -506,7 +506,7 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
             ]
         };
         dynamoClient.transactWrite(_acceptTransactionQuery, (err, data) => {
-            if (err) res.status(304).json('Action failed !', err);
+            if (err) res.status(304).json(`Action failed : ${err}`);
             else res.status(200).json('Accepted follow request');
         });
 
@@ -518,7 +518,7 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
             Key: _deleteKey
         };
         dynamoClient.delete(_deleteQuery, (err, data) => {
-            if (err) res.status(304).json("Error deleting follow request", err);
+            if (err) res.status(304).json(`Error deleting follow request: ${err}`);
             else res.status(204).json();
         });
 
