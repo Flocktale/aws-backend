@@ -48,12 +48,12 @@ const sortedSocialRelationByUsernameIndex = 'SortedSocialRelationByUsernameIndex
 const receivedFollowRequestIndex = 'ReceivedFollowRequestIndex';
 
 app.get("/", (req, res) => {
-    res.send("Hello from server, this is root path, nothing to find here.");
+    res.json("Hello from server, this is root path, nothing to find here.");
 });
 
 app.get("/users", (req, res) => {
     // TODO: send list of users
-    res.send('You have hit a TODO: Send list of users )');
+    res.json('You have hit a TODO: Send list of users )');
 });
 
 
@@ -73,14 +73,14 @@ app.post("/users/create", async (req, res) => {
         dynamoClient.put(query, (err, data) => {
             if (err) {
                 console.log(err);
-                res.status(304).send('Error creating profile', err);
+                res.status(304).json('Error creating profile', err);
             }
-            else res.status(201).send(data);
+            else res.status(201).json(data);
 
         });
 
     } catch (error) {
-        res.status(400).send(error);
+        res.status(400).json(error);
     }
 
 });
@@ -101,9 +101,9 @@ app.get("/users/:userId", (req, res) => {
     dynamoClient.get(query, (err, data) => {
         if (err) {
             console.log(err);
-            res.status(404).send(err);
+            res.status(404).json(err);
         }
-        else res.status(200).send(data);
+        else res.status(200).json(data);
     });
 
 });
@@ -123,7 +123,7 @@ app.patch("/users/:userId", async (req, res) => {
         _oldItem = (await dynamoClient.get(_getQuery).promise()).Item;
     } catch (e) {
         console.log(e);
-        res.status(404).send(`No data exists with user id: ${userId}`);
+        res.status(404).json(`No data exists with user id: ${userId}`);
         return;
     }
     const _newItemKeys = Object.keys(req.body);
@@ -141,7 +141,7 @@ app.patch("/users/:userId", async (req, res) => {
     if (attributeUpdates.length === 0) {
 
         console.log('no attributes to update');
-        res.status(200).send('Nothing to update');
+        res.status(200).json('Nothing to update');
         return;
     }
 
@@ -159,9 +159,9 @@ app.patch("/users/:userId", async (req, res) => {
     dynamoClient.update(_updateQuery, (err, data) => {
         if (err) {
             console.log(err);
-            res.status(304).send("Error updating profile");
+            res.status(304).json("Error updating profile");
         }
-        else res.status(200).send(data);
+        else res.status(200).json(data);
     });
 
 });
@@ -175,7 +175,7 @@ app.get("/users/query", async (req, res) => {
         const _schema = Joi.string().min(3).max(25).token().required();
         await _schema.validateAsync(username);
     } catch (e) {
-        res.status(400).send(e);
+        res.status(400).json(e);
         return;
     }
 
@@ -198,8 +198,8 @@ app.get("/users/query", async (req, res) => {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
     }
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 });
@@ -241,8 +241,8 @@ app.get('/users/:userId/following', (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 
@@ -285,8 +285,8 @@ app.get('/users/:userId/followers', (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 });
 
@@ -304,12 +304,12 @@ app.post('/users/:userId/follow-requests', async (req, res) => {
         };
 
         dynamoClient.put(_putQuery, (err, data) => {
-            if (err) res.status(304).send('Error sending follow-request', err);
-            else res.status(201).send(data);
+            if (err) res.status(304).json('Error sending follow-request', err);
+            else res.status(201).json(data);
         });
 
     } catch (e) {
-        res.status(400).send('Invalid body');
+        res.status(400).json('Invalid body');
     }
 
 });
@@ -352,8 +352,8 @@ app.get('/users/:userId/follow-requests/sent', (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 
@@ -383,8 +383,8 @@ app.get('/users/:userId/follow-requests/received', (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 });
@@ -403,7 +403,7 @@ app.delete('users/:userId/follow-requests/sent', async (req, res) => {
         });
         await _schema.validateAsync({ timestamp: timestamp, requestedUserId: requestedUserId });
     } catch (e) {
-        res.status(400).send('Timestamp and requestedUserId is required');
+        res.status(400).json('Timestamp and requestedUserId is required');
         return;
     }
 
@@ -420,8 +420,8 @@ app.delete('users/:userId/follow-requests/sent', async (req, res) => {
     };
 
     dynamoClient.delete(_deleteQuery, (err, data) => {
-        if (err) res.status(304).send("Error deleting follow request", err);
-        else res.status(204).send();
+        if (err) res.status(304).json("Error deleting follow request", err);
+        else res.status(204).json();
     });
 
 });
@@ -435,7 +435,7 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
     try {
         body = await FollowRequestSchemaWithDatabaseKeys.validateAsync(req.body);
     } catch (e) {
-        res.status(400).send('Invalid Follow Request Model object');
+        res.status(400).json('Invalid Follow Request Model object');
         return;
     }
 
@@ -444,7 +444,7 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
         const _schema = Joi.string().valid('accept', 'cancel').required();
         await _schema.validateAsync(req.headers.requestaction);
     } catch (e) {
-        res.status(400).send('Invalid Response action to follow request (accept/cancel)');
+        res.status(400).json('Invalid Response action to follow request (accept/cancel)');
         return;
     }
 
@@ -506,8 +506,8 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
             ]
         };
         dynamoClient.transactWrite(_acceptTransactionQuery, (err, data) => {
-            if (err) res.status(304).send('Action failed !', err);
-            else res.status(200).send('Accepted follow request');
+            if (err) res.status(304).json('Action failed !', err);
+            else res.status(200).json('Accepted follow request');
         });
 
     } else if (reqAction === 'cancel') {
@@ -518,13 +518,13 @@ app.post('/users/:userId/follow-requests/received', async (req, res) => {
             Key: _deleteKey
         };
         dynamoClient.delete(_deleteQuery, (err, data) => {
-            if (err) res.status(304).send("Error deleting follow request", err);
-            else res.status(204).send();
+            if (err) res.status(304).json("Error deleting follow request", err);
+            else res.status(204).json();
         });
 
     } else {
         console.log('Server side validation failed for Joi ');
-        res.status(400).send();
+        res.status(400).json();
     }
 
 });

@@ -61,7 +61,7 @@ const searchByUsernameIndex = "SearchByUsernameIndex";
 
 app.get("/clubs", (req, res) => {
     // TODO: send list of clubs
-    res.send('You have hit a TODO: Send list of clubs )');
+    res.json('You have hit a TODO: Send list of clubs )');
 });
 
 app.post('/clubs/create', async (req, res) => {
@@ -161,12 +161,12 @@ app.post('/clubs/create', async (req, res) => {
         };
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
-            if (err) res.status(304).send('Error creating club');
-            else res.status(201).send(data);
+            if (err) res.status(304).json('Error creating club');
+            else res.status(201).json(data);
         });
 
     } catch (error) {
-        res.status(400).send(error);
+        res.status(400).json(error);
     }
 
 });
@@ -195,8 +195,8 @@ app.get('/myclubs/:userId/organized', (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 });
 
@@ -221,7 +221,7 @@ app.get('/myclubs/:userId/history', (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(`Error getting club history for user at #primary level: ${err}`);
+        if (err) res.status(404).json(`Error getting club history for user at #primary level: ${err}`);
         else {
             // Fetching required details of all these clubs
 
@@ -248,8 +248,8 @@ app.get('/myclubs/:userId/history', (req, res) => {
             const _transactQuery = { TransactItems: _transactItems };
 
             dynamoClient.transactGet(_transactQuery, (err, data) => {
-                if (err) res.status(404).send(`Error getting club history for user: ${err}`);
-                else res.status(201).send(data);
+                if (err) res.status(404).json(`Error getting club history for user: ${err}`);
+                else res.status(201).json(data);
             });
         }
     });
@@ -262,7 +262,7 @@ app.get('/clubs/:clubId', async (req, res) => {
     const clubId = req.params.clubId;
     const creatorId = req.headers.creatorId;
     if (!creatorId) {
-        res.status(400).send('creatorId is required in headers');
+        res.status(400).json('creatorId is required in headers');
         return;
     }
 
@@ -275,8 +275,8 @@ app.get('/clubs/:clubId', async (req, res) => {
     };
 
     dynamoClient.get(_getQuery, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 });
@@ -289,7 +289,7 @@ app.get('/clubs/query', async (req, res) => {
         const _schema = Joi.string().min(3).max(25).required();
         await _schema.validateAsync(searchString);
     } catch (error) {
-        res.status(400).send(error);
+        res.status(400).json(error);
         return;
     }
 
@@ -313,8 +313,8 @@ app.get('/clubs/query', async (req, res) => {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
     }
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 
@@ -357,7 +357,7 @@ app.post('/clubs/:clubId/enter', async (req, res) => {
         };
 
     } catch (error) {
-        res.status(400).send(error);
+        res.status(400).json(error);
         return;
     }
 
@@ -382,20 +382,20 @@ app.post('/clubs/:clubId/enter', async (req, res) => {
         if (crossResult && crossResult['Items'].length === 1) {
             try {
                 const responseResult = await AudienceSchema.validateAsync(crossResult['Items'][0]);
-                res.status(204).send(responseResult);
+                res.status(204).json(responseResult);
             } catch (error) {
-                res.status(204).send('User already have a entry but AudienceSchema has error', error);
+                res.status(204).json('User already have a entry but AudienceSchema has error', error);
             }
             return;
         } else {
             dynamoClient.transactWrite(_transactQuery, async (err, data) => {
-                if (err) res.status(304).send('Error marking entry of user');
+                if (err) res.status(304).json('Error marking entry of user');
                 else {
                     try {
                         const responseResult = await AudienceSchema.validateAsync(result);
-                        res.status(204).send(responseResult);
+                        res.status(204).json(responseResult);
                     } catch (error) {
-                        res.status(204).send('User entry created but AudienceSchema has error', error);
+                        res.status(204).json('User entry created but AudienceSchema has error', error);
                     }
                     return;
                 }
@@ -405,13 +405,13 @@ app.post('/clubs/:clubId/enter', async (req, res) => {
 
     } catch (error) {
         dynamoClient.transactWrite(_transactQuery, async (err, data) => {
-            if (err) res.status(304).send('Error marking entry of user');
+            if (err) res.status(304).json('Error marking entry of user');
             else {
                 try {
                     const responseResult = await AudienceSchema.validateAsync(result);
-                    res.status(204).send(responseResult);
+                    res.status(204).json(responseResult);
                 } catch (error) {
-                    res.status(204).send('User entry created but AudienceSchema has error', error);
+                    res.status(204).json('User entry created but AudienceSchema has error', error);
                 }
                 return;
             }
@@ -432,7 +432,7 @@ app.post('/clubs/:clubId/reactions', async (req, res) => {
         _temp['clubId'] = clubId;
         await ReactionSchema.validateAsync(_temp); // if successfull then req.body contains {userId,username,avatar}
     } catch (error) {
-        res.status(400).send('invalid body', error);
+        res.status(400).json('invalid body', error);
         return;
     }
 
@@ -466,7 +466,7 @@ app.post('/clubs/:clubId/reactions', async (req, res) => {
                 indexValue: currentIndexValue
             });
         } catch (error) {
-            res.status(400).send(error);
+            res.status(400).json(error);
             return;
         }
         const _reactionDocQuery = {
@@ -510,8 +510,8 @@ app.post('/clubs/:clubId/reactions', async (req, res) => {
     }
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
-        if (err) res.status(304).send(`Error modifying reaction: ${err}`);
-        else res.status(201).send(data);
+        if (err) res.status(304).json(`Error modifying reaction: ${err}`);
+        else res.status(201).json(data);
     });
 });
 
@@ -538,8 +538,8 @@ app.get('/clubs/:clubId/reactions', async (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 });
@@ -580,12 +580,12 @@ app.post('/clubs/:clubId/reports', async (req, res) => {
         };
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
-            if (err) res.status(304).send(`Error reporting club: ${err}`);
-            else res.status(201).send(data);
+            if (err) res.status(304).json(`Error reporting club: ${err}`);
+            else res.status(201).json(data);
         });
 
     } catch (error) {
-        res.status(400).send(error);
+        res.status(400).json(error);
         return;
     }
 
@@ -617,8 +617,8 @@ app.get('/clubs/:clubId/reports', async (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 });
@@ -629,7 +629,7 @@ app.post('/clubs/:clubId/join-request', async (req, res) => {
     const clubId = req.params.clubId;
 
     if (!req.body.timestamp) {
-        res.status(400).send('Timestamp should exist in body', error);
+        res.status(400).json('Timestamp should exist in body', error);
         return;
     }
 
@@ -640,15 +640,15 @@ app.post('/clubs/:clubId/join-request', async (req, res) => {
         // We don't let kicked out people request to join club
         if (body.isKickedOut === true) {
             // forbidden (403)
-            res.status(403).send('User is kicked out by owner, can not request to join!');
+            res.status(403).json('User is kicked out by owner, can not request to join!');
             return;
         } else if (body.isPartcipant === true) {
             //  not acceptable (406) since user is already a partcipant.
-            res.status(406).send('User is already a participant');
+            res.status(406).json('User is already a participant');
             return;
         } else if (body.joinRequested === true) {
             //  not acceptable (406) since user already have an active join request.
-            res.status(406).send('Join request is already pending!');
+            res.status(406).json('Join request is already pending!');
             return;
         }
 
@@ -697,13 +697,13 @@ app.post('/clubs/:clubId/join-request', async (req, res) => {
         };
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
-            if (err) res.status(304).send(`Error in join request to club: ${err}`);
-            else res.status(201).send(data);
+            if (err) res.status(304).json(`Error in join request to club: ${err}`);
+            else res.status(201).json(data);
         });
 
 
     } catch (error) {
-        res.status(400).send(error);
+        res.status(400).json(error);
         return;
     }
 });
@@ -735,8 +735,8 @@ app.get('/clubs/:clubId/join-request', async (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 });
@@ -752,7 +752,7 @@ app.delete('/clubs/:clubId/join-request', async (req, res) => {
     const timestamp = req.headers.timestamp;
 
     if ((!timestamp) || (!audienceId)) {
-        res.status(400).send('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
+        res.status(400).json('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
         return;
     }
 
@@ -772,8 +772,8 @@ app.delete('/clubs/:clubId/join-request', async (req, res) => {
     };
 
     dynamoClient.update(_audienceUpdateQuery, (err, data) => {
-        if (err) res.status(304).send(`Error in deleting join request: ${err}`);
-        else res.status(202).send(data);
+        if (err) res.status(304).json(`Error in deleting join request: ${err}`);
+        else res.status(202).json(data);
     });
 
 });
@@ -791,21 +791,21 @@ app.post('/clubs/:clubId/join-request/:resp', async (req, res) => {
         const _schema = Joi.string().valid('accept', 'cancel').required();
         await _schema.validateAsync(requestAction);
     } catch (error) {
-        res.status(400).send('invalid response , valid => accept or cancel');
+        res.status(400).json('invalid response , valid => accept or cancel');
         return;
     }
 
     if (requestAction === 'accept') {
 
         if (!req.body.timestamp) {
-            res.status(400).send('timestamp should exist in body when accepting the join request');
+            res.status(400).json('timestamp should exist in body when accepting the join request');
             return;
         }
         var result;
         try {
             result = await AudienceSchemaWithDatabaseKeys.validateAsync(req.body);
         } catch (error) {
-            res.status(400).send('Invalid body', error);
+            res.status(400).json('Invalid body', error);
             return;
         }
         const newTimestamp = Date.now();
@@ -848,8 +848,8 @@ app.post('/clubs/:clubId/join-request/:resp', async (req, res) => {
         };
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
-            if (err) res.status(304).send(`Error accepting join request: ${err}`);
-            else res.status(201).send(data);
+            if (err) res.status(304).json(`Error accepting join request: ${err}`);
+            else res.status(201).json(data);
             return;
         });
 
@@ -861,7 +861,7 @@ app.post('/clubs/:clubId/join-request/:resp', async (req, res) => {
         const timestamp = req.headers.timestamp;
 
         if ((!timestamp) || (!audienceId)) {
-            res.status(400).send('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
+            res.status(400).json('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
             return;
         }
 
@@ -882,12 +882,12 @@ app.post('/clubs/:clubId/join-request/:resp', async (req, res) => {
         };
 
         dynamoClient.update(_audienceUpdateQuery, (err, data) => {
-            if (err) res.status(304).send(`Error in cancelling join request: ${err}`);
-            else res.status(202).send(data);
+            if (err) res.status(304).json(`Error in cancelling join request: ${err}`);
+            else res.status(202).json(data);
         });
 
     } else {
-        res.status(501).send('request has hit a dead end');
+        res.status(501).json('request has hit a dead end');
         return;
     }
 
@@ -912,8 +912,8 @@ app.get('/clubs/:clubId/participants', async (req, res) => {
     };
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 });
@@ -927,7 +927,7 @@ app.post('/clubs/:clubId/kick', async (req, res) => {
     const timestamp = req.headers.timestamp;
 
     if ((!timestamp) || (!audienceId)) {
-        res.status(400).send('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
+        res.status(400).json('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
         return;
     }
 
@@ -952,7 +952,7 @@ app.post('/clubs/:clubId/kick', async (req, res) => {
     try {
         counterDoc = await CountParticipantSchema.validateAsync({ clubId: clubId });
     } catch (error) {
-        res.status(400).send('error in  validation of CountParticipantSchema ', error);
+        res.status(400).json('error in  validation of CountParticipantSchema ', error);
     }
 
     const _counterUpdateQuery = {
@@ -976,8 +976,8 @@ app.post('/clubs/:clubId/kick', async (req, res) => {
     };
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
-        if (err) res.status(304).send(`Error kicking out participant: ${err}`);
-        else res.status(201).send(data);
+        if (err) res.status(304).json(`Error kicking out participant: ${err}`);
+        else res.status(201).json(data);
         return;
     });
 });
@@ -1008,8 +1008,8 @@ app.get('/clubs/:clubId/kick', async (req, res) => {
     }
 
     dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).send(err);
-        else res.status(200).send(data);
+        if (err) res.status(404).json(err);
+        else res.status(200).json(data);
     });
 
 });
@@ -1023,7 +1023,7 @@ app.post('/clubs/:clubId/un-kick', async (req, res) => {
     const timestamp = req.headers.timestamp;
 
     if ((!timestamp) || (!audienceId)) {
-        res.status(400).send('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
+        res.status(400).json('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
         return;
     }
 
@@ -1042,8 +1042,8 @@ app.post('/clubs/:clubId/un-kick', async (req, res) => {
     }
 
     dynamoClient.update(_audienceUnKickedQuery, (err, data) => {
-        if (err) res.status(304).send(`Error un-kicking the user: ${err}`);
-        else res.status(201).send(data);
+        if (err) res.status(304).json(`Error un-kicking the user: ${err}`);
+        else res.status(201).json(data);
         return;
     });
 });
