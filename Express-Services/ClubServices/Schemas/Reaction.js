@@ -6,7 +6,7 @@ const ReactionSchema = Joi.object({
 
 
     username: Joi.string().required(),
-    avatar: Joi.string(),
+    avatar: Joi.string().required(),
 
     indexValue: Joi.number().allow(0, 1, 2).required(), // {0: Dislike, 1: Like, 2: Heart}
 

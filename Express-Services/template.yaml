@@ -19,6 +19,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: "MyTable"
+        - S3CrudPolicy:
+            BucketName: "mootclub-public"
 
       Events:
         APIRoot:
@@ -50,6 +52,12 @@ Resources:
           Properties:
             Path: /users/{userId}
             Method: patch
+
+        UploadAvatar:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/avatar
+            Method: post
 
         SearchUserByUsername:
           Type: Api
@@ -109,6 +117,9 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: "MyTable"
 
+        - S3CrudPolicy:
+            BucketName: "mootclub-public"
+
       Events:
         AllClubList:
           Type: Api
@@ -120,6 +131,12 @@ Resources:
           Type: Api
           Properties:
             Path: /clubs/create
+            Method: post
+
+        UploadAvatar:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/avatar
             Method: post
 
         MyOrganisedClubs:

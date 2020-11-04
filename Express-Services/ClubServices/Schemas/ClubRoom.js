@@ -8,6 +8,7 @@ const ClubInputSchema = Joi.object({
 
     creatorId: Joi.string().required(),
     creatorUsername: Joi.string().min(3).max(25).required(),
+    creatorAvatar: Joi.string().required(),
 
     timeWindow: Joi.number().integer().default(1800).min(300),  // expected duration of club entered at time of creation (default 1800 seconds i.e. 30 minutes)
 
@@ -22,7 +23,6 @@ const ClubInputSchema = Joi.object({
 
     //normal fields
 
-    creatorAvatar: Joi.string(),
     clubAvatar: Joi.string(),
     decription: Joi.string(),
 

@@ -4,6 +4,7 @@ const UserInputSchema = Joi.object({
     //! required fields
     userId: Joi.string().required(),
     username: Joi.string().min(3).max(25).token().required(),
+    avatar: Joi.string().required(),
 
     createdOn: Joi.number().default(() => Date.now()),
     modifiedOn: Joi.number().default(Joi.ref('createdOn')),
@@ -12,7 +13,6 @@ const UserInputSchema = Joi.object({
     name: Joi.string().min(3).max(100),
     phone: Joi.string(),
     email: Joi.string().email(),
-    avatar: Joi.string(),
     bio: Joi.string(),
 
     termsAccepted: Joi.boolean().equal(true),

@@ -2,6 +2,7 @@
 ? Methods to implement =>
 ! All Clubs List 
 # Create Club
+# Upload Club Image
 # Get all my organized clubs 
 # Get my club history timeline (attended, participated as well as organised (owned) )  
 ! Update Club on owner request 
@@ -26,14 +27,10 @@
 
 
 const express = require('express');
-const app = express();
+const fs = require("fs");
+const multer = require('multer');
 const cors = require('cors');
 
-const AWS = require('aws-sdk');
-
-const { nanoid } = require('nanoid');
-
-const Joi = require('joi');
 
 const { ClubRoomCompleteSchema } = require('./Schemas/ClubRoom');
 const { AudienceSchemaWithDatabaseKeys, AudienceSchema } = require('./Schemas/Audience');
@@ -42,6 +39,16 @@ const { ReportSchemaWithDatabaseKeys } = require('./Schemas/Report');
 const { CountCommentSchema, CountReactionSchema, CountReportSchema,
     CountParticipantSchema, CountAudienceSchema, CountJoinRequestSchema
 } = require('./Schemas/AtomicCountSchemas');
+
+
+
+const AWS = require('aws-sdk');
+const Joi = require('joi');
+const { nanoid } = require('nanoid');
+
+
+const app = express();
+
 
 app.use(cors());
 app.use(express.json());
@@ -53,6 +60,14 @@ AWS.config.update({
 });
 
 const dynamoClient = new AWS.DynamoDB.DocumentClient();
+const s3 = new AWS.S3();
+
+const imageUploadConstParams = {
+    ACL: 'public-read',
+    Bucket: 'mootclub-public',
+    // Body:            populate it 
+    // Key:             populate it
+};
 
 const tableName = "MyTable";
 const allClubsOfAudienceIndex = "AllClubsOfAudienceIndex";
@@ -69,14 +84,13 @@ app.post('/clubs/create', async (req, res) => {
     try {
         const clubId = nanoid();
         req.body['clubId'] = clubId;
+        req.body['clubAvatar'] = `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`;
         const newClub = await ClubRoomCompleteSchema.validateAsync(req.body);
 
         const _createClubQuery = {
             TableName: tableName,
             Item: newClub,
         };
-
-
 
         const _audienceDoc = await AudienceSchemaWithDatabaseKeys.validateAsync({
             clubId: clubId,
@@ -162,13 +176,62 @@ app.post('/clubs/create', async (req, res) => {
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
             if (err) res.status(304).json('Error creating club');
-            else res.status(201).json(data);
+            else {
+
+                const fileName = clubId;
+                var params = {
+                    ...imageUploadConstParams,
+                    Body: fs.createReadStream('./static/microphone.jpg'),
+                    Key: `clubAvatar/${fileName}`
+                };
+
+                s3.upload(params, (err, data) => {
+                    if (err) {
+                        console.log(`Error occured while trying to upload: ${err}`);
+                        return;
+                    }
+                    else if (data) {
+                        console.log('Default Club Image uploaded successfully!');
+                    }
+                });
+
+                res.status(201).json(data)
+
+            };
         });
 
     } catch (error) {
         res.status(400).json(error);
     }
 
+});
+
+app.post("/clubs/:clubId/avatar", multer.single('avatar'), (req, res) => {
+    const clubId = req.params.clubId;
+
+    if (!req.file) {
+        res.status(400).send('Invalid request. File not found');
+        return;
+    }
+
+    // TODO: process this file, may include - check for broken/corrupt file, valid image extension, cropping or resizing etc.
+    const fileName = clubId;
+
+    var params = {
+        ...imageUploadConstParams,
+        Body: req.file.buffer,
+        Key: `clubAvatar/${fileName}`
+    };
+
+    s3.upload(params, (err, data) => {
+        if (err) {
+            res.json(`Error occured while trying to upload: ${err}`);
+            return;
+        }
+        else if (data) {
+            res.status(201).json('Image uploaded successfully');
+        }
+    });
 });
 
 app.get('/myclubs/:userId/organized', (req, res) => {

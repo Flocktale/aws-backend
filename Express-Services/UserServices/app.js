@@ -3,8 +3,9 @@
 ? Methods to implement =>
 # Create user profile in database 
 # Get profile by userId
-# Get profile by username
 # Update profile of user
+# Upload Image
+# Get profile by username
 ! Delete user from database
 # Get My followers
 # Get whom I'm following
@@ -13,21 +14,24 @@
 # Get follow requests i have received
 # cancel (delete) a sent follow request
 # respond to received follow requests - delete , accept
-! Upload Image
 */
 
 const express = require('express');
-const app = express();
 const cors = require('cors');
-
-const AWS = require('aws-sdk');
-
-const Joi = require('joi');
+const multer = require('multer');
+const fs = require("fs");
 
 const { UserBaseCompleteSchema } = require('./Schemas/UserBase');
 const { FollowRequestSchemaWithDatabaseKeys } = require('./Schemas/FollowRequest');
 const { FollowingSchemaWithDatabaseKeys } = require('./Schemas/Following');
 const { FollowerSchemaWithDatabaseKeys } = require('./Schemas/Follower');
+
+
+const AWS = require('aws-sdk');
+const Joi = require('joi');
+
+const app = express();
+
 
 app.use(cors());
 app.use(express.json());
@@ -41,6 +45,15 @@ AWS.config.update({
 });
 
 const dynamoClient = new AWS.DynamoDB.DocumentClient();
+const s3 = new AWS.S3();
+
+const imageUploadConstParams = {
+    ACL: 'public-read',
+    Bucket: 'mootclub-public',
+    // Body:            populate it 
+    // Key:             populate it
+};
+
 
 const tableName = "MyTable";
 const searchByUsernameIndex = "SearchByUsernameIndex";
@@ -58,8 +71,9 @@ app.get("/users", (req, res) => {
 
 
 app.post("/users/create", async (req, res) => {
-
+    // TODO: upload default user profile here.
     try {
+        req.body['avatar'] = `https://mootclub-public.s3.amazonaws.com/userAvatar/${req.body.userId}`;
         const result = await UserBaseCompleteSchema.validateAsync(req.body);
         const query = {
             TableName: tableName,
@@ -75,8 +89,25 @@ app.post("/users/create", async (req, res) => {
                 console.log(err);
                 res.status(304).json(`Error creating profile: ${err}`);
             }
-            else res.status(201).json(data);
+            else {
+                const fileName = result.userId;
+                var params = {
+                    ...imageUploadConstParams,
+                    Body: fs.createReadStream('./static/dp.jpg'),
+                    Key: `userAvatar/${fileName}`
+                };
 
+                s3.upload(params, (err, data) => {
+                    if (err) {
+                        console.log(`Error occured while trying to upload: ${err}`);
+                        return;
+                    }
+                    else if (data) {
+                        console.log('Default profile pic uploaded successfully!');
+                    }
+                });
+                res.status(201).json(data);
+            }
         });
 
     } catch (error) {
@@ -164,6 +195,35 @@ app.patch("/users/:userId", async (req, res) => {
         else res.status(200).json(data);
     });
 
+});
+
+
+app.post("/users/:userId/avatar", multer.single('avatar'), (req, res) => {
+    const userId = req.params.userId;
+
+    if (!req.file) {
+        res.status(400).send('Invalid request. File not found');
+        return;
+    }
+
+    // TODO: process this file, may include - check for broken/corrupt file, valid image extension, cropping or resizing etc.
+    const fileName = userId;
+
+    var params = {
+        ...imageUploadConstParams,
+        Body: req.file.buffer,
+        Key: `userAvatar/${fileName}`
+    };
+
+    s3.upload(params, (err, data) => {
+        if (err) {
+            res.json(`Error occured while trying to upload: ${err}`);
+            return;
+        }
+        else if (data) {
+            res.status(201).json('Image uploaded successfully');
+        }
+    });
 });
 
 
