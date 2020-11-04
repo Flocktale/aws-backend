@@ -198,7 +198,7 @@ app.patch("/users/:userId", async (req, res) => {
 });
 
 
-app.post("/users/:userId/avatar", multer.single('avatar'), (req, res) => {
+app.post("/users/:userId/avatar", multer().single('avatar'), (req, res) => {
     const userId = req.params.userId;
 
     if (!req.file) {

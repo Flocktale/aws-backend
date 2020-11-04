@@ -206,7 +206,7 @@ app.post('/clubs/create', async (req, res) => {
 
 });
 
-app.post("/clubs/:clubId/avatar", multer.single('avatar'), (req, res) => {
+app.post("/clubs/:clubId/avatar", multer().single('avatar'), (req, res) => {
     const clubId = req.params.clubId;
 
     if (!req.file) {
