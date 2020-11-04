@@ -1,12 +1,11 @@
 const router = require('express').Router();
-const AWS = require('aws-sdk');
 const Joi = require('joi');
 
-const { FollowRequestSchemaWithDatabaseKeys } = require('../Schemas/FollowRequest');
-const { FollowingSchemaWithDatabaseKeys } = require('../Schemas/Following');
-const { FollowerSchemaWithDatabaseKeys } = require('../Schemas/Follower');
+const { FollowRequestSchemaWithDatabaseKeys } = require('../../Schemas/FollowRequest');
+const { FollowingSchemaWithDatabaseKeys } = require('../../Schemas/Following');
+const { FollowerSchemaWithDatabaseKeys } = require('../../Schemas/Follower');
 
-const { receivedFollowRequestIndex, sortedSocialRelationByUsernameIndex, dynamoClient, tableName } = require('../config');
+const { receivedFollowRequestIndex, sortedSocialRelationByUsernameIndex, dynamoClient, tableName } = require('../../config');
 
 
 //! send a follow-request

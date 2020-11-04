@@ -4,28 +4,28 @@ const Joi = require('joi');
 const { searchByUsernameIndex, dynamoClient, tableName } = require('../config');
 
 
-//! Search list of users by username. (paginated with limit of 10 results)
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
 
-    const username = req.body;
+    const searchString = req.body;
     try {
-        const _schema = Joi.string().min(3).max(25).token().required();
-        await _schema.validateAsync(username);
-    } catch (e) {
-        res.status(400).json(e);
+        const _schema = Joi.string().min(3).max(25).required();
+        await _schema.validateAsync(searchString);
+    } catch (error) {
+        res.status(400).json(error);
         return;
     }
 
-    const query = {
+    const _query = {
         TableName: tableName,
         IndexName: searchByUsernameIndex,
         KeyConditionExpression: 'PublicSearch = :hkey and begins_with ( FilterDataName , :filter )',
         ExpressionAttributeValues: {
             ":hkey": 1,
-            ":filter": `USER#${username}`
+            ":filter": `CLUB#${searchString}`,
         },
         AttributesToGet: [
-            'userId', 'username', 'name', 'avatar'
+            'clubId', 'clubName', 'creatorId', 'creatorUsername', 'category', 'scheduleTime',
+            'creatorAvatar', 'clubAvatar', 'tags', 'duration'
         ],
         Limit: 10,
         ReturnConsumedCapacity: "INDEXES"
@@ -38,7 +38,7 @@ router.get("/", async (req, res) => {
         if (err) res.status(404).json(err);
         else res.status(200).json(data);
     });
-
 });
+
 
 module.exports = router;
