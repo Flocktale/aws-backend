@@ -1,0 +1,163 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Websocket-Services
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  GeneralWebsocket:
+    Type: "AWS::ApiGatewayV2::Api"
+    Properties:
+      Name: websocket-channel
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+
+  ConnectRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref GeneralWebsocket #required
+      RouteKey: $connect #required
+      AuthorizationType: NONE
+      OperationName: ConnectRoute
+      Target: !Join
+        - "/"
+        - - "integrations"
+          - !Ref ConnectInteg
+
+  ConnectInteg:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref GeneralWebsocket #required
+      IntegrationType: AWS_PROXY #required
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectFunction.Arn}/invocations
+
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref GeneralWebsocket
+      RouteKey: $disconnect
+      AuthorizationType: NONE
+      OperationName: DisconnectRoute
+      Target: !Join
+        - "/"
+        - - "integrations"
+          - !Ref DisconnectInteg
+
+  DisconnectInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref GeneralWebsocket
+      Description: Disconnect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
+
+  CommentRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref GeneralWebsocket
+      RouteKey: sendmessage
+      AuthorizationType: NONE
+      OperationName: CommentRoute
+      Target: !Join
+        - "/"
+        - - "integrations"
+          - !Ref CommentInteg
+
+  CommentInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref GeneralWebsocket
+      Description: Send Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CommentFunction.Arn}/invocations
+
+  WsDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - ConnectRoute
+      - CommentRoute
+      - DisconnectRoute
+    Properties:
+      ApiId: !Ref GeneralWebsocket
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: Dev
+      Description: Dev Stage
+      DeploymentId: !Ref WsDeployment
+      ApiId: !Ref GeneralWebsocket
+
+  OnConnectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: onconnect/
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs12.x
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: wsTable
+
+  OnConnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - GeneralWebsocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnConnectFunction
+      Principal: apigateway.amazonaws.com
+
+  OnDisconnectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ondisconnect/
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs12.x
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: wsTable
+
+  OnDisconnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - GeneralWebsocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnDisconnectFunction
+      Principal: apigateway.amazonaws.com
+
+  CommentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: comment/
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs12.x
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: wsTable
+        - DynamoDBCrudPolicy:
+            TableName: myTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - "execute-api:ManageConnections"
+              Resource:
+                - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GeneralWebsocket}/*"
+
+  CommentPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - GeneralWebsocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref CommentFunction
+      Principal: apigateway.amazonaws.com
