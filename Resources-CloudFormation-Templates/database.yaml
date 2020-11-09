@@ -3,6 +3,34 @@ Description: >
   Database schema with GSIs
 
 Resources:
+  WsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: WsTable
+      BillingMode: PAY_PER_REQUEST # set capacity to on-demand mode
+
+      AttributeDefinitions:
+        - AttributeName: connectionId
+          AttributeType: S
+
+        - AttributeName: skey
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: connectionId
+          KeyType: HASH
+
+      GlobalSecondaryIndexes:
+        - IndexName: wsInvertIndex
+          KeySchema:
+            - AttributeName: skey
+              KeyType: HASH
+
+            - AttributeName: connectionId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
   MyTable:
     Type: AWS::DynamoDB::Table
     Properties:

@@ -1,5 +1,5 @@
 {
-  "name": "comment",
+  "name": "club-subscription",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,10 +9,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "joi": "^17.3.0",
-    "nanoid": "^3.1.16"
-  },
+  "dependencies": {},
   "devDependencies": {
     "aws-sdk": "^2.787.0"
   }
