@@ -147,7 +147,6 @@ router.delete('/sent', async (req, res) => {
 // ! NOTE :  (req.body should conform to FollowRequest model)
 router.post('/received', async (req, res) => {
 
-    const userId = req.userId;
 
     var body;
 
@@ -171,7 +170,7 @@ router.post('/received', async (req, res) => {
 
 
     const _deleteKey = {
-        P_K: `USER#${userId}`,
+        P_K: `USER#${body.userId}`,
         S_K: `FOLLOWREQUEST#${timestamp}#${body.requestedUserId}`
     };
 
@@ -180,7 +179,7 @@ router.post('/received', async (req, res) => {
         const timestamp = new Date.now();
 
         const followingTableItem = await FollowingSchemaWithDatabaseKeys.validateAsync({
-            userId: userId,
+            userId: body.userId,
             followingUserId: body.requestedUserId,
             followingUsername: body.requestedUsername,
             followingName: body.requestedName,
@@ -196,7 +195,6 @@ router.post('/received', async (req, res) => {
             followerName: body.name,
             followerAvatar: body.avatar,
             timestamp: timestamp,
-
         });
 
 
@@ -219,7 +217,34 @@ router.post('/received', async (req, res) => {
                         TableName: tableName,
                         Item: followerTableItem,
                     }
-                }
+                },
+                {                   // following count increment in user doc
+                    Update: {
+                        TableName: tableName,
+                        Key: {
+                            P_K: `USER#${body.userId}`,
+                            S_K: `USERMETA#${body.userId}`
+                        },
+                        UpdateExpression: 'set followingCount = followingCount + :counter',
+                        ExpressionAttributeValues: {
+                            ':counter': 1,
+                        }
+                    }
+                },
+                {                   // follower count increment in user doc
+                    Update: {
+                        TableName: tableName,
+                        Key: {
+                            P_K: `USER#${body.requestedUserId}`,
+                            S_K: `USERMETA#${body.requestedUserId}`
+                        },
+                        UpdateExpression: 'set followerCount = followerCount + :counter',
+                        ExpressionAttributeValues: {
+                            ':counter': 1,
+                        }
+                    }
+                },
+
 
             ]
         };

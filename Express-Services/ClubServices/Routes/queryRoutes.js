@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
     if (req.headers.lastevaluatedkey) {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
     }
-    dynamoClient.query(query, (err, data) => {
+    dynamoClient.query(_query, (err, data) => {
         if (err) res.status(404).json(err);
         else res.status(200).json(data);
     });

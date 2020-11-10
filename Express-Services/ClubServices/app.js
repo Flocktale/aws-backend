@@ -1,3 +1,6 @@
+// TODO: countComment is not updated in websocket
+// TODO: in user complete schema, count fields are not updated dynamically.
+
 /* 
 ? Methods to implement =>
 ! All Clubs List 
@@ -11,8 +14,8 @@
 # Enter a club
 # React on club
 # Get reactions     (List with userId, username, avatar and indexValue) 
-! Comment on club
-! Get comments
+# Comment on club (websocket)
+# Get comments (websocket)
 # Report club
 # Get reports
 # Request to join club 
