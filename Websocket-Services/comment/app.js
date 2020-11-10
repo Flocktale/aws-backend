@@ -74,7 +74,7 @@ exports.handler = async event => {
     const postCalls = connectionData.Items.map(async ({ connectionId }) => {
         try {
             await apigwManagementApi.postToConnection({
-                ConnectionId: connectionId, Data: postData
+                ConnectionId: connectionId, Data: postComment
             }).promise();
         } catch (error) {
             if (error.statusCode === 410) {
