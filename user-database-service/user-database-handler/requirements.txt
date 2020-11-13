@@ -1,3 +1,0 @@
-requests
-flask-lambda-python36
-boto3
