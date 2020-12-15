@@ -1,5 +1,5 @@
 const router = require('express').Router();
-
+const fs = require('fs');
 const { UserBaseCompleteSchema } = require('../Schemas/UserBase');
 const { imageUploadConstParams, dynamoClient, s3, tableName } = require('../config');
 
@@ -26,17 +26,19 @@ router.post("/", async (req, res) => {
                 const fileName = result.userId;
                 var params = {
                     ...imageUploadConstParams,
-                    Body: fs.createReadStream('../static/dp.jpg'),
+                    Body: fs.createReadStream('./static/dp.jpg'),
                     Key: `userAvatar/${fileName}`
                 };
 
                 s3.upload(params, (err, data) => {
                     if (err) {
                         console.log(`Error occured while trying to upload: ${err}`);
+                        console.log(data);
                         return;
                     }
                     else if (data) {
                         console.log('Default profile pic uploaded successfully!');
+                        console.log(data);
                     }
                 });
                 res.status(201).json(data);

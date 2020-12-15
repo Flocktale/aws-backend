@@ -41,7 +41,7 @@ router.get("/", async (req, res) => {
     }
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else res.status(200).json(data["Items"]);
     });
 
 });
