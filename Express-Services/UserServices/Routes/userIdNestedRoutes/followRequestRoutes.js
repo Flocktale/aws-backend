@@ -23,7 +23,10 @@ router.post('/', async (req, res) => {
 
         dynamoClient.put(_putQuery, (err, data) => {
             if (err) res.status(304).json(`Error sending follow-request : ${err}`);
-            else res.status(201).json(data);
+            else {
+                console.log(data);
+                res.status(201).json('follow-request sent');
+            }
         });
 
     } catch (e) {
@@ -48,20 +51,28 @@ router.get('/sent', (req, res) => {
     //! prefix of value of sort key has different cases. 
     if (req.headers.sortby === 'username') {
         query["IndexName"] = sortedSocialRelationByUsernameIndex;
-        query["KeyConditionExpression"] = 'P_K = :hkey and begins_with ( SocialConnectionUsername , :skey )';
-        query["ExpressionAttributeValues"] = {
-            ":hkey": `USER#${userId}`,
-            ":skey": 'FollowRequest#'
+        query["KeyConditions"] = {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`USER#${userId}`]
+            },
+            "SocialConnectionUsername": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": ['FollowRequest#']
+            },
         };
 
     } else {
-
-        query["KeyConditionExpression"] = 'P_K = :hkey and begins_with ( S_K , :skey )';
-        query["ExpressionAttributeValues"] = {
-            ":hkey": `USER#${userId}`,
-            ":skey": 'FOLLOWREQUEST#'
+        query["KeyConditions"] = {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`USER#${userId}`]
+            },
+            "S_K": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": ['FOLLOWREQUEST#']
+            },
         };
-
     }
     if (req.headers.lastevaluatedkey) {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
@@ -69,7 +80,10 @@ router.get('/sent', (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else res.status(200).json({
+            'requestedUsers': data["Items"],
+            'lastevaluatedkey': data["LastEvaluatedKey"]
+        });
     });
 
 
@@ -88,11 +102,13 @@ router.get('/received', (req, res) => {
     };
 
     query["IndexName"] = receivedFollowRequestIndex;
-    query["KeyConditionExpression"] = 'FollowRequestReceiver = :hkey';
-    query["ExpressionAttributeValues"] = {
-        ":hkey": `FOLLOWREQUEST-RECEIVED#${userId}`,
-    };
+    query["KeyConditions"] = {
+        "FollowRequestReceiver": {
+            "ComparisonOperator": "EQ",
+            "AttributeValueList": [`FOLLOWREQUEST-RECEIVED#${userId}`]
+        },
 
+    };
 
     if (req.headers.lastevaluatedkey) {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
@@ -100,7 +116,10 @@ router.get('/received', (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else res.status(200).json({
+            'receivedUsers': data["Items"],
+            'lastevaluatedkey': data["LastEvaluatedKey"]
+        });
     });
 
 });
@@ -137,7 +156,7 @@ router.delete('/sent', async (req, res) => {
 
     dynamoClient.delete(_deleteQuery, (err, data) => {
         if (err) res.status(304).json(`Error deleting follow request: ${err}`);
-        else res.status(204).json();
+        else res.status(204).json('deleted follow-request');
     });
 
 });
@@ -146,7 +165,6 @@ router.delete('/sent', async (req, res) => {
 // accept or reject a follow-request...........
 // ! NOTE :  (req.body should conform to FollowRequest model)
 router.post('/received', async (req, res) => {
-
 
     var body;
 
@@ -262,12 +280,12 @@ router.post('/received', async (req, res) => {
         };
         dynamoClient.delete(_deleteQuery, (err, data) => {
             if (err) res.status(304).json(`Error deleting follow request: ${err}`);
-            else res.status(204).json();
+            else res.status(204).json('deleted the follow request.');
         });
 
     } else {
         console.log('Server side validation failed for Joi ');
-        res.status(400).json();
+        res.status(400).json('Server error');
     }
 
 });

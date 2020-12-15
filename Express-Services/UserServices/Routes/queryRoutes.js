@@ -32,16 +32,21 @@ router.get("/", async (req, res) => {
         AttributesToGet: [
             'userId', 'username', 'name', 'avatar'
         ],
-        Limit: 10,
+        Limit: 1,
         ReturnConsumedCapacity: "INDEXES"
     };
-
     if (req.headers.lastevaluatedkey) {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
     }
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data["Items"]);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "users": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 
 });

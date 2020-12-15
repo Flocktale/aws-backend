@@ -19,6 +19,11 @@ router.get("/", (req, res) => {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
         },
+        AttributesToGet: [
+            'userId', 'username', 'avatar', 'createdOn', 'modifiedOn', 'name', 'phone', 'email', 'bio', 'termsAccepted',
+            'policyAccepted', 'lngPref', 'regionCode', 'geoLat', 'geoLong',
+            'followerCount', 'followingCount', 'clubsCreated', 'clubsParticipated', 'kickedOutCount', 'clubsJoinRequests', 'clubsAttended'
+        ],
         TableName: tableName
     };
 
@@ -27,7 +32,10 @@ router.get("/", (req, res) => {
             console.log(err);
             res.status(404).json(err);
         }
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json(data['Item']);
+        }
     });
 
 });
@@ -52,6 +60,8 @@ router.patch("/", async (req, res) => {
         res.status(404).json(`No data exists with user id: ${userId}`);
         return;
     }
+    console.log('oldItem', _oldItem);
+
     const _newItemKeys = Object.keys(req.body);
 
     const attributeUpdates = {};
@@ -64,12 +74,17 @@ router.patch("/", async (req, res) => {
         }
     }
 
-    if (attributeUpdates.length === 0) {
+    let len = 0;
+    for (var _ in attributeUpdates) {
+        len++;
+    }
 
+    if (len === 0) {
         console.log('no attributes to update');
         res.status(200).json('Nothing to update');
         return;
     }
+    console.log('attriubtes to update', attributeUpdates);
 
     const _updateQuery = {
         TableName: tableName,
@@ -87,7 +102,7 @@ router.patch("/", async (req, res) => {
             console.log(err);
             res.status(304).json("Error updating profile");
         }
-        else res.status(200).json(data);
+        else res.status(200).json('User profile updated successfully');
     });
 
 });
@@ -109,20 +124,28 @@ router.get('/following', (req, res) => {
     //! prefix of value of sort key has different cases. 
     if (req.headers.sortby === 'username') {
         query["IndexName"] = sortedSocialRelationByUsernameIndex;
-        query["KeyConditionExpression"] = 'P_K = :hkey and begins_with ( SocialConnectionUsername , :skey )';
-        query["ExpressionAttributeValues"] = {
-            ":hkey": `USER#${userId}`,
-            ":skey": 'Following#'
+        query["KeyConditions"] = {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`USER#${userId}`]
+            },
+            "SocialConnectionUsername": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": ['Following#']
+            },
         };
 
     } else {
-
-        query["KeyConditionExpression"] = 'P_K = :hkey and begins_with ( S_K , :skey )';
-        query["ExpressionAttributeValues"] = {
-            ":hkey": `USER#${userId}`,
-            ":skey": 'FOLLOWING#'
+        query["KeyConditions"] = {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`USER#${userId}`]
+            },
+            "S_K": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": ['FOLLOWING#']
+            },
         };
-
     }
 
     if (req.headers.lastevaluatedkey) {
@@ -131,7 +154,13 @@ router.get('/following', (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "followings": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 
 
@@ -154,20 +183,29 @@ router.get('/followers', (req, res) => {
     //! prefix of value of sort key has different cases. 
     if (req.headers.sortby === 'username') {
         query["IndexName"] = sortedSocialRelationByUsernameIndex;
-        query["KeyConditionExpression"] = 'P_K = :hkey and begins_with ( SocialConnectionUsername , :skey )';
-        query["ExpressionAttributeValues"] = {
-            ":hkey": `USER#${userId}`,
-            ":skey": 'Follower#'
+
+        query["KeyConditions"] = {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`USER#${userId}`]
+            },
+            "SocialConnectionUsername": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": ['Follower#']
+            },
         };
 
     } else {
-
-        query["KeyConditionExpression"] = 'P_K = :hkey and begins_with ( S_K , :skey )';
-        query["ExpressionAttributeValues"] = {
-            ":hkey": `USER#${userId}`,
-            ":skey": 'FOLLOWER#'
+        query["KeyConditions"] = {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`USER#${userId}`]
+            },
+            "S_K": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": ['FOLLOWER#']
+            },
         };
-
     }
     if (req.headers.lastevaluatedkey) {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
@@ -175,7 +213,13 @@ router.get('/followers', (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "followers": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 });
 
