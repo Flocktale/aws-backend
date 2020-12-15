@@ -63,7 +63,10 @@ router.post('/kick', async (req, res) => {
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
         if (err) res.status(304).json(`Error kicking out participant: ${err}`);
-        else res.status(201).json(data);
+        else {
+            console.log(data);
+            res.status(201).json('kicked out participant');
+        }
         return;
     });
 });
@@ -77,12 +80,16 @@ router.get('/', async (req, res) => {
         TableName: tableName,
         IndexName: audienceDynamicDataIndex,
         Limit: 30,
-        KeyConditionExpression: 'P_K = :hkey and begins_with ( AudienceDynamicField , :filter )',
-        ExpressionAttributeValues: {
-            ":hkey": `CLUB#${clubId}`,
-            ":filter": `KickedOut#`
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "AudienceDynamicField": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`KickedOut#`]
+            },
         },
-
         AttributesToGet: [
             'audienceId', 'avatar', 'username', 'AudienceDynamicField'
         ],
@@ -96,7 +103,13 @@ router.get('/', async (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "kickedOutParticipants": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 
 });
@@ -130,7 +143,10 @@ router.post('/revoke', async (req, res) => {
 
     dynamoClient.update(_audienceUnKickedQuery, (err, data) => {
         if (err) res.status(304).json(`Error un-kicking the user: ${err}`);
-        else res.status(201).json(data);
+        else {
+            console.log(data);
+            res.status(201).json('Un-kicked the user');
+        }
         return;
     });
 });

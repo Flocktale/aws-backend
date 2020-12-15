@@ -12,6 +12,7 @@ const { imageUploadConstParams, dynamoClient, s3, tableName } = require('../conf
 
 
 router.post('/', async (req, res) => {
+
     try {
         const clubId = nanoid();
         req.body['clubId'] = clubId;
@@ -113,7 +114,7 @@ router.post('/', async (req, res) => {
                 const fileName = clubId;
                 var params = {
                     ...imageUploadConstParams,
-                    Body: fs.createReadStream('../static/microphone.jpg'),
+                    Body: fs.createReadStream('./static/microphone.jpg'),
                     Key: `clubAvatar/${fileName}`
                 };
 
@@ -126,8 +127,9 @@ router.post('/', async (req, res) => {
                         console.log('Default Club Image uploaded successfully!');
                     }
                 });
+                console.log(data);
 
-                res.status(201).json(data)
+                res.status(201).json('club created successfully');
 
             };
         });

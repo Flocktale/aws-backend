@@ -96,7 +96,10 @@ router.post('/', async (req, res) => {
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
         if (err) res.status(304).json(`Error modifying reaction: ${err}`);
-        else res.status(201).json(data);
+        else {
+            console.log(data);
+            res.status(201).json('Modified reaction');
+        }
     });
 });
 
@@ -108,10 +111,15 @@ router.get('/', async (req, res) => {
     const query = {
         TableName: tableName,
         Limit: 50,
-        KeyConditionExpression: 'P_K = :hkey and begins_with ( S_K , :filter )',
-        ExpressionAttributeValues: {
-            ":hkey": `CLUB#${clubId}`,
-            ":filter": `REACT#`
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "S_K": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`REACT#`]
+            },
         },
         AttributesToGet: [
             'userId', 'username', 'avatar', 'indexValue'
@@ -125,7 +133,13 @@ router.get('/', async (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "reactions": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 
 });

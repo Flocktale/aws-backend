@@ -39,8 +39,14 @@ router.get('/', async (req, res) => {
     };
 
     dynamoClient.get(_getQuery, (err, data) => {
-        if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        if (err) {
+            console.log(err);
+            res.status(404).json(err);
+        }
+        else {
+            console.log(data);
+            res.status(200).json(data['Item']);
+        }
     });
 
 });
@@ -52,10 +58,15 @@ router.get('/participants', async (req, res) => {
     const query = {
         TableName: tableName,
         IndexName: audienceDynamicDataIndex,
-        KeyConditionExpression: 'P_K = :hkey and begins_with ( AudienceDynamicField , :filter )',
-        ExpressionAttributeValues: {
-            ":hkey": `CLUB#${clubId}`,
-            ":filter": `Participant#`
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "AudienceDynamicField": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`Participant#`]
+            },
         },
         AttributesToGet: [
             'audienceId', 'isOwner', 'avatar', 'username', 'AudienceDynamicField'
@@ -66,7 +77,13 @@ router.get('/participants', async (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "participants": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 
 });

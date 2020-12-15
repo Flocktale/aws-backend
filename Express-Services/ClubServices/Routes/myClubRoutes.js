@@ -8,10 +8,15 @@ router.get('/:userId/organized', (req, res) => {
 
     const query = {
         TableName: tableName,
-        KeyConditionExpression: 'P_K = :hkey and begins_with ( S_K , :skey )',
-        ExpressionAttributeValues: {
-            ":hkey": `USER#${userId}`,
-            ":skey": 'CLUB#'
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`USER#${userId}`]
+            },
+            "S_K": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": ['CLUB#']
+            },
         },
         AttributesToGet: [
             'clubId', 'clubName', 'creatorId', 'creatorUsername', 'category', 'scheduleTime',
@@ -28,7 +33,13 @@ router.get('/:userId/organized', (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "organizedClubs": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 });
 
@@ -38,9 +49,11 @@ router.get('/:userId/history', (req, res) => {
     const query = {
         TableName: tableName,
         IndexName: allClubsOfAudienceIndex,
-        KeyConditionExpression: 'audienceId = :hkey',
-        ExpressionAttributeValues: {
-            ":hkey": userId,
+        KeyConditions: {
+            "audienceId": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [userId]
+            },
         },
         AttributesToGet: ['clubId', 'creatorId'],
         Limit: 10,
@@ -52,16 +65,16 @@ router.get('/:userId/history', (req, res) => {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
     }
 
-    dynamoClient.query(query, (err, data) => {
+    dynamoClient.query(query, (err, primaryData) => {
         if (err) res.status(404).json(`Error getting club history for user at #primary level: ${err}`);
         else {
             // Fetching required details of all these clubs
 
-            console.log('fetched clubs with only clubName for history timeline', data);
+            console.log('fetched clubs with only clubName for history timeline', primaryData);
 
             const _transactItems = [];
 
-            data['Items'].forEach((element) => {
+            primaryData['Items'].forEach((element) => {
                 _transactItems.push({
                     Get: {
                         TableName: tableName,
@@ -81,7 +94,13 @@ router.get('/:userId/history', (req, res) => {
 
             dynamoClient.transactGet(_transactQuery, (err, data) => {
                 if (err) res.status(404).json(`Error getting club history for user: ${err}`);
-                else res.status(201).json(data);
+                else {
+                    console.log(data);
+                    res.status(200).json({
+                        "historyClubs": data["Items"],
+                        'lastevaluatedkey': primaryData["LastEvaluatedKey"]
+                    });
+                }
             });
         }
     });

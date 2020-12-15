@@ -43,7 +43,10 @@ router.post('/', async (req, res) => {
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
             if (err) res.status(304).json(`Error reporting club: ${err}`);
-            else res.status(201).json(data);
+            else {
+                console.log(data);
+                res.status(201).json('Reported club');
+            }
         });
 
     } catch (error) {
@@ -63,10 +66,15 @@ router.get('/', async (req, res) => {
     const query = {
         TableName: tableName,
         Limit: 20,
-        KeyConditionExpression: 'P_K = :hkey and begins_with ( S_K , :filter )',
-        ExpressionAttributeValues: {
-            ":hkey": `CLUB#${clubId}`,
-            ":filter": `REPORT#`
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "AudienceDynamicField": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`REPORT#`]
+            },
         },
         AttributesToGet: [
             'userId', 'username', 'avatar', 'body', 'timestamp'
@@ -81,7 +89,13 @@ router.get('/', async (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "reports": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 
 });
