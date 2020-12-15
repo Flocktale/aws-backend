@@ -81,7 +81,10 @@ router.post('/', async (req, res) => {
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
             if (err) res.status(304).json(`Error in join request to club: ${err}`);
-            else res.status(201).json(data);
+            else {
+                console.log(data);
+                res.status(201).json('posted join request');
+            }
         });
 
 
@@ -99,10 +102,15 @@ router.get('/', async (req, res) => {
         TableName: tableName,
         IndexName: audienceDynamicDataIndex,
         Limit: 30,
-        KeyConditionExpression: 'P_K = :hkey and begins_with ( AudienceDynamicField , :filter )',
-        ExpressionAttributeValues: {
-            ":hkey": `CLUB#${clubId}`,
-            ":filter": `ActiveJoinRequest#`
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "AudienceDynamicField": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`ActiveJoinRequest#`]
+            },
         },
         AttributesToGet: [
             'audienceId', 'joinRequestAttempts', 'avatar', 'username', 'AudienceDynamicField'
@@ -117,7 +125,13 @@ router.get('/', async (req, res) => {
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "activeJoinRequestUsers": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 
 });
@@ -153,7 +167,10 @@ router.delete('/', async (req, res) => {
 
     dynamoClient.update(_audienceUpdateQuery, (err, data) => {
         if (err) res.status(304).json(`Error in deleting join request: ${err}`);
-        else res.status(202).json(data);
+        else {
+            console.log(data);
+            res.status(202).json('Deleted join request');
+        }
     });
 
 });
@@ -229,7 +246,10 @@ router.post('/:resp', async (req, res) => {
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
             if (err) res.status(304).json(`Error accepting join request: ${err}`);
-            else res.status(201).json(data);
+            else {
+                console.log(data);
+                res.status(201).json('Accepted join request');
+            }
             return;
         });
 
@@ -263,7 +283,10 @@ router.post('/:resp', async (req, res) => {
 
         dynamoClient.update(_audienceUpdateQuery, (err, data) => {
             if (err) res.status(304).json(`Error in cancelling join request: ${err}`);
-            else res.status(202).json(data);
+            else {
+                console.log(data);
+                res.status(202).json('Cancelled join request');
+            }
         });
 
     } else {

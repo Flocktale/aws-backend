@@ -6,10 +6,10 @@ const { searchByUsernameIndex, dynamoClient, tableName } = require('../config');
 
 router.get('/', async (req, res) => {
 
-    const searchString = req.body;
+    const clubName = req.body.clubName;
     try {
         const _schema = Joi.string().min(3).max(25).required();
-        await _schema.validateAsync(searchString);
+        await _schema.validateAsync(clubName);
     } catch (error) {
         res.status(400).json(error);
         return;
@@ -18,10 +18,15 @@ router.get('/', async (req, res) => {
     const _query = {
         TableName: tableName,
         IndexName: searchByUsernameIndex,
-        KeyConditionExpression: 'PublicSearch = :hkey and begins_with ( FilterDataName , :filter )',
-        ExpressionAttributeValues: {
-            ":hkey": 1,
-            ":filter": `CLUB#${searchString}`,
+        KeyConditions: {
+            "PublicSearch": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [1]
+            },
+            "FilterDataName": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`CLUB#${clubName}`]
+            },
         },
         AttributesToGet: [
             'clubId', 'clubName', 'creatorId', 'creatorUsername', 'category', 'scheduleTime',
@@ -36,7 +41,13 @@ router.get('/', async (req, res) => {
     }
     dynamoClient.query(_query, (err, data) => {
         if (err) res.status(404).json(err);
-        else res.status(200).json(data);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "clubs": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
     });
 });
 
