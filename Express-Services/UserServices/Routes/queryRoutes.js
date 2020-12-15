@@ -6,8 +6,8 @@ const { searchByUsernameIndex, dynamoClient, tableName } = require('../config');
 
 //! Search list of users by username. (paginated with limit of 10 results)
 router.get("/", async (req, res) => {
+    const username = req.body.username;
 
-    const username = req.body;
     try {
         const _schema = Joi.string().min(3).max(25).token().required();
         await _schema.validateAsync(username);
@@ -19,10 +19,15 @@ router.get("/", async (req, res) => {
     const query = {
         TableName: tableName,
         IndexName: searchByUsernameIndex,
-        KeyConditionExpression: 'PublicSearch = :hkey and begins_with ( FilterDataName , :filter )',
-        ExpressionAttributeValues: {
-            ":hkey": 1,
-            ":filter": `USER#${username}`
+        KeyConditions: {
+            "PublicSearch": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [1]
+            },
+            "FilterDataName": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`USER#${username}`]
+            },
         },
         AttributesToGet: [
             'userId', 'username', 'name', 'avatar'
