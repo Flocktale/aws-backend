@@ -20,13 +20,15 @@ router.use('/reports', reportRouter);
 // _________________________________________________________________________________________________________________________________________________________
 // _________________________________________________________________________________________________________________________________________________________
 
-//! req.headers - {creatorId}
+// required
+// query parameters - "creatorId"
+
 router.get('/', async (req, res) => {
 
     const clubId = req.clubId;
-    const creatorId = req.headers.creatorId;
+    const creatorId = req.query.creatorId;
     if (!creatorId) {
-        res.status(400).json('creatorId is required in headers');
+        res.status(400).json('creatorId is required in query parameters');
         return;
     }
 
@@ -51,7 +53,8 @@ router.get('/', async (req, res) => {
 
 });
 
-//! get list of participants
+
+//! get list of all participants
 router.get('/participants', async (req, res) => {
     const clubId = req.clubId;
 

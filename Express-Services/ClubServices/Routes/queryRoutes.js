@@ -3,10 +3,13 @@ const Joi = require('joi');
 
 const { searchByUsernameIndex, dynamoClient, tableName } = require('../config');
 
+// required
+// query parameters - "username"
+// headers - "lastevaluatedkey"  (optional)
 
 router.get('/', async (req, res) => {
 
-    const clubName = req.body.clubName;
+    const clubName = req.query.clubName;
     try {
         const _schema = Joi.string().min(3).max(25).required();
         await _schema.validateAsync(clubName);

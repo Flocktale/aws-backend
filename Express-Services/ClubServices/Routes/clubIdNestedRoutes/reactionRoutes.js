@@ -3,13 +3,33 @@ const router = require('express').Router();
 const { ReactionSchema, ReactionSchemaWithDatabaseKeys } = require('../../Schemas/Reaction');
 
 const { dynamoClient, tableName } = require('../../config');
+const Joi = require('joi');
 
 
+// required
+// query parameters - "previousIndexValue" , "currentIndexValue" (values should be integer)
+// body : {userId,username,avatar}
 
-//! headers - {previousindexvalue , currentindexvalue} , req.body => {userId,username,avatar}
 router.post('/', async (req, res) => {
 
     const clubId = req.clubId;
+
+    const previousIndexValue = req.query.previousIndexValue;
+    const currentIndexValue = req.query.currentIndexValue;
+
+
+    if ((!currentIndexValue) && (!previousIndexValue)) {
+        res.status(400).json('when currentIndexValue is null then previousIndexValue should be an integer');
+        return;
+    }
+
+    try {
+        await Joi.number().description('invalid previousIndexValue, only integer accepted (optional)').validateAsync(previousIndexValue);
+        await Joi.number().description('invalid currentIndexValue, only integer accepted (optional)').validateAsync(currentIndexValue);
+    } catch (error) {
+        res.status(400).json(error);
+        return;
+    }
 
     try {
         const _temp = req.body;
@@ -25,8 +45,6 @@ router.post('/', async (req, res) => {
     const username = req.body.username;
     const avatar = req.body.avatar;
 
-    const previousIndexValue = req.headers.previousindexvalue;
-    const currentIndexValue = req.headers.currentindexvalue;
 
     const _transactQuery = { TransactItems: [] };
 
@@ -104,13 +122,17 @@ router.post('/', async (req, res) => {
 });
 
 
+
+// required
+// headers - "lastevaluatedkey"  (optional)
+
 router.get('/', async (req, res) => {
 
     const clubId = req.clubId;
 
     const query = {
         TableName: tableName,
-        Limit: 50,
+        Limit: 30,
         KeyConditions: {
             "P_K": {
                 "ComparisonOperator": "EQ",

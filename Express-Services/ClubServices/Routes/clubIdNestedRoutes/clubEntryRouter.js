@@ -5,6 +5,9 @@ const { AudienceSchemaWithDatabaseKeys, AudienceSchema } = require('../../Schema
 const { allClubsOfAudienceIndex, dynamoClient, tableName } = require('../../config');
 
 
+//required
+// body: AudienceSchemaWithDatabaseKeys validated
+
 router.post('/', async (req, res) => {
 
     const clubId = req.clubId;

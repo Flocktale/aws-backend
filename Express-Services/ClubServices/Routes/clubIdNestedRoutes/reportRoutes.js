@@ -8,6 +8,9 @@ const { ReportSchemaWithDatabaseKeys } = require('../../Schemas/Report');
 
 const { dynamoClient, tableName } = require('../../config');
 
+// required
+// body : ReportSchemaWithDatabaseKeys validated
+
 router.post('/', async (req, res) => {
 
     const clubId = req.clubId;
@@ -58,6 +61,9 @@ router.post('/', async (req, res) => {
 
 
 
+
+// required
+// headers - "lastevaluatedkey"  (optional)
 
 router.get('/', async (req, res) => {
 

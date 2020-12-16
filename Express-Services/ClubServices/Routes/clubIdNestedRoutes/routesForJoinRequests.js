@@ -7,7 +7,9 @@ const { CountParticipantSchema, CountJoinRequestSchema } = require('../../Schema
 const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../../config');
 
 
-// ! req.body is AudienceSchema (without DatabaseKeys)
+// required
+// body: AudienceSchema validated
+
 router.post('/', async (req, res) => {
     // There is no seperate schema for join requests, instead we change AudienceDynamicField
     const clubId = req.clubId;
@@ -94,6 +96,10 @@ router.post('/', async (req, res) => {
     }
 });
 
+
+// required
+// headers - "lastevaluatedkey"  (optional)
+
 router.get('/', async (req, res) => {
 
     const clubId = req.clubId;
@@ -136,14 +142,18 @@ router.get('/', async (req, res) => {
 
 });
 
-// ! headers - {audienceid, timestamp of audience}
+
+
+// required
+// query parameters - "audienceId" , "timestamp"
+
 router.delete('/', async (req, res) => {
     // we don't decrement counter for join requests because it does not account for unique requests.
 
     const clubId = req.clubId;
 
-    const audienceId = req.headers.audienceid;
-    const timestamp = req.headers.timestamp;
+    const audienceId = req.query.audienceId;
+    const timestamp = req.query.timestamp;
 
     if ((!timestamp) || (!audienceId)) {
         res.status(400).json('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
@@ -154,7 +164,6 @@ router.delete('/', async (req, res) => {
         joinRequested: { "Action": "PUT", "Value": false },
         AudienceDynamicField: { "Action": "DELETE" },
     };
-
 
     const _audienceUpdateQuery = {
         TableName: tableName,
@@ -177,7 +186,9 @@ router.delete('/', async (req, res) => {
 
 
 // ! if resp === 'accept'  then req.body should be a AudienceSchema with timestamp
-// ! if resp === 'cancel'  then req.headers - {audienceid, timestamp of audience}
+// ! if resp === 'cancel'  then req.query - {audienceid, timestamp of audience}
+// query parameters - "audienceId" , "timestamp" (optional)
+
 router.post('/:resp', async (req, res) => {
 
     const clubId = req.clubId;
@@ -257,11 +268,11 @@ router.post('/:resp', async (req, res) => {
     } else if (requestAction === 'cancel') {
 
 
-        const audienceId = req.headers.audienceid;
-        const timestamp = req.headers.timestamp;
+        const audienceId = req.query.audienceId;
+        const timestamp = req.query.timestamp;
 
         if ((!timestamp) || (!audienceId)) {
-            res.status(400).json('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
+            res.status(400).json('timestamp should exist in query parameters and should be equal to entry time of user in club, audienceId should also exist');
             return;
         }
 

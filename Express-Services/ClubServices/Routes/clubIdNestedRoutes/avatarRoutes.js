@@ -4,6 +4,12 @@ const multer = require('multer');
 const { s3, imageUploadConstParams } = require('../../config');
 
 
+//required
+// this post request should be type of multipart post request
+// a single file named "avatar" should exist.
+
+// TODO: Analyze this file and check if it is an image and then apply some image processing to validate image content.
+
 router.post("/avatar", multer().single('avatar'), (req, res) => {
     const clubId = req.clubId;
 

@@ -2,6 +2,10 @@ const router = require('express').Router();
 
 const { allClubsOfAudienceIndex, dynamoClient, tableName } = require('../config');
 
+
+// required
+// headers - "lastevaluatedkey"  (optional)
+
 router.get('/:userId/organized', (req, res) => {
 
     const userId = req.params.userId;
@@ -43,6 +47,9 @@ router.get('/:userId/organized', (req, res) => {
     });
 });
 
+
+// required
+// headers - "lastevaluatedkey"  (optional)
 
 router.get('/:userId/history', (req, res) => {
     const userId = req.params.userId;

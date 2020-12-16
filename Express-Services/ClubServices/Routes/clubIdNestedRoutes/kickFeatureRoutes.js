@@ -4,16 +4,17 @@ const { CountParticipantSchema } = require('../../Schemas/AtomicCountSchemas');
 
 const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../../config');
 
+//required
+// query parameters - "audienceId", "timestamp" 
 
-// ! req.headers - {audienceid, timestamp of audience}
 router.post('/kick', async (req, res) => {
     const clubId = req.clubId;
 
-    const audienceId = req.headers.audienceid;
-    const timestamp = req.headers.timestamp;
+    const audienceId = req.query.audienceId;
+    const timestamp = req.query.timestamp;
 
     if ((!timestamp) || (!audienceId)) {
-        res.status(400).json('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
+        res.status(400).json('timestamp should exist in query parameters and should be equal to entry time of user in club, audienceId should also exist');
         return;
     }
 
@@ -71,6 +72,8 @@ router.post('/kick', async (req, res) => {
     });
 });
 
+// required
+// headers - "lastevaluatedkey"  (optional)
 
 router.get('/', async (req, res) => {
 
@@ -115,15 +118,17 @@ router.get('/', async (req, res) => {
 });
 
 
-// ! req.headers - {audienceid, timestamp of audience}
+//required
+// query parameters - "audienceId", "timestamp" 
+
 router.post('/revoke', async (req, res) => {
     const clubId = req.clubId;
 
-    const audienceId = req.headers.audienceid;
-    const timestamp = req.headers.timestamp;
+    const audienceId = req.query.audienceId;
+    const timestamp = req.query.timestamp;
 
     if ((!timestamp) || (!audienceId)) {
-        res.status(400).json('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
+        res.status(400).json('timestamp should exist in query parameters and should be equal to entry time of user in club, audienceId should also exist');
         return;
     }
 

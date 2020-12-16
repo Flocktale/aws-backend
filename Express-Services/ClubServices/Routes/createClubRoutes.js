@@ -10,7 +10,8 @@ const { CountCommentSchema, CountReactionSchema, CountReportSchema,
 
 const { imageUploadConstParams, dynamoClient, s3, tableName } = require('../config');
 
-
+//required
+// body: ClubRoomCompleteSchema validated
 router.post('/', async (req, res) => {
 
     try {
