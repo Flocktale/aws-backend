@@ -4,9 +4,14 @@ const Joi = require('joi');
 const { searchByUsernameIndex, dynamoClient, tableName } = require('../config');
 
 
+// required
+// query parameters - "username"
+// headers - "lastevaluatedkey"  (optional)
+
 //! Search list of users by username. (paginated with limit of 10 results)
 router.get("/", async (req, res) => {
-    const username = req.body.username;
+
+    const username = req.query.username;
 
     try {
         const _schema = Joi.string().min(3).max(25).token().required();
@@ -32,7 +37,7 @@ router.get("/", async (req, res) => {
         AttributesToGet: [
             'userId', 'username', 'name', 'avatar'
         ],
-        Limit: 1,
+        Limit: 10,
         ReturnConsumedCapacity: "INDEXES"
     };
     if (req.headers.lastevaluatedkey) {

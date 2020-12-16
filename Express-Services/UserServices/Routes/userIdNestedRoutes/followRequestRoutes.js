@@ -8,6 +8,8 @@ const { FollowerSchemaWithDatabaseKeys } = require('../../Schemas/Follower');
 const { receivedFollowRequestIndex, sortedSocialRelationByUsernameIndex, dynamoClient, tableName } = require('../../config');
 
 
+//required
+// body : FollowRequestSchemaWithDatabaseKeys validated
 //! send a follow-request
 router.post('/', async (req, res) => {
 
@@ -35,6 +37,11 @@ router.post('/', async (req, res) => {
 
 });
 
+
+// required
+// query parameters - "sortby" (possible value = "username")  (optional)
+// headers - "lastevaluatedkey"  (optional)
+
 // ! Note - sorting by username is only available in case of sent requests but not for received becasuse for later case, we need to query a GSI.
 router.get('/sent', (req, res) => {
     const userId = req.userId;
@@ -49,7 +56,7 @@ router.get('/sent', (req, res) => {
 
 
     //! prefix of value of sort key has different cases. 
-    if (req.headers.sortby === 'username') {
+    if (req.query.sortby === 'username') {
         query["IndexName"] = sortedSocialRelationByUsernameIndex;
         query["KeyConditions"] = {
             "P_K": {
@@ -89,6 +96,9 @@ router.get('/sent', (req, res) => {
 
 });
 
+// required
+// headers - "lastevaluatedkey"  (optional)
+
 //! get received follow requests
 router.get('/received', (req, res) => {
     const userId = req.userId;
@@ -124,13 +134,16 @@ router.get('/received', (req, res) => {
 
 });
 
+//required
+// query parameters - "timestamp" , "requestedUserId"
+
 //! delete follow-request sent by user
 router.delete('/sent', async (req, res) => {
 
     const userId = req.userId;
 
-    const timestamp = req.headers.timestamp;
-    const requestedUserId = req.headers.requestedUserId;
+    const timestamp = req.query.timestamp;
+    const requestedUserId = req.query.requestedUserId;
 
     try {
         const _schema = Joi.object({
@@ -162,8 +175,11 @@ router.delete('/sent', async (req, res) => {
 });
 
 
+//required
+// body: FollowRequestSchemaWithDatabaseKeys validated
+// query parameters : "requestaction" (possible values - "accept", "cancel") 
+
 // accept or reject a follow-request...........
-// ! NOTE :  (req.body should conform to FollowRequest model)
 router.post('/received', async (req, res) => {
 
     var body;
@@ -178,13 +194,13 @@ router.post('/received', async (req, res) => {
 
     try {
         const _schema = Joi.string().valid('accept', 'cancel').required();
-        await _schema.validateAsync(req.headers.requestaction);
+        await _schema.validateAsync(req.query.requestaction);
     } catch (e) {
         res.status(400).json('Invalid Response action to follow request (accept/cancel)');
         return;
     }
 
-    const reqAction = req.headers.requestaction;
+    const reqAction = req.query.requestaction;
 
 
     const _deleteKey = {

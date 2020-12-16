@@ -4,6 +4,10 @@ const { UserBaseCompleteSchema } = require('../Schemas/UserBase');
 const { imageUploadConstParams, dynamoClient, s3, tableName } = require('../config');
 
 
+
+// required
+// body : UserBaseCompleteSchema validated
+
 router.post("/", async (req, res) => {
     try {
         req.body['avatar'] = `https://mootclub-public.s3.amazonaws.com/userAvatar/${req.body.userId}`;
@@ -41,7 +45,8 @@ router.post("/", async (req, res) => {
                         console.log(data);
                     }
                 });
-                res.status(201).json(data);
+                console.log(data);
+                res.status(201).json('User Profile created successfully.');
             }
         });
 

@@ -108,6 +108,10 @@ router.patch("/", async (req, res) => {
 });
 
 
+// required
+// query parameters - "sortby" (possible value = "username")  (optional)
+// headers - "lastevaluatedkey"  (optional)
+
 //! Get list of following users
 router.get('/following', (req, res) => {
 
@@ -122,7 +126,7 @@ router.get('/following', (req, res) => {
     };
 
     //! prefix of value of sort key has different cases. 
-    if (req.headers.sortby === 'username') {
+    if (req.query.sortby === 'username') {
         query["IndexName"] = sortedSocialRelationByUsernameIndex;
         query["KeyConditions"] = {
             "P_K": {
@@ -166,6 +170,10 @@ router.get('/following', (req, res) => {
 
 });
 
+// required
+// query parameters - "sortby" (possible value = "username")  (optional)
+// headers - "lastevaluatedkey"  (optional)
+
 //! Get list of followers
 router.get('/followers', (req, res) => {
 
@@ -181,7 +189,7 @@ router.get('/followers', (req, res) => {
 
 
     //! prefix of value of sort key has different cases. 
-    if (req.headers.sortby === 'username') {
+    if (req.query.sortby === 'username') {
         query["IndexName"] = sortedSocialRelationByUsernameIndex;
 
         query["KeyConditions"] = {
