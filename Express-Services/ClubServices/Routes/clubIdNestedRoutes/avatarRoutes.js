@@ -10,7 +10,7 @@ const { s3, imageUploadConstParams } = require('../../config');
 
 // TODO: Analyze this file and check if it is an image and then apply some image processing to validate image content.
 
-router.post("/avatar", multer().single('avatar'), (req, res) => {
+router.post("/", multer().single('avatar'), (req, res) => {
     const clubId = req.clubId;
 
     if (!req.file) {
