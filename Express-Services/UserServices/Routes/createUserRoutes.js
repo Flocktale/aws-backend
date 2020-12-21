@@ -24,7 +24,7 @@ router.post("/", async (req, res) => {
         dynamoClient.put(query, (err, data) => {
             if (err) {
                 console.log(err);
-                res.status(304).json(`Error creating profile: ${err}`);
+                res.status(404).json(`Error creating profile: ${err}`);
             }
             else {
                 const fileName = result.userId;

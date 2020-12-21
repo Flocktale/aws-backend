@@ -1,13 +1,15 @@
 const router = require('express').Router();
+const Joi = require('joi');
+
 
 const { sortedSocialRelationByUsernameIndex, dynamoClient, tableName } = require('../config');
 
 
 const avatarRouter = require('./userIdNestedRoutes/avatarRoutes');
-const followRequestRouter = require('./userIdNestedRoutes/followRequestRoutes');
+const relationsRouter = require('./userIdNestedRoutes/relationRoutes');
 
 router.use('/avatar', avatarRouter);
-router.use('/follow-requests', followRequestRouter);
+router.use('/relations', relationsRouter);
 
 
 //! Get user by userId
@@ -100,136 +102,13 @@ router.patch("/", async (req, res) => {
     dynamoClient.update(_updateQuery, (err, data) => {
         if (err) {
             console.log(err);
-            res.status(304).json("Error updating profile");
+            res.status(404).json("Error updating profile");
         }
         else res.status(200).json('User profile updated successfully');
     });
 
 });
 
-
-// required
-// query parameters - "sortby" (possible value = "username")  (optional)
-// headers - "lastevaluatedkey"  (optional)
-
-//! Get list of following users
-router.get('/following', (req, res) => {
-
-    const userId = req.userId;
-    const query = {
-        TableName: tableName,
-        AttributesToGet: [
-            'followingUserId', 'followingUsername', 'followingName', 'followingAvatar', 'timestamp'
-        ],
-        Limit: 10,
-        ReturnConsumedCapacity: "INDEXES"
-    };
-
-    //! prefix of value of sort key has different cases. 
-    if (req.query.sortby === 'username') {
-        query["IndexName"] = sortedSocialRelationByUsernameIndex;
-        query["KeyConditions"] = {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`USER#${userId}`]
-            },
-            "SocialConnectionUsername": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": ['Following#']
-            },
-        };
-
-    } else {
-        query["KeyConditions"] = {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`USER#${userId}`]
-            },
-            "S_K": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": ['FOLLOWING#']
-            },
-        };
-    }
-
-    if (req.headers.lastevaluatedkey) {
-        query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
-    }
-
-    dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).json(err);
-        else {
-            console.log(data);
-            res.status(200).json({
-                "followings": data["Items"],
-                'lastevaluatedkey': data["LastEvaluatedKey"]
-            });
-        }
-    });
-
-
-});
-
-// required
-// query parameters - "sortby" (possible value = "username")  (optional)
-// headers - "lastevaluatedkey"  (optional)
-
-//! Get list of followers
-router.get('/followers', (req, res) => {
-
-    const userId = req.userId;
-    const query = {
-        TableName: tableName,
-        AttributesToGet: [
-            'followerUserId', 'followerUsername', 'followerName', 'followerAvatar', 'timestamp'
-        ],
-        Limit: 10,
-        ReturnConsumedCapacity: "INDEXES"
-    };
-
-
-    //! prefix of value of sort key has different cases. 
-    if (req.query.sortby === 'username') {
-        query["IndexName"] = sortedSocialRelationByUsernameIndex;
-
-        query["KeyConditions"] = {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`USER#${userId}`]
-            },
-            "SocialConnectionUsername": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": ['Follower#']
-            },
-        };
-
-    } else {
-        query["KeyConditions"] = {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`USER#${userId}`]
-            },
-            "S_K": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": ['FOLLOWER#']
-            },
-        };
-    }
-    if (req.headers.lastevaluatedkey) {
-        query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
-    }
-
-    dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).json(err);
-        else {
-            console.log(data);
-            res.status(200).json({
-                "followers": data["Items"],
-                'lastevaluatedkey': data["LastEvaluatedKey"]
-            });
-        }
-    });
-});
 
 
 module.exports = router;

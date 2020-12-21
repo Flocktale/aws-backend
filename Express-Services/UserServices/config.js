@@ -19,7 +19,7 @@ const imageUploadConstParams = {
 const tableName = "MyTable";
 const searchByUsernameIndex = "SearchByUsernameIndex";
 const sortedSocialRelationByUsernameIndex = 'SortedSocialRelationByUsernameIndex';
-const receivedFollowRequestIndex = 'ReceivedFollowRequestIndex';
+const sortedSocialRelationByTimestampIndex = 'SortedSocialRelationByTimestampIndex';
 
 module.exports = {
     dynamoClient,
@@ -28,5 +28,5 @@ module.exports = {
     tableName,
     searchByUsernameIndex,
     sortedSocialRelationByUsernameIndex,
-    receivedFollowRequestIndex
+    sortedSocialRelationByTimestampIndex,
 };

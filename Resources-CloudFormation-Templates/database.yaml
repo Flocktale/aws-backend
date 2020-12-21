@@ -35,6 +35,8 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: MyTable
+      BillingMode: PAY_PER_REQUEST # set capacity to on-demand mode
+
       AttributeDefinitions:
         - AttributeName: P_K
           AttributeType: S
@@ -42,7 +44,10 @@ Resources:
         - AttributeName: S_K
           AttributeType: S
 
-        - AttributeName: SocialConnectionUsername # for follower/following sorted by username
+        - AttributeName: SocialConnectionUsername # for social relation sorted by username
+          AttributeType: S
+
+        - AttributeName: SocialConnectionTimestamp # for social relation sorted by timestamp
           AttributeType: S
 
         - AttributeName: PublicSearch
@@ -52,9 +57,6 @@ Resources:
           AttributeType: S
 
         - AttributeName: AudienceDynamicField
-          AttributeType: S
-
-        - AttributeName: FollowRequestReceiver
           AttributeType: S
 
         - AttributeName: timestamp
@@ -80,9 +82,16 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields
-          ProvisionedThroughput:
-            ReadCapacityUnits: 1
-            WriteCapacityUnits: 1
+
+        - IndexName: SortedSocialRelationByTimestampIndex
+          KeySchema:
+            - AttributeName: P_K
+              KeyType: HASH
+
+            - AttributeName: SocialConnectionTimestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
 
         - IndexName: SearchByUsernameIndex
           KeySchema:
@@ -93,9 +102,6 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields
-          ProvisionedThroughput:
-            ReadCapacityUnits: 1
-            WriteCapacityUnits: 1
 
         - IndexName: AllClubsOfAudienceIndex # All the clubs entered by a user whether just attended, participated or organized (owned)
           KeySchema:
@@ -106,9 +112,6 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields
-          ProvisionedThroughput:
-            ReadCapacityUnits: 1
-            WriteCapacityUnits: 1
 
         - IndexName: AudienceDynamicDataIndex # for actvie join request, particpants, kicked out people
           KeySchema:
@@ -119,23 +122,3 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields
-          ProvisionedThroughput:
-            ReadCapacityUnits: 1
-            WriteCapacityUnits: 1
-
-        - IndexName: ReceivedFollowRequestIndex
-          KeySchema:
-            - AttributeName: FollowRequestReceiver
-              KeyType: HASH
-
-            - AttributeName: timestamp
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL #TODO: only project required fields
-          ProvisionedThroughput:
-            ReadCapacityUnits: 1
-            WriteCapacityUnits: 1
-
-      ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2

@@ -7,7 +7,7 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 30
 
 Resources:
   UserServiceFunction:
@@ -65,46 +65,22 @@ Resources:
             Path: /users/query
             Method: get
 
-        ListFollowing: #use headers for sorting by username
+        ListSocialRelatives: 
           Type: Api
           Properties:
-            Path: /users/{userId}/following
+            Path: /users/{userId}/relations
             Method: get
 
-        ListFollowers: #use headers for sorting by username
+        AddSocialRelatives:
           Type: Api
           Properties:
-            Path: /users/{userId}/followers
-            Method: get
-
-        SendFollowRequest:
-          Type: Api
-          Properties:
-            Path: /users/{userId}/follow-requests
+            Path: /users/{userId}/relations/add
             Method: post
 
-        ListSentFollowRequests: #use headers for sorting by username
+        RemoveSocialRelatives: 
           Type: Api
           Properties:
-            Path: /users/{userId}/follow-requests/sent
-            Method: get
-
-        ListReceivedFollowRequests:
-          Type: Api
-          Properties:
-            Path: /users/{userId}/follow-requests/received
-            Method: get
-
-        DeleteFollowRequest: #only sender can perform this action
-          Type: Api
-          Properties:
-            Path: /users/{userId}/follow-requests/sent
-            Method: delete
-
-        ResponseToFollowRequest: # only receiver can perform this action (appropriate headers are required)
-          Type: Api
-          Properties:
-            Path: /users/{userId}/follow-requests/received
+            Path: /users/{userId}/relations/remove
             Method: post
 
   ClubServiceFunction:

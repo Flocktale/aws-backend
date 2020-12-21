@@ -71,18 +71,18 @@ router.post('/', async (req, res) => {
                 const responseResult = await AudienceSchema.validateAsync(crossResult['Items'][0]);
                 res.status(204).json(responseResult);
             } catch (error) {
-                res.status(204).json(`User already have a entry but AudienceSchema has error: ${error}`);
+                res.status(404).json(`User already have a entry but AudienceSchema has error: ${error}`);
             }
             return;
         } else {
             dynamoClient.transactWrite(_transactQuery, async (err, data) => {
-                if (err) res.status(304).json('Error marking entry of user');
+                if (err) res.status(404).json('Error marking entry of user');
                 else {
                     try {
                         const responseResult = await AudienceSchema.validateAsync(result);
                         res.status(204).json(responseResult);
                     } catch (error) {
-                        res.status(204).json(`User entry created but AudienceSchema has error: ${error}`);
+                        res.status(404).json(`User entry created but AudienceSchema has error: ${error}`);
                     }
                     return;
                 }
@@ -92,13 +92,13 @@ router.post('/', async (req, res) => {
 
     } catch (error) {
         dynamoClient.transactWrite(_transactQuery, async (err, data) => {
-            if (err) res.status(304).json('Error marking entry of user');
+            if (err) res.status(404).json('Error marking entry of user');
             else {
                 try {
                     const responseResult = await AudienceSchema.validateAsync(result);
                     res.status(204).json(responseResult);
                 } catch (error) {
-                    res.status(204).json(`User entry created but AudienceSchema has error:  ${error}`);
+                    res.status(404).json(`User entry created but AudienceSchema has error:  ${error}`);
                 }
                 return;
             }

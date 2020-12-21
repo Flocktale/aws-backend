@@ -82,7 +82,7 @@ router.post('/', async (req, res) => {
         };
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
-            if (err) res.status(304).json(`Error in join request to club: ${err}`);
+            if (err) res.status(404).json(`Error in join request to club: ${err}`);
             else {
                 console.log(data);
                 res.status(201).json('posted join request');
@@ -175,7 +175,7 @@ router.delete('/', async (req, res) => {
     };
 
     dynamoClient.update(_audienceUpdateQuery, (err, data) => {
-        if (err) res.status(304).json(`Error in deleting join request: ${err}`);
+        if (err) res.status(404).json(`Error in deleting join request: ${err}`);
         else {
             console.log(data);
             res.status(202).json('Deleted join request');
@@ -256,7 +256,7 @@ router.post('/:resp', async (req, res) => {
         };
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
-            if (err) res.status(304).json(`Error accepting join request: ${err}`);
+            if (err) res.status(404).json(`Error accepting join request: ${err}`);
             else {
                 console.log(data);
                 res.status(201).json('Accepted join request');
@@ -293,7 +293,7 @@ router.post('/:resp', async (req, res) => {
         };
 
         dynamoClient.update(_audienceUpdateQuery, (err, data) => {
-            if (err) res.status(304).json(`Error in cancelling join request: ${err}`);
+            if (err) res.status(404).json(`Error in cancelling join request: ${err}`);
             else {
                 console.log(data);
                 res.status(202).json('Cancelled join request');

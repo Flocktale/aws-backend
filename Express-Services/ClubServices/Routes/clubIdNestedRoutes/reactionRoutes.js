@@ -113,7 +113,7 @@ router.post('/', async (req, res) => {
     }
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
-        if (err) res.status(304).json(`Error modifying reaction: ${err}`);
+        if (err) res.status(404).json(`Error modifying reaction: ${err}`);
         else {
             console.log(data);
             res.status(201).json('Modified reaction');

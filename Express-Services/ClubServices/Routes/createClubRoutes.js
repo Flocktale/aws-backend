@@ -109,7 +109,7 @@ router.post('/', async (req, res) => {
         };
 
         dynamoClient.transactWrite(_transactQuery, (err, data) => {
-            if (err) res.status(304).json('Error creating club');
+            if (err) res.status(404).json('Error creating club');
             else {
 
                 const fileName = clubId;

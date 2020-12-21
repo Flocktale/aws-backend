@@ -63,7 +63,7 @@ router.post('/kick', async (req, res) => {
     };
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
-        if (err) res.status(304).json(`Error kicking out participant: ${err}`);
+        if (err) res.status(404).json(`Error kicking out participant: ${err}`);
         else {
             console.log(data);
             res.status(201).json('kicked out participant');
@@ -147,7 +147,7 @@ router.post('/revoke', async (req, res) => {
     }
 
     dynamoClient.update(_audienceUnKickedQuery, (err, data) => {
-        if (err) res.status(304).json(`Error un-kicking the user: ${err}`);
+        if (err) res.status(404).json(`Error un-kicking the user: ${err}`);
         else {
             console.log(data);
             res.status(201).json('Un-kicked the user');

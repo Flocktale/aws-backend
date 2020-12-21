@@ -1,5 +1,4 @@
 const router = require('express').Router();
-const multer = require('multer');
 
 const { s3, imageUploadConstParams } = require('../../config');
 
@@ -10,20 +9,21 @@ const { s3, imageUploadConstParams } = require('../../config');
 
 // TODO: Analyze this file and check if it is an image and then apply some image processing to validate image content.
 
-router.post("/", multer().single('avatar'), (req, res) => {
+router.post("/", (req, res) => {
     const clubId = req.clubId;
 
-    if (!req.file) {
-        res.status(400).send('Invalid request. File not found');
+    if (!req.body || !req.body.image) {
+        res.status(400).send('Invalid request. image not found');
         return;
     }
 
-    // TODO: process this file, may include - check for broken/corrupt file, valid image extension, cropping or resizing etc.
     const fileName = clubId;
+
+    const buffer = Buffer.from(req.body.image, 'base64');
 
     var params = {
         ...imageUploadConstParams,
-        Body: req.file.buffer,
+        Body: buffer,
         Key: `clubAvatar/${fileName}`
     };
 
