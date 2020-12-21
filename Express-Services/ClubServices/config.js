@@ -17,16 +17,28 @@ const imageUploadConstParams = {
 };
 
 const tableName = "MyTable";
-const allClubsOfAudienceIndex = "AllClubsOfAudienceIndex";
+
+const clubCategoryIndex = "ClubCategoryIndex";
+
+const clubCreatorIdIndex = "ClubCreatorIdIndex";
+
+const sortKeyWithTimestampIndex = "SortKeyWithTimestampIndex";
+
+const timestampSortIndex = "TimestampSortIndex";
 const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
 const searchByUsernameIndex = "SearchByUsernameIndex";
+
+
 
 module.exports = {
     dynamoClient,
     s3,
     imageUploadConstParams,
     tableName,
-    allClubsOfAudienceIndex,
+    clubCategoryIndex,
+    clubCreatorIdIndex,
+    sortKeyWithTimestampIndex,
+    timestampSortIndex,
     audienceDynamicDataIndex,
     searchByUsernameIndex,
 };

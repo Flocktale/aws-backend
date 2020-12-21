@@ -10,6 +10,7 @@ const { searchByUsernameIndex, dynamoClient, tableName } = require('../config');
 router.get('/', async (req, res) => {
 
     const clubName = req.query.clubName;
+
     try {
         const _schema = Joi.string().min(3).max(25).required();
         await _schema.validateAsync(clubName);
@@ -32,8 +33,7 @@ router.get('/', async (req, res) => {
             },
         },
         AttributesToGet: [
-            'clubId', 'clubName', 'creatorId', 'creatorUsername', 'category', 'scheduleTime',
-            'creatorAvatar', 'clubAvatar', 'tags', 'duration'
+            'clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration'
         ],
         Limit: 10,
         ReturnConsumedCapacity: "INDEXES"

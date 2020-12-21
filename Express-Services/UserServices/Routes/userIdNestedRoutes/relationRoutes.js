@@ -8,21 +8,21 @@ const { sortedSocialRelationByUsernameIndex, sortedSocialRelationByTimestampInde
 
 // required
 // query parameters - 
-//       "socialRelation" (possible "followings","followers", "requests-sent", "requests-received","friends"),  
+//       "socialRelation" (possible "followings","followers", "requests_sent", "requests_received","friends"),  
 //       "sortby" (possible value = "username" , "timestamp" (default))  (optional)
 // headers - "lastevaluatedkey"  (optional)
 
-//! Get list of followers/foillowing/requests-sent/requests-received//friends
+//! Get list of followers/foillowing/requests_sent/requests_received//friends
 router.get('/', async (req, res) => {
 
     const userId = req.userId;
     const socialRelation = req.query.socialRelation;
 
     try {
-        const _schema = Joi.string().valid("followings", "followers", "requests-sent", "requests-received", "friends").required();
+        const _schema = Joi.string().valid("followings", "followers", "requests_sent", "requests_received", "friends").required();
         await _schema.validateAsync(socialRelation);
     } catch (error) {
-        res.status(400).json('invalid query , valid socialRelation =>"followings", "followers", "requests-sent", "requests-received", "friends"');
+        res.status(400).json('invalid query , valid socialRelation =>"followings", "followers", "requests_sent", "requests_received", "friends"');
         return;
     }
 
@@ -30,8 +30,8 @@ router.get('/', async (req, res) => {
 
     if (socialRelation === "followings") { bitChecker = 'B5'; }
     else if (socialRelation === "followers") { bitChecker = 'B4'; }
-    else if (socialRelation === "requests-sent") { bitChecker = 'B3'; }
-    else if (socialRelation === "requests-received") { bitChecker = 'B2'; }
+    else if (socialRelation === "requests_sent") { bitChecker = 'B3'; }
+    else if (socialRelation === "requests_received") { bitChecker = 'B2'; }
     else if (socialRelation === "friends") { bitChecker = 'B1'; }
     else {
         res.status(501).json('request has hit a dead end');
@@ -63,7 +63,7 @@ router.get('/', async (req, res) => {
                 "ComparisonOperator": "EQ",
                 "AttributeValueList": [`USER#${userId}`]
             },
-            "SocialConnectionUsername": {
+            "UsernameSortField": {
                 "ComparisonOperator": "BEGINS_WITH",
                 "AttributeValueList": ['RELATION-SORT-USERNAME#']
             },
@@ -77,7 +77,7 @@ router.get('/', async (req, res) => {
                 "ComparisonOperator": "EQ",
                 "AttributeValueList": [`USER#${userId}`]
             },
-            "SocialConnectionTimestamp": {
+            "TimestampSortField": {
                 "ComparisonOperator": "BEGINS_WITH",
                 "AttributeValueList": ['RELATION-SORT-TIMESTAMP#']
             },
@@ -104,7 +104,7 @@ router.get('/', async (req, res) => {
 //required
 // query parameters - 
 //      "foreignUserId" - user id of other user
-//       "action" (possible values - "follow" , "send-friend-request" , "accept-friend-request")
+//       "action" (possible values - "follow" , "send_friend_request" , "accept_friend_request")
 
 //! follow a user or send friend request or accept friend request.
 router.post('/add', async (req, res) => {
@@ -116,7 +116,7 @@ router.post('/add', async (req, res) => {
 
     try {
         await Joi.string().required().validateAsync(foreignUserId);
-        await Joi.string().valid("follow", "send-friend-request", "accept-friend-request").required().validateAsync(addAction);
+        await Joi.string().valid("follow", "send_friend_request", "accept_friend_request").required().validateAsync(addAction);
     } catch (error) {
         res.status(400).json(error);
         return;
@@ -132,7 +132,7 @@ router.post('/add', async (req, res) => {
     };
     let oldRelationDoc;
     try {
-        oldRelationDoc = await dynamoClient.get(oldRelationDocQuery).promise();
+        oldRelationDoc = (await dynamoClient.get(oldRelationDocQuery).promise())['Item'];
     } catch (error) {
         console.log('no old doc exists for this request hence this is a new relation');
     }
@@ -185,7 +185,7 @@ router.post('/add', async (req, res) => {
             };
 
 
-        } else if (addAction === "send-friend-request") {
+        } else if (addAction === "send_friend_request") {
             primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b3 = :tr, #tsp = :tsp  ';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
                 '#rIO': 'relationIndexObj',
@@ -213,7 +213,7 @@ router.post('/add', async (req, res) => {
             };
 
         }
-        else if (addAction === "accept-friend-request") {
+        else if (addAction === "accept_friend_request") {
             primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b4 = :fal, #rIO.#b1 = :tr, #tsp = :tsp  ';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
                 '#rIO': 'relationIndexObj',
@@ -265,7 +265,7 @@ router.post('/add', async (req, res) => {
 
             newForeignUserRelationDoc["relationIndexObj"]["B4"] = true;
         }
-        else if (addAction === "send-friend-request") {
+        else if (addAction === "send_friend_request") {
             newPrimaryUserRelationDoc["relationIndexObj"]["B5"] = true;
             newPrimaryUserRelationDoc["relationIndexObj"]["B3"] = true;
 
@@ -348,7 +348,7 @@ async function _prepareNewRelationDoc(primaryUser, foreignUser, timestamp) {
 //required
 // query parameters - 
 //      "foreignUserId" - user id of other user
-//       "action" (possible values - "unfollow" , "delete-friend-request" , "unfriend" )
+//       "action" (possible values - "unfollow" , "delete_friend_request" , "unfriend" )
 
 //! unfollow a user or delete friend request.
 router.post('/remove', async (req, res) => {
@@ -359,7 +359,7 @@ router.post('/remove', async (req, res) => {
 
     try {
         await Joi.string().required().validateAsync(foreignUserId);
-        await Joi.string().valid("unfollow", "delete-friend-request", "unfriend").required().validateAsync(removeAction);
+        await Joi.string().valid("unfollow", "delete_friend_request", "unfriend").required().validateAsync(removeAction);
     } catch (error) {
         res.status(400).json(error);
         return;
@@ -406,7 +406,7 @@ router.post('/remove', async (req, res) => {
             ':tsp': newTimestmap,
         };
 
-    } else if (removeAction === "delete-friend-request") {
+    } else if (removeAction === "delete_friend_request") {
         // in this case, we are not checking if user deleted an already sent request or cancelled an incoming request.
         // because anyways it will not affect the following/follower relation between users.
 

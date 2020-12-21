@@ -2,11 +2,6 @@ const Joi = require('joi');
 
 const AudienceSchema = Joi.object({
     clubId: Joi.string().required(),
-    creatorId: Joi.string().required(),
-
-    audienceId: Joi.string().required(),            //GSI: AllClubsOfAudienceIndex
-
-    isOwner: Joi.boolean().default(false),
 
     isKickedOut: Joi.boolean().default(false),
     isPartcipant: Joi.boolean().default(false),
@@ -14,8 +9,12 @@ const AudienceSchema = Joi.object({
 
     joinRequestAttempts: Joi.number().default(0),
 
-    avatar: Joi.string(),
-    username: Joi.string().required(),
+
+    audience: Joi.object({
+        userId: Joi.string().required(),
+        username: Joi.string().required(),
+        avatar: Joi.string().required(),
+    }).required(),
 
     timestamp: Joi.number().default(() => Date.now()),
 
@@ -25,17 +24,16 @@ const AudienceSchemaWithDatabaseKeys = AudienceSchema.append({
     P_K: Joi.string().default(Joi.expression('CLUB#{{clubId}}')),
 
     S_K: Joi.string().default(
-        Joi.expression('AUDIENCE#{{timestamp}}#{{audienceId}}')
+        Joi.expression('AUDIENCE#{{audience.userId}}')
     ),
 
-    AudienceDynamicField: Joi.string(),     // GSI: AudienceDynamicDataIndex
+    AudienceDynamicField: Joi.string().valid(
+        Joi.expression('KickedOut#{{timestamp}}#{{audience.userId}}'),
+        Joi.expression('Participant#{{timestamp}}#{{audience.userId}}'),
+        Joi.expression('ActiveJoinRequest#{{timestamp}}#{{audience.userId}}'),
+    ),                                                                           // GSI: AudienceDynamicDataIndex
 
-    // possibleValues of AudienceDynamicField  =>(
-    //     Joi.expression('KickedOut#{{new_timestamp}}#{{audienceId}}'),
-    //     Joi.expression('Participant#{{new_timestamp}}#{{audienceId}}'),
-    //     Joi.expression('ActiveJoinRequest#{{new_timestamp}}#{{audienceId}}'),
-    // ),       
-
+    TimestampSortField: Joi.string().default('AUDIENCE-SORT-TIMESTAMP#{{timestamp}}#{{audience.userId}}'),       // GSI: TimestampSortIndex
 
 });
 

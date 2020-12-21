@@ -66,8 +66,8 @@ const UserRelationSchemaWithDatabaseKeys = UserRelationSchema.append({
         Joi.expression('RELATION#{{foreignUser.userId}}')
     ),
 
-    SocialConnectionUsername: Joi.string().default(Joi.expression('RELATION-SORT-USERNAME#{{foreignUser.username}}')),    //GSI: SortedSocialRelationByUsernameIndex
-    SocialConnectionTimestamp: Joi.string().default(Joi.expression('RELATION-SORT-TIMESTAMP#{{timestamp}}#{{foreignUser.userId}}')),    //GSI: SortedSocialRelationByTimestampIndex
+    UsernameSortField: Joi.string().default(Joi.expression('RELATION-SORT-USERNAME#{{foreignUser.username}}')),    //GSI: UsernameSortIndex
+    TimestampSortField: Joi.string().default(Joi.expression('RELATION-SORT-TIMESTAMP#{{timestamp}}#{{foreignUser.userId}}')),    //GSI: TimestampSortIndex
 });
 
 exports.UserRelationSchema = UserRelationSchema;

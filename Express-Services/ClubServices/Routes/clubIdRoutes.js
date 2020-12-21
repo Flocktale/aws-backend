@@ -20,24 +20,16 @@ router.use('/reports', reportRouter);
 // _________________________________________________________________________________________________________________________________________________________
 // _________________________________________________________________________________________________________________________________________________________
 
-// required
-// query parameters - "creatorId"
-
 router.get('/', async (req, res) => {
 
     const clubId = req.clubId;
-    const creatorId = req.query.creatorId;
-    if (!creatorId) {
-        res.status(400).json('creatorId is required in query parameters');
-        return;
-    }
 
     const _getQuery = {
         TableName: tableName,
         Key: {
-            P_K: `USER#${creatorId}`,
-            S_K: `CLUB#${clubId}`
-        }
+            P_K: `CLUB#${clubId}`,
+            S_K: `CLUBMETA#${clubId}`
+        },
     };
 
     dynamoClient.get(_getQuery, (err, data) => {
@@ -71,9 +63,7 @@ router.get('/participants', async (req, res) => {
                 "AttributeValueList": [`Participant#`]
             },
         },
-        AttributesToGet: [
-            'audienceId', 'isOwner', 'avatar', 'username', 'AudienceDynamicField'
-        ],
+        AttributesToGet: ['audience'],
         ScanIndexForward: false,
         ReturnConsumedCapacity: "INDEXES"
     };

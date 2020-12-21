@@ -12,6 +12,7 @@ const { imageUploadConstParams, dynamoClient, s3, tableName } = require('../conf
 
 //required
 // body: ClubRoomCompleteSchema validated
+
 router.post('/', async (req, res) => {
 
     try {
@@ -28,14 +29,15 @@ router.post('/', async (req, res) => {
 
         const _audienceDoc = await AudienceSchemaWithDatabaseKeys.validateAsync({
             clubId: clubId,
-            creatorId: newClub.creatorId,
-            audienceId: newClub.creatorId,
-            isOwner: true,
+            audience: {
+                userId: newClub.creator.userId,
+                username: newClub.creator.username,
+                avatar: newClub.creator.avatar,
+            },
+
             isPartcipant: true,
-            avatar: newClub.creatorAvatar,
-            username: newClub.creatorUsername,
             timestamp: newClub.scheduleTime,
-            AudienceDynamicField: `Participant#${newClub.scheduleTime}#${newClub.creatorId}`
+            AudienceDynamicField: `Participant#${newClub.scheduleTime}#${newClub.creator.userId}`
         });
 
         const _audienceQuery = {
@@ -57,12 +59,8 @@ router.post('/', async (req, res) => {
 
         const _transactQuery = {
             TransactItems: [
-                {
-                    Put: _createClubQuery
-                },
-                {
-                    Put: _audienceQuery
-                },
+                { Put: _createClubQuery },
+                { Put: _audienceQuery },
                 {
                     Put: {
                         TableName: tableName,
@@ -132,7 +130,7 @@ router.post('/', async (req, res) => {
 
                 res.status(201).json('club created successfully');
 
-            };
+            }
         });
 
     } catch (error) {

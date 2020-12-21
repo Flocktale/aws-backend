@@ -7,7 +7,7 @@ const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../../con
 //required
 // query parameters - "audienceId", "timestamp" 
 
-router.post('/kick', async (req, res) => {
+router.post('/', async (req, res) => {
     const clubId = req.clubId;
 
     const audienceId = req.query.audienceId;

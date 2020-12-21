@@ -1,6 +1,6 @@
 const router = require('express').Router();
 
-const { allClubsOfAudienceIndex, dynamoClient, tableName } = require('../config');
+const { clubCreatorIdIndex, sortKeyWithTimestampIndex, dynamoClient, tableName } = require('../config');
 
 
 // required
@@ -12,19 +12,15 @@ router.get('/:userId/organized', (req, res) => {
 
     const query = {
         TableName: tableName,
+        IndexName: clubCreatorIdIndex,
         KeyConditions: {
-            "P_K": {
+            "ClubCreatorIdField": {
                 "ComparisonOperator": "EQ",
                 "AttributeValueList": [`USER#${userId}`]
             },
-            "S_K": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": ['CLUB#']
-            },
         },
         AttributesToGet: [
-            'clubId', 'clubName', 'creatorId', 'creatorUsername', 'category', 'scheduleTime',
-            'creatorAvatar', 'clubAvatar', 'tags', 'duration'
+            'clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration'
         ],
         Limit: 10,
         ScanIndexForward: false,
@@ -55,14 +51,14 @@ router.get('/:userId/history', (req, res) => {
     const userId = req.params.userId;
     const query = {
         TableName: tableName,
-        IndexName: allClubsOfAudienceIndex,
+        IndexName: sortKeyWithTimestampIndex,
         KeyConditions: {
-            "audienceId": {
+            "S_K": {
                 "ComparisonOperator": "EQ",
-                "AttributeValueList": [userId]
+                "AttributeValueList": [`AUDIENCE#${userId}`]
             },
         },
-        AttributesToGet: ['clubId', 'creatorId'],
+        AttributesToGet: ['clubId'],
         Limit: 10,
         ScanIndexForward: false,
         ReturnConsumedCapacity: "INDEXES"
@@ -77,7 +73,7 @@ router.get('/:userId/history', (req, res) => {
         else {
             // Fetching required details of all these clubs
 
-            console.log('fetched clubs with only clubName for history timeline', primaryData);
+            console.log('fetched clubs with only clubId for history timeline', primaryData);
 
             const _transactItems = [];
 
@@ -86,12 +82,11 @@ router.get('/:userId/history', (req, res) => {
                     Get: {
                         TableName: tableName,
                         Key: {
-                            P_K: `USER#${element.creatorId}`,
-                            S_K: `CLUB#${element.clubId}`
+                            P_K: `CLUB#${element.clubId}`,
+                            S_K: `CLUBMETA#${element.clubId}`
                         },
                         AttributesToGet: [
-                            'clubId', 'clubName', 'creatorId', 'creatorUsername', 'category', 'scheduleTime',
-                            'creatorAvatar', 'clubAvatar', 'tags', 'duration'
+                            'clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration'
                         ]
                     }
                 });

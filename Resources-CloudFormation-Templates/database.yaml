@@ -43,11 +43,14 @@ Resources:
 
         - AttributeName: S_K
           AttributeType: S
-
-        - AttributeName: SocialConnectionUsername # for social relation sorted by username
+        
+        - AttributeName: ClubCreatorIdField
           AttributeType: S
 
-        - AttributeName: SocialConnectionTimestamp # for social relation sorted by timestamp
+        - AttributeName: UsernameSortField # sorted by username
+          AttributeType: S
+
+        - AttributeName: TimestampSortField # sorted by timestamp
           AttributeType: S
 
         - AttributeName: PublicSearch
@@ -56,14 +59,14 @@ Resources:
         - AttributeName: FilterDataName
           AttributeType: S
 
+        - AttributeName: category
+          AttributeType: S
+
         - AttributeName: AudienceDynamicField
           AttributeType: S
 
         - AttributeName: timestamp
           AttributeType: N
-
-        - AttributeName: audienceId
-          AttributeType: S
 
       KeySchema:
         - AttributeName: P_K
@@ -73,22 +76,44 @@ Resources:
           KeyType: RANGE
 
       GlobalSecondaryIndexes:
-        - IndexName: SortedSocialRelationByUsernameIndex
+        
+        - IndexName: ClubCategoryIndex
           KeySchema:
-            - AttributeName: P_K
+            - AttributeName: category
               KeyType: HASH
 
-            - AttributeName: SocialConnectionUsername
+            - AttributeName: timestamp
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields
 
-        - IndexName: SortedSocialRelationByTimestampIndex
+        - IndexName: ClubCreatorIdIndex
+          KeySchema:
+            - AttributeName: ClubCreatorIdField
+              KeyType: HASH
+
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+
+
+        - IndexName: UsernameSortIndex
           KeySchema:
             - AttributeName: P_K
               KeyType: HASH
 
-            - AttributeName: SocialConnectionTimestamp
+            - AttributeName: UsernameSortField
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+
+        - IndexName: TimestampSortIndex
+          KeySchema:
+            - AttributeName: P_K
+              KeyType: HASH
+
+            - AttributeName: TimestampSortField
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields
@@ -103,9 +128,9 @@ Resources:
           Projection:
             ProjectionType: ALL #TODO: only project required fields
 
-        - IndexName: AllClubsOfAudienceIndex # All the clubs entered by a user whether just attended, participated or organized (owned)
+        - IndexName: SortKeyWithTimestampIndex # All the clubs entered by a user whether just attended, participated or organized (owned)
           KeySchema:
-            - AttributeName: audienceId
+            - AttributeName: S_K
               KeyType: HASH
 
             - AttributeName: timestamp

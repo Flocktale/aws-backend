@@ -14,7 +14,7 @@ const CountCommentSchema = countBaseSchema.append({
 });
 
 const CountReactionSchema = countBaseSchema.append({
-    indexValue: Joi.number().allow(0, 1, 2).required(),
+    indexValue: Joi.number().valid(0, 1, 2).required(),
     S_K: Joi.string().default(Joi.expression('CountReaction#{{indexValue}}')),
 });
 

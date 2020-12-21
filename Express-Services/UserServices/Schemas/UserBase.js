@@ -33,7 +33,7 @@ const UserInputSchemaWithDatabaseKeys = UserInputSchema.append({
     P_K: Joi.string().default(Joi.expression('USER#{{userId}}')),
     S_K: Joi.string().default(Joi.expression('USERMETA#{{userId}}')),
 
-    PublicSearch: Joi.number().integer().allow(0, 1).default(1),                        // GSI : SearchByUsernameIndex
+    PublicSearch: Joi.number().integer().valid(0, 1).default(1),                        // GSI : SearchByUsernameIndex
     FilterDataName: Joi.string().default(Joi.expression('USER#{{username}}')),          // GSI : SearchByUsernameIndex
 
 });
