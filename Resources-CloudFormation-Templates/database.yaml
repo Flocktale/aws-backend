@@ -67,6 +67,9 @@ Resources:
 
         - AttributeName: timestamp
           AttributeType: N
+        
+        - AttributeName: scheduleTime
+          AttributeType: N
 
       KeySchema:
         - AttributeName: P_K
@@ -82,7 +85,7 @@ Resources:
             - AttributeName: category
               KeyType: HASH
 
-            - AttributeName: timestamp
+            - AttributeName: scheduleTime
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields

@@ -8,42 +8,106 @@ const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../../con
 
 
 // required
-// body: AudienceSchema validated
+// headers - "lastevaluatedkey"  (optional)
 
-router.post('/', async (req, res) => {
-    // There is no seperate schema for join requests, instead we change AudienceDynamicField
+router.get('/', async (req, res) => {
+
     const clubId = req.clubId;
 
-    if (!req.body.timestamp) {
-        res.status(400).json(`Timestamp should exist in body: ${error}`);
+    const query = {
+        TableName: tableName,
+        IndexName: audienceDynamicDataIndex,
+        Limit: 30,
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "AudienceDynamicField": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`ActiveJoinRequest#`]
+            },
+        },
+        AttributesToGet: ['audience', 'joinRequestAttempts', 'timestamp'],
+        ScanIndexForward: false,
+        ReturnConsumedCapacity: "INDEXES"
+    };
+
+    if (req.headers.lastevaluatedkey) {
+        query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
+    }
+
+    dynamoClient.query(query, (err, data) => {
+        if (err) res.status(404).json(err);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "activeJoinRequestUsers": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
+    });
+
+});
+
+
+router.post('/:userId', async (req, res) => {
+    // There is no seperate schema for join requests, instead we use AudienceDynamicField
+
+    const clubId = req.clubId;
+    const audienceId = req.params.userId;
+
+    let audienceDoc;
+
+    try {
+        // fetching audience info for this club
+        const _audienceDocQuery = {
+            TableName: tableName,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `AUDIENCE#${audienceId}`,
+            },
+            AttributesToGet: ['clubId', 'isKickedOut', 'isParticipant', 'joinRequested',
+                'joinRequestAttempts', 'audience', 'timestamp'],
+        };
+
+        audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
+
+        if (!audienceDoc) {
+            res.status(404).json("This user doesn't exist as audience");
+            return;
+        }
+    } catch (error) {
+        console.log("This user doesn't exist as audience, completed with error: ", error);
+        res.status(404).json("This user doesn't exist as audience, function completed with error");
         return;
     }
 
-    try {
-        const body = await AudienceSchema.validateAsync(req.body);
 
+
+    try {
         // We don't let kicked out people request to join club
-        if (body.isKickedOut === true) {
+        if (audienceDoc.isKickedOut === true) {
             // forbidden (403)
             res.status(403).json('User is kicked out by owner, can not request to join!');
             return;
-        } else if (body.isPartcipant === true) {
-            //  not acceptable (406) since user is already a partcipant.
-            res.status(406).json('User is already a participant');
+        } else if (audienceDoc.isPartcipant === true) {
+            //  conflict (409) since user is already a partcipant.
+            res.status(409).json('User is already a participant');
             return;
-        } else if (body.joinRequested === true) {
-            //  not acceptable (406) since user already have an active join request.
-            res.status(406).json('Join request is already pending!');
+        } else if (audienceDoc.joinRequested === true) {
+            //  conflict (409) since user already have an active join request.
+            res.status(409).json('Join request is already pending!');
             return;
         }
 
         // Now, this is the fresh request!!!
         const newTimestamp = Date.now();
 
-        body['joinRequested'] = true;
-        body['AudienceDynamicField'] = `ActiveJoinRequest#${newTimestamp}#${result.audienceId}`;
+        audienceDoc['joinRequested'] = true;
+        audienceDoc['timestamp'] = newTimestamp;
 
-        const result = await AudienceSchemaWithDatabaseKeys.validateAsync(body);
+        const result = await AudienceSchemaWithDatabaseKeys.validateAsync(audienceDoc);
 
         const _audienceUpdateQuery = {
             TableName: tableName,
@@ -91,87 +155,32 @@ router.post('/', async (req, res) => {
 
 
     } catch (error) {
+        console.log(error);
         res.status(400).json(error);
         return;
     }
 });
 
 
-// required
-// headers - "lastevaluatedkey"  (optional)
 
-router.get('/', async (req, res) => {
-
-    const clubId = req.clubId;
-
-    const query = {
-        TableName: tableName,
-        IndexName: audienceDynamicDataIndex,
-        Limit: 30,
-        KeyConditions: {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`CLUB#${clubId}`]
-            },
-            "AudienceDynamicField": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": [`ActiveJoinRequest#`]
-            },
-        },
-        AttributesToGet: [
-            'audienceId', 'joinRequestAttempts', 'avatar', 'username', 'AudienceDynamicField'
-        ],
-        ScanIndexForward: false,
-        ReturnConsumedCapacity: "INDEXES"
-    };
-
-    if (req.headers.lastevaluatedkey) {
-        query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
-    }
-
-    dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).json(err);
-        else {
-            console.log(data);
-            res.status(200).json({
-                "activeJoinRequestUsers": data["Items"],
-                'lastevaluatedkey': data["LastEvaluatedKey"]
-            });
-        }
-    });
-
-});
-
-
-
-// required
-// query parameters - "audienceId" , "timestamp"
-
-router.delete('/', async (req, res) => {
+router.delete('/:userId', async (req, res) => {
     // we don't decrement counter for join requests because it does not account for unique requests.
 
     const clubId = req.clubId;
-
-    const audienceId = req.query.audienceId;
-    const timestamp = req.query.timestamp;
-
-    if ((!timestamp) || (!audienceId)) {
-        res.status(400).json('timestamp should exist in headers and should be equal to entry time of user in club, audienceid should also exist');
-        return;
-    }
-
-    const _attributeUpdates = {
-        joinRequested: { "Action": "PUT", "Value": false },
-        AudienceDynamicField: { "Action": "DELETE" },
-    };
+    const audienceId = req.params.userId;
 
     const _audienceUpdateQuery = {
         TableName: tableName,
         Key: {
             P_K: `CLUB#${clubId}`,
-            S_K: `AUDIENCE#${timestamp}#${audienceId}`
+            S_K: `AUDIENCE#${audienceId}`,
         },
-        AttributeUpdates: _attributeUpdates,
+        ConditionExpression: ' joinRequested = :tr ',
+        UpdateExpression: 'SET joinRequested = :fal REMOVE AudienceDynamicField',
+        ExpressionAttributeValues: {
+            ':tr': true,
+            ':fal': false,
+        }
     };
 
     dynamoClient.update(_audienceUpdateQuery, (err, data) => {
@@ -185,15 +194,20 @@ router.delete('/', async (req, res) => {
 });
 
 
-// ! if resp === 'accept'  then req.body should be a AudienceSchema with timestamp
-// ! if resp === 'cancel'  then req.query - {audienceid, timestamp of audience}
-// query parameters - "audienceId" , "timestamp" (optional)
+// query parameters - "audienceId"
 
 router.post('/:resp', async (req, res) => {
 
     const clubId = req.clubId;
 
     const requestAction = req.params.resp;
+
+    const audienceId = req.query.audienceId;
+
+    if (!audienceId) {
+        res.status(400).json('audienceId is required');
+        return;
+    }
 
     try {
         const _schema = Joi.string().valid('accept', 'cancel').required();
@@ -203,26 +217,62 @@ router.post('/:resp', async (req, res) => {
         return;
     }
 
-    if (requestAction === 'accept') {
 
-        if (!req.body.timestamp) {
-            res.status(400).json('timestamp should exist in body when accepting the join request');
+    let audienceDoc;
+
+    try {
+        // fetching audience info for this club
+        const _audienceDocQuery = {
+            TableName: tableName,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `AUDIENCE#${audienceId}`,
+            },
+            AttributesToGet: ['joinRequested', 'audience', 'timestamp'],
+        };
+
+        audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
+
+        if (!audienceDoc) {
+            res.status(404).json("This user doesn't exist as audience");
             return;
         }
+    } catch (error) {
+        console.log("This user doesn't exist as audience, completed with error: ", error);
+        res.status(404).json("This user doesn't exist as audience, function completed with error");
+        return;
+    }
+
+
+    if (audienceDoc.joinRequested !== true) {
+        res.status(404).json("This user has no active join request.");
+        return;
+    }
+
+
+
+    if (requestAction === 'accept') {
+        const newTimestamp = Date.now();
+
+        audienceDoc['joinRequested'] = false;
+        audienceDoc['isPartcipant'] = true;
+        audienceDoc['timestamp'] = newTimestamp;
+
         var result;
         try {
-            result = await AudienceSchemaWithDatabaseKeys.validateAsync(req.body);
+            result = await AudienceSchemaWithDatabaseKeys.validateAsync(audienceDoc);
         } catch (error) {
-            res.status(400).json(`Invalid body: ${error}`);
+            console.log(error);
+            res.status(500).json(error);
             return;
         }
-        const newTimestamp = Date.now();
 
         const _attributeUpdates = {
             joinRequested: { "Action": "PUT", "Value": false },
-            AudienceDynamicField: { "Action": "PUT", "Value": `Participant#${newTimestamp}#${result.audienceId}` },
+            AudienceDynamicField: { "Action": "PUT", "Value": result.AudienceDynamicField },
             isPartcipant: { "Action": "PUT", "Value": true }
         };
+
         const _audienceUpdateQuery = {
             TableName: tableName,
             Key: {
@@ -267,16 +317,6 @@ router.post('/:resp', async (req, res) => {
 
     } else if (requestAction === 'cancel') {
 
-
-        const audienceId = req.query.audienceId;
-        const timestamp = req.query.timestamp;
-
-        if ((!timestamp) || (!audienceId)) {
-            res.status(400).json('timestamp should exist in query parameters and should be equal to entry time of user in club, audienceId should also exist');
-            return;
-        }
-
-
         const _attributeUpdates = {
             joinRequested: { "Action": "PUT", "Value": false },
             AudienceDynamicField: { "Action": "DELETE" },
@@ -287,7 +327,7 @@ router.post('/:resp', async (req, res) => {
             TableName: tableName,
             Key: {
                 P_K: `CLUB#${clubId}`,
-                S_K: `AUDIENCE#${timestamp}#${audienceId}`
+                S_K: `AUDIENCE#${audienceId}`
             },
             AttributeUpdates: _attributeUpdates,
         };

@@ -21,7 +21,7 @@ router.post('/:userId', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
             },
-            AttributesToGet: ['clubId', 'creatorId', 'isKickedOut', 'isParticipant', 'joinRequested',
+            AttributesToGet: ['clubId', 'isKickedOut', 'isParticipant', 'joinRequested',
                 'joinRequestAttempts', 'audience', 'timestamp'],
         };
 
@@ -30,9 +30,11 @@ router.post('/:userId', async (req, res) => {
         if (oldAudienceDoc) {
             res.status(204).json(oldAudienceDoc);
             return;
-        }
+        } else
+            console.log('no old doc exists for this request hence this is new audience');
+
     } catch (error) {
-        console.log('no old doc exists for this request hence this is new audience');
+        console.log('no old doc exists for this request hence this is new audience, completed with error: ', error);
     }
 
     // new audience, it is :)

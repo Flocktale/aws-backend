@@ -8,15 +8,37 @@ const Joi = require('joi');
 // });
 
 const { dynamoClient, tableName } = require('./config');
+const { string } = require('joi');
 
 
 async function testing() {
     try {
 
 
-        const data = await Joi.object({ a: Joi.string().required() }).validateAsync({
-            a: '1',
-            b: '2'
+        const data = await Joi.object({
+
+            aa: Joi.number().required(),
+            a: Joi.number().required(),
+            b: Joi.boolean().valid(false).default(true),
+            c: Joi.string()
+                .valid(`Worked#1`)
+                .default((parent, helpers) => {
+                    // console.log('parent : ', parent);
+                    // console.log('helpers : ', helpers);
+
+                    throw new Error('more than one boolean attribute is true');
+
+                    // if (parent.aa === 2)
+                    // return 'helo#' + parent.aa;
+
+                    // else if (parent.a === 1) return 'null';
+                }),
+
+
+        }).validateAsync({
+            aa: '2',
+            a: '3',
+            // b: true
         });
 
         console.log(data);
@@ -34,6 +56,7 @@ async function testing() {
         // }
     } catch (error) {
         console.log(error);
+        console.log(error.details[0].context.error);
     }
 }
 

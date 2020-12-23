@@ -1,14 +1,13 @@
 const router = require('express').Router();
 
-const { ReactionSchema, ReactionSchemaWithDatabaseKeys } = require('../../Schemas/Reaction');
+const { ReactionSchemaWithDatabaseKeys } = require('../../Schemas/Reaction');
 
-const { dynamoClient, tableName } = require('../../config');
+const { timestampSortIndex, dynamoClient, tableName } = require('../../config');
 const Joi = require('joi');
 
 
 // required
-// query parameters - "previousIndexValue" , "currentIndexValue" (values should be integer)
-// body : {userId,username,avatar}
+// query parameters - "previousIndexValue" , "currentIndexValue" (values should be integer) , "audienceId"
 
 router.post('/', async (req, res) => {
 
@@ -17,6 +16,13 @@ router.post('/', async (req, res) => {
     const previousIndexValue = req.query.previousIndexValue;
     const currentIndexValue = req.query.currentIndexValue;
 
+    const audienceId = req.query.audienceId;
+
+
+    if (!audienceId) {
+        res.status(400).json('audienceId is required');
+        return;
+    }
 
     if ((!currentIndexValue) && (!previousIndexValue)) {
         res.status(400).json('when currentIndexValue is null then previousIndexValue should be an integer');
@@ -24,26 +30,14 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        await Joi.number().description('invalid previousIndexValue, only integer accepted (optional)').validateAsync(previousIndexValue);
-        await Joi.number().description('invalid currentIndexValue, only integer accepted (optional)').validateAsync(currentIndexValue);
+        await Joi.number().integer().description('invalid previousIndexValue, only integer accepted (optional)').validateAsync(previousIndexValue);
+        await Joi.number().integer().description('invalid currentIndexValue, only integer accepted (optional)').validateAsync(currentIndexValue);
     } catch (error) {
         res.status(400).json(error);
         return;
     }
 
-    try {
-        const _temp = req.body;
-        _temp['indexValue'] = 0;        // necessary to validate schema
-        _temp['clubId'] = clubId;
-        await ReactionSchema.validateAsync(_temp); // if successfull then req.body contains {userId,username,avatar}
-    } catch (error) {
-        res.status(400).json(`invalid body: ${error}`);
-        return;
-    }
 
-    const userId = req.body.userId;
-    const username = req.body.username;
-    const avatar = req.body.avatar;
 
 
     const _transactQuery = { TransactItems: [] };
@@ -59,19 +53,39 @@ router.post('/', async (req, res) => {
     if (currentIndexValue)                 // if a user select new reaction on club  
     {
         console.log('new reaction of user on club id:' + clubId + '     reaction: ' + currentIndexValue);
-        var reactionDoc;
+
+        const _userSummaryQuery = {
+            TableName: tableName,
+            Key: {
+                P_K: `USER#${audienceId}`,
+                S_K: `USERMETA#${audienceId}`,
+            },
+            AttributesToGet: ["userId", "username", "avatar"],
+        };
+
+        var reactionDoc, user;
+
         try {
+
+            user = (await dynamoClient.get(_userSummaryQuery).promise())['Item'];
+
+            if (!user) {
+                console.log('could not fetch user summary data');
+                res.status(500).json('could not fetch user summary data');
+                return;
+            }
+
             reactionDoc = await ReactionSchemaWithDatabaseKeys.validateAsync({
                 clubId: clubId,
-                userId: userId,
-                username: username,
-                avatar: avatar,
+                user: user,
                 indexValue: currentIndexValue
             });
+
         } catch (error) {
             res.status(400).json(error);
             return;
         }
+
         const _reactionDocQuery = {
             TableName: tableName,
             Item: reactionDoc
@@ -132,20 +146,19 @@ router.get('/', async (req, res) => {
 
     const query = {
         TableName: tableName,
+        IndexName: timestampSortIndex,
         Limit: 30,
         KeyConditions: {
             "P_K": {
                 "ComparisonOperator": "EQ",
                 "AttributeValueList": [`CLUB#${clubId}`]
             },
-            "S_K": {
+            "TimestampSortField": {
                 "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": [`REACT#`]
+                "AttributeValueList": [`REACT-SORT-TIMESTAMP#`]
             },
         },
-        AttributesToGet: [
-            'userId', 'username', 'avatar', 'indexValue'
-        ],
+        AttributesToGet: ['user', 'indexValue', 'timestamp'],
         ScanIndexForward: false,
     };
 

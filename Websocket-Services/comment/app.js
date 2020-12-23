@@ -21,18 +21,38 @@ exports.handler = async event => {
         return { statusCode: 400, body: 'Body should exist.' };
     }
 
+    const userId = body.userId;
+
+    const _userSummaryQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `USER#${userId}`,
+            S_K: `USERMETA#${userId}`,
+        },
+        AttributesToGet: ["userId", "username", "avatar"],
+    };
+
     var result, postComment;
 
     try {
+
+        const user = (await dynamoClient.get(_userSummaryQuery).promise())['Item'];
+
         result = CommentSchemaWithDatabaseKeys.validateAsync({
             clubId: body.clubId,
-            userId: body.userId,
+            user: user,
             commentId: nanoid(),
-            username: body.username,
-            avatar: body.avatar,
             body: body.body,
         });
-        postComment = CommentSchema.validateAsync(result);
+
+        postComment = CommentSchema.validateAsync({
+            clubId: clubId,
+            commentId: result.commentId,
+            user: user,
+            body: result.body,
+            timestamp: result.timestamp,
+        });
+
     } catch (error) {
         return { statusCode: 400, body: `Invalid data : ${error}` };
     }

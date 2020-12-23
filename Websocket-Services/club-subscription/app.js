@@ -7,6 +7,7 @@ const ddb = new AWS.DynamoDB.DocumentClient();
 
 const WsTable = 'WsTable';
 const myTable = 'myTable';
+const timestampSortIndex = 'TimestampSortIndex';
 
 exports.handler = async event => {
 
@@ -34,16 +35,16 @@ exports.handler = async event => {
                 apiVersion: '2018-11-29',
                 endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
             });
+
             const _query = {
                 TableName: myTable,
-                KeyConditionExpression: 'P_K = :hkey and begins_with ( S_K , :filter )',
+                IndexName: timestampSortIndex,
+                KeyConditionExpression: 'P_K = :hkey and begins_with ( TimestampSortField , :filter )',
                 ExpressionAttributeValues: {
                     ":hkey": `CLUB#${clubId}`,
-                    ":filter": `COMMENT#`
+                    ":filter": `COMMENT-SORT-TIMESTAMP#`
                 },
-                AttributesToGet: [
-                    'clubId', 'userId', 'commentId', 'username', 'avatar', 'body', 'timestamp'
-                ],
+                AttributesToGet: ['clubId', 'user', 'commentId', 'body', 'timestamp'],
                 ScanIndexForward: false,
                 Limit: 50,
 

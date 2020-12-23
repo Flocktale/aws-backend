@@ -27,11 +27,19 @@ const AudienceSchemaWithDatabaseKeys = AudienceSchema.append({
         Joi.expression('AUDIENCE#{{audience.userId}}')
     ),
 
-    AudienceDynamicField: Joi.string().valid(
-        Joi.expression('KickedOut#{{timestamp}}#{{audience.userId}}'),
-        Joi.expression('Participant#{{timestamp}}#{{audience.userId}}'),
-        Joi.expression('ActiveJoinRequest#{{timestamp}}#{{audience.userId}}'),
-    ),                                                                           // GSI: AudienceDynamicDataIndex
+    AudienceDynamicField: Joi.string()
+        .default((parent, helpers) => {
+            let counter = 0;
+            let prefix;
+            if (parent.isKickedOut === true) { counter++; prefix = "KickedOut#"; }
+            else if (parent.isPartcipant === true) { counter++; prefix = "Participant#"; }
+            else if (parent.joinRequested === true) { counter++; prefix = "ActiveJoinRequest#"; }
+
+            if (counter === 1)
+                return prefix + parent.timestamp + "#" + parent.audience.userId;
+
+            if (counter > 1) throw new Error('more than one boolean attribute is true');
+        }),                                                                           // GSI: AudienceDynamicDataIndex
 
     TimestampSortField: Joi.string().default('AUDIENCE-SORT-TIMESTAMP#{{timestamp}}#{{audience.userId}}'),       // GSI: TimestampSortIndex
 

@@ -4,23 +4,16 @@ const { CountParticipantSchema } = require('../../Schemas/AtomicCountSchemas');
 
 const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../../config');
 
-//required
-// query parameters - "audienceId", "timestamp" 
 
-router.post('/', async (req, res) => {
+router.post('/:userId', async (req, res) => {
     const clubId = req.clubId;
 
-    const audienceId = req.query.audienceId;
-    const timestamp = req.query.timestamp;
-
-    if ((!timestamp) || (!audienceId)) {
-        res.status(400).json('timestamp should exist in query parameters and should be equal to entry time of user in club, audienceId should also exist');
-        return;
-    }
+    const audienceId = req.params.userId;
 
     const newTimestamp = Date.now();
 
     const _attributeUpdates = {
+        timestamp: { "Action": "PUT", "Value": newTimestamp },
         isPartcipant: { "Action": "PUT", "Value": false },
         isKickedOut: { "Action": "PUT", "Value": true },
         AudienceDynamicField: { "Action": "PUT", "Value": `KickedOut#${newTimestamp}#${audienceId}` },
@@ -30,7 +23,7 @@ router.post('/', async (req, res) => {
         TableName: tableName,
         Key: {
             P_K: `CLUB#${clubId}`,
-            S_K: `AUDIENCE#${timestamp}#${audienceId}`
+            S_K: `AUDIENCE#${audienceId}`
         },
         AttributeUpdates: _attributeUpdates,
     }
@@ -93,9 +86,7 @@ router.get('/', async (req, res) => {
                 "AttributeValueList": [`KickedOut#`]
             },
         },
-        AttributesToGet: [
-            'audienceId', 'avatar', 'username', 'AudienceDynamicField'
-        ],
+        AttributesToGet: ['audience', 'timestamp'],
         ScanIndexForward: false,
         ReturnConsumedCapacity: "INDEXES"
     };
@@ -114,21 +105,19 @@ router.get('/', async (req, res) => {
             });
         }
     });
-
 });
 
 
 //required
-// query parameters - "audienceId", "timestamp" 
+// query parameters - "audienceId"
 
 router.post('/revoke', async (req, res) => {
     const clubId = req.clubId;
 
     const audienceId = req.query.audienceId;
-    const timestamp = req.query.timestamp;
 
-    if ((!timestamp) || (!audienceId)) {
-        res.status(400).json('timestamp should exist in query parameters and should be equal to entry time of user in club, audienceId should also exist');
+    if (!audienceId) {
+        res.status(400).json('audienceId is required');
         return;
     }
 
@@ -141,7 +130,7 @@ router.post('/revoke', async (req, res) => {
         TableName: tableName,
         Key: {
             P_K: `CLUB#${clubId}`,
-            S_K: `AUDIENCE#${timestamp}#${audienceId}`
+            S_K: `AUDIENCE#${audienceId}`
         },
         AttributeUpdates: _attributeUpdates,
     }

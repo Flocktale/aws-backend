@@ -6,24 +6,51 @@ const { CountReportSchema } = require('../../Schemas/AtomicCountSchemas');
 const { ReportSchemaWithDatabaseKeys } = require('../../Schemas/Report');
 
 
-const { dynamoClient, tableName } = require('../../config');
+const { timestampSortIndex, dynamoClient, tableName } = require('../../config');
 
 // required
-// body : ReportSchemaWithDatabaseKeys validated
+// body; {'body': String}
 
-router.post('/', async (req, res) => {
+router.post('/:userId', async (req, res) => {
 
     const clubId = req.clubId;
+    const userId = req.params.userId;
+
+
+    const _userSummaryQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `USER#${userId}`,
+            S_K: `USERMETA#${userId}`,
+        },
+        AttributesToGet: ["userId", "username", "avatar"],
+    };
+
 
     try {
-        const body = req.body;
-        body['reportId'] = nanoid();
-        const result = await ReportSchemaWithDatabaseKeys.validateAsync(body);
+
+        const user = (await dynamoClient.get(_userSummaryQuery).promise())['Item'];
+
+        if (!user) {
+            console.log('could not fetch user summary data');
+            res.status(500).json('could not fetch user summary data');
+            return;
+        }
+
+        const reportId = nanoid();
+
+        const result = await ReportSchemaWithDatabaseKeys.validateAsync({
+            clubId: clubId,
+            user: user,
+            reportId: reportId,
+            body: req.body.body,
+        });
 
         const _putQuery = {
             TableName: tableName,
             Item: result
         };
+
         const counterDoc = await CountReportSchema.validateAsync({ clubId: clubId });
         const _counterUpdateQuery = {
             TableName: tableName,
@@ -71,20 +98,19 @@ router.get('/', async (req, res) => {
 
     const query = {
         TableName: tableName,
+        IndexName: timestampSortIndex,
         Limit: 20,
         KeyConditions: {
             "P_K": {
                 "ComparisonOperator": "EQ",
                 "AttributeValueList": [`CLUB#${clubId}`]
             },
-            "AudienceDynamicField": {
+            "TimestampSortField": {
                 "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": [`REPORT#`]
+                "AttributeValueList": [`REPORT-SORT-TIMESTAMP#`]
             },
         },
-        AttributesToGet: [
-            'userId', 'username', 'avatar', 'body', 'timestamp'
-        ],
+        AttributesToGet: ['clubId', 'user', 'reportId', 'body', 'timestamp'],
         ScanIndexForward: false,
         ReturnConsumedCapacity: "INDEXES"
     };

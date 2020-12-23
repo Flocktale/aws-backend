@@ -43,9 +43,7 @@ const ClubInputSchemaWithDatabaseKeys = ClubInputSchema.append({
 
     S_K: Joi.string().default(Joi.expression('CLUBMETA#{{clubId}}')),
 
-    ClubCreatorIdField: Joi.string().default(Joi.expression('USER#{{creator.userId}}')),
-
-    TimestampSortField: Joi.string().default('CLUB-SORT-TIMESTAMP#{{timestamp}}#{{clubId}}'),       // GSI: TimestampSortIndex
+    ClubCreatorIdField: Joi.string().default(Joi.expression('USER#{{creator.userId}}')),            // GSI: ClubCreatorIdIndex
 
     PublicSearch: Joi.number().integer().valid(0, 1).default(1),                        // GSI : SearchByUsernameIndex
     FilterDataName: Joi.string().default(Joi.expression('CLUB#{{clubName}}')),          // GSI : SearchByUsernameIndex
