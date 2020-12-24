@@ -38,11 +38,45 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const { clubCategoryIndex, dynamoClient, tableName } = require('./config');
 
+app.get("/clubs", async (req, res) => {
+    var categoryList = ['Entrepreneurship', 'Education', 'Comedy', 'Travel', 'Society',
+        'Health', 'Finance', 'Sports', 'Other'];
 
-app.get("/clubs", (req, res) => {
-    // TODO: send list of clubs
-    res.json('You have hit a TODO: Send list of clubs )');
+    var latestClubs = {
+        categoryClubs: []
+    };
+
+    const fetchCategoryClubs = categoryList.map(async (category) => {
+        const _query = {
+            TableName: tableName,
+            IndexName: clubCategoryIndex,
+            KeyConditions: {
+                'category': {
+                    ComparisonOperator: 'EQ',
+                    AttributeValueList: [category]
+                }
+            },
+            AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime', 'clubAvatar', 'tags'],
+            ScanIndexForward: false,
+            Limit: 5,
+        };
+        try {
+            const clubs = (await dynamoClient.query(_query).promise())['Items'];
+            latestClubs.categoryClubs.push({
+                category: category,
+                clubs: clubs
+            });
+        } catch (error) {
+            console.log('error in fetching latest 5 clubs from : ' + category + ' : category, or it can be error of apigwManagement :', error);
+        }
+    });
+
+    await Promise.all(fetchCategoryClubs);
+
+    res.status(200).json(latestClubs);
+
 });
 
 

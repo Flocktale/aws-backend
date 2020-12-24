@@ -36,7 +36,7 @@ router.get('/:userId/organized', (req, res) => {
         else {
             console.log(data);
             res.status(200).json({
-                "organizedClubs": data["Items"],
+                "clubs": data["Items"],
                 'lastevaluatedkey': data["LastEvaluatedKey"]
             });
         }
@@ -98,8 +98,12 @@ router.get('/:userId/history', (req, res) => {
                 if (err) res.status(404).json(`Error getting club history for user: ${err}`);
                 else {
                     console.log(data);
+                    var historyClubs = [];
+                    data['Responses'].map((response) => {
+                        historyClubs.push(response['Item']);
+                    })
                     res.status(200).json({
-                        "historyClubs": data["Items"],
+                        "clubs": historyClubs,
                         'lastevaluatedkey': primaryData["LastEvaluatedKey"]
                     });
                 }
