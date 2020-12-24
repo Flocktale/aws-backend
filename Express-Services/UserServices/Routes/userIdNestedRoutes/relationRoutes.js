@@ -243,13 +243,16 @@ router.post('/add', async (req, res) => {
             };
         }
 
-        _transactQuery = [
-            { Update: primaryUserRelationDocUpdateQuery },
-            { Update: foreignUserRelationDocUpdateQuery },
-        ];
+        _transactQuery = {
+            TransactItems:
+                [
+                    { Update: primaryUserRelationDocUpdateQuery },
+                    { Update: foreignUserRelationDocUpdateQuery },
+                ]
+        };
 
     } else {
-        const primaryUser = await _getUserSummaryData(primaryUserId);
+        const primaryUser = await _getUserSummaryData(userId);
         const foreignUser = await _getUserSummaryData(foreignUserId);
         const newTimestmap = Date.now();
 
@@ -458,10 +461,12 @@ router.post('/remove', async (req, res) => {
         };
     }
 
-    const _transactQuery = [
-        { Update: primaryUserRelationDocUpdateQuery },
-        { Update: foreignUserRelationDocUpdateQuery },
-    ];
+    const _transactQuery = {
+        TransactItems: [
+            { Update: primaryUserRelationDocUpdateQuery },
+            { Update: foreignUserRelationDocUpdateQuery },
+        ]
+    };
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
         if (err) {
@@ -485,26 +490,28 @@ router.post('/remove', async (req, res) => {
                 }
             };
 
-            const _deleteTransactQuery = [
-                {
-                    Delete: {
-                        ..._conditionalDeleteQuery,
-                        Key: {
-                            P_K: `USER#${userId}`,
-                            S_K: `RELATION#${foreignUserId}`,
+            const _deleteTransactQuery = {
+                TransactItems: [
+                    {
+                        Delete: {
+                            ..._conditionalDeleteQuery,
+                            Key: {
+                                P_K: `USER#${userId}`,
+                                S_K: `RELATION#${foreignUserId}`,
+                            }
+                        }
+                    },
+                    {
+                        Delete: {
+                            ..._conditionalDeleteQuery,
+                            Key: {
+                                P_K: `USER#${foreignUserId}`,
+                                S_K: `RELATION#${userId}`,
+                            }
                         }
                     }
-                },
-                {
-                    Delete: {
-                        ..._conditionalDeleteQuery,
-                        Key: {
-                            P_K: `USER#${foreignUserId}`,
-                            S_K: `RELATION#${userId}`,
-                        }
-                    }
-                }
-            ];
+                ]
+            };
 
             dynamoClient.transactWrite(_deleteTransactQuery, (err, data) => {
                 if (err) console.log(err);
