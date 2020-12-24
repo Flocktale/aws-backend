@@ -284,10 +284,12 @@ router.post('/add', async (req, res) => {
             Item: newForeignUserRelationDoc
         }
 
-        _transactQuery = [
-            { Put: newPrimaryUserRelationDocQuery },
-            { Put: newForeignUserRelationDocQuery },
-        ];
+        _transactQuery = {
+            TransactItems: [
+                { Put: newPrimaryUserRelationDocQuery },
+                { Put: newForeignUserRelationDocQuery },
+            ]
+        };
 
     }
 
@@ -335,6 +337,7 @@ async function _prepareNewRelationDoc(primaryUser, foreignUser, timestamp) {
             primaryUser: primaryUser,
             foreignUser: foreignUser,
             timestamp: timestamp,
+            relationIndexObj: {},
         });
         return result;
     } catch (error) {
