@@ -3,7 +3,7 @@ const Joi = require('joi');
 
 const { UserRelationSchemaWithDatabaseKeys } = require('../../Schemas/UserRelation');
 
-const { sortedSocialRelationByUsernameIndex, sortedSocialRelationByTimestampIndex, dynamoClient, tableName } = require('../../config');
+const { usernameSortIndex, timestampSortIndex, dynamoClient, tableName } = require('../../config');
 
 
 // required
@@ -56,7 +56,7 @@ router.get('/', async (req, res) => {
 
 
     if (req.query.sortby === 'username') {
-        query["IndexName"] = sortedSocialRelationByUsernameIndex;
+        query["IndexName"] = usernameSortIndex;
 
         query["KeyConditions"] = {
             "P_K": {
@@ -70,7 +70,7 @@ router.get('/', async (req, res) => {
         };
 
     } else {
-        query["IndexName"] = sortedSocialRelationByTimestampIndex;
+        query["IndexName"] = timestampSortIndex;
 
         query["KeyConditions"] = {
             "P_K": {
