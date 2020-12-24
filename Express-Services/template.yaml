@@ -65,7 +65,7 @@ Resources:
             Path: /users/query
             Method: get
 
-        ListSocialRelatives: 
+        ListSocialRelatives:
           Type: Api
           Properties:
             Path: /users/{userId}/relations
@@ -77,7 +77,7 @@ Resources:
             Path: /users/{userId}/relations/add
             Method: post
 
-        RemoveSocialRelatives: 
+        RemoveSocialRelatives:
           Type: Api
           Properties:
             Path: /users/{userId}/relations/remove
@@ -103,16 +103,16 @@ Resources:
             Path: /clubs
             Method: get
 
+        SearchClubByName:
+          Type: Api
+          Properties:
+            Path: /clubs/query
+            Method: get
+
         CreateClub:
           Type: Api
           Properties:
             Path: /clubs/create
-            Method: post
-
-        UploadAvatar:
-          Type: Api
-          Properties:
-            Path: /clubs/{clubId}/avatar
             Method: post
 
         MyOrganisedClubs:
@@ -133,11 +133,11 @@ Resources:
             Path: /clubs/{clubId}
             Method: get
 
-        SearchClubByName:
+        UploadAvatar:
           Type: Api
           Properties:
-            Path: /clubs/query
-            Method: get
+            Path: /clubs/{clubId}/avatar
+            Method: post
 
         EnterClub:
           Type: Api

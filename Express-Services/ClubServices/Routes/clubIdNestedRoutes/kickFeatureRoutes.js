@@ -5,10 +5,18 @@ const { CountParticipantSchema } = require('../../Schemas/AtomicCountSchemas');
 const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../../config');
 
 
-router.post('/:userId', async (req, res) => {
+// required
+// query parameters - "audienceId"
+router.post('/', async (req, res) => {
     const clubId = req.clubId;
 
-    const audienceId = req.params.userId;
+    const audienceId = req.query.audienceId;
+
+
+    if (!audienceId) {
+        res.status(400).json('audienceId is required');
+        return;
+    }
 
     const newTimestamp = Date.now();
 

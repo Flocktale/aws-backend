@@ -9,12 +9,19 @@ const { ReportSchemaWithDatabaseKeys } = require('../../Schemas/Report');
 const { timestampSortIndex, dynamoClient, tableName } = require('../../config');
 
 // required
+// query parameters - "userId"
 // body; {'body': String}
 
-router.post('/:userId', async (req, res) => {
+router.post('/', async (req, res) => {
 
     const clubId = req.clubId;
-    const userId = req.params.userId;
+    const userId = req.query.userId;
+
+
+    if (!userId) {
+        res.status(400).json('userId is required');
+        return;
+    }
 
 
     const _userSummaryQuery = {

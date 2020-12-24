@@ -50,12 +50,19 @@ router.get('/', async (req, res) => {
 
 });
 
-
-router.post('/:userId', async (req, res) => {
+//required
+// query parameters - "userId"
+router.post('/', async (req, res) => {
     // There is no seperate schema for join requests, instead we use AudienceDynamicField
 
     const clubId = req.clubId;
-    const audienceId = req.params.userId;
+    const audienceId = req.query.userId;
+
+
+    if (!audienceId) {
+        res.status(400).json('audienceId is required');
+        return;
+    }
 
     let audienceDoc;
 
@@ -162,12 +169,20 @@ router.post('/:userId', async (req, res) => {
 });
 
 
+//required
+// query parameters - "userId"
 
-router.delete('/:userId', async (req, res) => {
+router.delete('/', async (req, res) => {
     // we don't decrement counter for join requests because it does not account for unique requests.
 
     const clubId = req.clubId;
-    const audienceId = req.params.userId;
+    const audienceId = req.query.userId;
+
+
+    if (!audienceId) {
+        res.status(400).json('audienceId is required');
+        return;
+    }
 
     const _audienceUpdateQuery = {
         TableName: tableName,

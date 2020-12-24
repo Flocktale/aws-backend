@@ -5,17 +5,17 @@ const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../config
 
 const avatarRouter = require('./clubIdNestedRoutes/avatarRoutes');
 const clubEntryRouter = require('./clubIdNestedRoutes/clubEntryRouter');
-const joinRequestRouter = require('./clubIdNestedRoutes/routesForJoinRequests');
-const kickFeatureRouter = require('./clubIdNestedRoutes/kickFeatureRoutes');
 const reactionRouter = require('./clubIdNestedRoutes/reactionRoutes');
 const reportRouter = require('./clubIdNestedRoutes/reportRoutes');
+const joinRequestRouter = require('./clubIdNestedRoutes/routesForJoinRequests');
+const kickFeatureRouter = require('./clubIdNestedRoutes/kickFeatureRoutes');
 
 router.use('/avatar', avatarRouter);
 router.use('/enter', clubEntryRouter);
-router.use('/join-request', joinRequestRouter);
-router.use('/kick', kickFeatureRouter);
 router.use('/reactions', reactionRouter);
 router.use('/reports', reportRouter);
+router.use('/join-request', joinRequestRouter);
+router.use('/kick', kickFeatureRouter);
 
 // _________________________________________________________________________________________________________________________________________________________
 // _________________________________________________________________________________________________________________________________________________________
