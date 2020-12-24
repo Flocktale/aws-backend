@@ -23,7 +23,7 @@ const ReportSchemaWithDatabaseKeys = ReportSchema.append({
         Joi.expression('REPORT#{{user.userId}}#{{reportId}}')
     ),
 
-    TimestampSortField: Joi.string().default('REPORT-SORT-TIMESTAMP#{{timestamp}}#{{reportId}}'),       // GSI: TimestampSortIndex
+    TimestampSortField: Joi.string().default(Joi.expression('REPORT-SORT-TIMESTAMP#{{timestamp}}#{{reportId}}')),       // GSI: TimestampSortIndex
 
 });
 

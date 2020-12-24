@@ -41,7 +41,7 @@ const AudienceSchemaWithDatabaseKeys = AudienceSchema.append({
             if (counter > 1) throw new Error('more than one boolean attribute is true');
         }),                                                                           // GSI: AudienceDynamicDataIndex
 
-    TimestampSortField: Joi.string().default('AUDIENCE-SORT-TIMESTAMP#{{timestamp}}#{{audience.userId}}'),       // GSI: TimestampSortIndex
+    TimestampSortField: Joi.string().default(Joi.expression('AUDIENCE-SORT-TIMESTAMP#{{timestamp}}#{{audience.userId}}')),       // GSI: TimestampSortIndex
 
 });
 

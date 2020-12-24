@@ -20,7 +20,7 @@ const ReactionSchemaWithDatabaseKeys = ReactionSchema.append({
 
     S_K: Joi.string().default(Joi.expression('REACT#{{user.userId}}')),
 
-    TimestampSortField: Joi.string().default('REACT-SORT-TIMESTAMP#{{timestamp}}#{{user.userId}}'),       // GSI: TimestampSortIndex
+    TimestampSortField: Joi.string().default(Joi.expression('REACT-SORT-TIMESTAMP#{{timestamp}}#{{user.userId}}')),       // GSI: TimestampSortIndex
 
 });
 

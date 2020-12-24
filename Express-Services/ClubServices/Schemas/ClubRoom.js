@@ -30,9 +30,9 @@ const ClubInputSchema = Joi.object({
     clubAvatar: Joi.string(),
     decription: Joi.string(),
 
-    isLocal: Joi.boolean(),
-    isGlobal: Joi.boolean(),
-    isPrivate: Joi.boolean(),
+    isLocal: Joi.boolean().default(true),
+    isGlobal: Joi.boolean().default(false),
+    isPrivate: Joi.boolean().default(false),
 
     tags: Joi.array().items(Joi.string()),
 

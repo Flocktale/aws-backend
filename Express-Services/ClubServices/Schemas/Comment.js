@@ -22,7 +22,7 @@ const CommentSchemaWithDatabaseKeys = CommentSchema.append({
         Joi.expression('COMMENT#{{user.userId}}#{{commentId}}')
     ),
 
-    TimestampSortField: Joi.string().default('COMMENT-SORT-TIMESTAMP#{{timestamp}}#{{commentId}}'),       // GSI: TimestampSortIndex
+    TimestampSortField: Joi.string().default(Joi.expression('COMMENT-SORT-TIMESTAMP#{{timestamp}}#{{commentId}}')),       // GSI: TimestampSortIndex
 
 });
 
