@@ -33,7 +33,7 @@ router.post('/', async (req, res) => {
             AttributesToGet: ['userId', 'username', 'avatar'],
         };
 
-        const _creatorSummaryDoc = (await dynamoClient.get(_creatorSummaryDoc).promise())['Item'];
+        const _creatorSummaryDoc = (await dynamoClient.get(_creatorSummaryQuery).promise())['Item'];
         const clubId = nanoid();
 
         req.body['creator'] = _creatorSummaryDoc;

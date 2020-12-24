@@ -42,9 +42,11 @@ exports.handler = async event => {
             const _query = {
                 TableName: myTable,
                 IndexName: clubCategoryIndex,
-                KeyConditionExpression: 'category = :hkey',
-                ExpressionAttributeValues: {
-                    ":hkey": category,
+                KeyConditions: {
+                    'category': {
+                        ComparisonOperator: 'EQ',
+                        AttributeValueList: [category]
+                    }
                 },
                 AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime', 'clubAvatar', 'tags'],
                 ScanIndexForward: false,
@@ -63,7 +65,7 @@ exports.handler = async event => {
                         Key: { connectionId: event.requestContext.connectionId }
                     }).promise();
                 }
-                console.log('error in fetching latest 10 clubs from : ' + category + ' : category, or it can be error of apigwManagement :', error);
+                console.log('error in fetching latest 5 clubs from : ' + category + ' : category, or it can be error of apigwManagement :', error);
             }
         });
 
