@@ -318,11 +318,9 @@ async function _getUserSummaryData(userId) {
         },
     };
     try {
-        const userDoc = await dynamoClient.get(userDocQuery).promise();
-        if (userDoc && userDoc["Item"]) {
-            return userDoc["Item"];
-        } else
-            return null;
+        const userDoc = (await dynamoClient.get(userDocQuery).promise())['Item'];
+
+        return userDoc;
     } catch (error) {
         console.log('error in fetch user summary: ', error);
         return null;

@@ -11,12 +11,32 @@ const { CountCommentSchema, CountReactionSchema, CountReportSchema,
 const { imageUploadConstParams, dynamoClient, s3, tableName } = require('../config');
 
 //required
-// body: ClubRoomCompleteSchema validated
+// query parameters - "creatorId"
+// body: ClubRoomCompleteSchema validated (except clubId, clubAvatar, creator)
 
 router.post('/', async (req, res) => {
 
+    const creatorId = req.query.creatorId;
+    if (!creatorId) {
+        res.status(400).json('creator id is required');
+        return;
+    }
+
     try {
+
+        const _creatorSummaryQuery = {
+            TableName: tableName,
+            Key: {
+                P_K: `USER#${creatorId}`,
+                S_K: `USERMETA#${creatorId}`
+            },
+            AttributesToGet: ['userId', 'username', 'avatar'],
+        };
+
+        const _creatorSummaryDoc = (await dynamoClient.get(_creatorSummaryDoc).promise())['Item'];
         const clubId = nanoid();
+
+        req.body['creator'] = _creatorSummaryDoc;
         req.body['clubId'] = clubId;
         req.body['clubAvatar'] = `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`;
 
