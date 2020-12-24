@@ -112,6 +112,11 @@ router.post('/add', async (req, res) => {
     const userId = req.userId;
     const foreignUserId = req.query.foreignUserId;
 
+    if (userId === foreignUserId) {
+        res.status(400).json('both user id should be unique');
+        return;
+    }
+
     const addAction = req.query.action;
 
     try {
@@ -358,6 +363,12 @@ async function _prepareNewRelationDoc(primaryUser, foreignUser, timestamp) {
 router.post('/remove', async (req, res) => {
     const userId = req.userId;
     const foreignUserId = req.query.foreignUserId;
+
+
+    if (userId === foreignUserId) {
+        res.status(400).json('both user id should be unique');
+        return;
+    }
 
     const removeAction = req.query.action;
 
