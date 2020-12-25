@@ -17,6 +17,7 @@ const { imageUploadConstParams, dynamoClient, s3, tableName } = require('../conf
 router.post('/', async (req, res) => {
 
     const creatorId = req.query.creatorId;
+    
     if (!creatorId) {
         res.status(400).json('creator id is required');
         return;

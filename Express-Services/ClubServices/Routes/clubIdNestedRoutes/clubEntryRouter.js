@@ -1,4 +1,4 @@
-const router = require('express').Router();
+const   router = require('express').Router();
 
 const { AudienceSchemaWithDatabaseKeys, AudienceSchema } = require('../../Schemas/Audience');
 
@@ -13,11 +13,11 @@ router.post('/', async (req, res) => {
 
     const clubId = req.clubId;
     const audienceId = req.query.userId;
-
     if (!audienceId) {
         res.status(400).json('user id is required in query parameters');
         return;
     }
+
 
     try {
         // checking if user already exists as audience
@@ -32,9 +32,8 @@ router.post('/', async (req, res) => {
         };
 
         const oldAudienceDoc = (await dynamoClient.get(_oldAudienceDocQuery).promise())['Item'];
-
         if (oldAudienceDoc) {
-            res.status(204).json(oldAudienceDoc);
+            res.status(202).json(oldAudienceDoc);
             return;
         } else
             console.log('no old doc exists for this request hence this is new audience');
@@ -42,6 +41,8 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.log('no old doc exists for this request hence this is new audience, completed with error: ', error);
     }
+
+    console.log("Adding new audience")
 
     // new audience, it is :)
 
@@ -91,7 +92,7 @@ router.post('/', async (req, res) => {
             ]
         };
 
-        ynamoClient.transactWrite(_transactQuery, async (err, data) => {
+        dynamoClient.transactWrite(_transactQuery, async (err, data) => {
             if (err) res.status(404).json('Error marking entry of user');
             else {
                 const responseResult = await AudienceSchema.validateAsync({
