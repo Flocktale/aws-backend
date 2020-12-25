@@ -43,7 +43,7 @@ Resources:
 
         - AttributeName: S_K
           AttributeType: S
-        
+
         - AttributeName: ClubCreatorIdField
           AttributeType: S
 
@@ -67,7 +67,7 @@ Resources:
 
         - AttributeName: timestamp
           AttributeType: N
-        
+
         - AttributeName: scheduleTime
           AttributeType: N
 
@@ -79,7 +79,6 @@ Resources:
           KeyType: RANGE
 
       GlobalSecondaryIndexes:
-        
         - IndexName: ClubCategoryIndex
           KeySchema:
             - AttributeName: category
@@ -95,11 +94,10 @@ Resources:
             - AttributeName: ClubCreatorIdField
               KeyType: HASH
 
-            - AttributeName: timestamp
+            - AttributeName: scheduleTime
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields
-
 
         - IndexName: UsernameSortIndex
           KeySchema:

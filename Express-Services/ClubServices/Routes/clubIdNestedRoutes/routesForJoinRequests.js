@@ -139,7 +139,10 @@ router.post('/', async (req, res) => {
                 P_K: counterDoc.P_K,
                 S_K: counterDoc.S_K
             },
-            UpdateExpression: 'set count = count + :counter',
+            UpdateExpression: 'set #cnt = #cnt + :counter',
+            ExpressionAttributeNames: {
+                '#cnt': 'count'
+            },
             ExpressionAttributeValues: {
                 ':counter': 1,
             }
@@ -306,7 +309,10 @@ router.post('/:resp', async (req, res) => {
                 P_K: counterDoc.P_K,
                 S_K: counterDoc.S_K
             },
-            UpdateExpression: 'set count = count + :counter',       //incrementing
+            UpdateExpression: 'set #cnt = #cnt + :counter',       //incrementing
+            ExpressionAttributeNames: {
+                '#cnt': 'count'
+            },
             ExpressionAttributeValues: {
                 ':counter': 1,
             }

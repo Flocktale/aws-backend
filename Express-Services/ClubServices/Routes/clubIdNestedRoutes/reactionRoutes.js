@@ -7,52 +7,125 @@ const Joi = require('joi');
 
 
 // required
-// query parameters - "previousIndexValue" , "currentIndexValue" (values should be integer) , "audienceId"
+// query parameters - "indexValue" , "audienceId"
 
 router.post('/', async (req, res) => {
 
     const clubId = req.clubId;
-
-    const previousIndexValue = req.query.previousIndexValue;
-    const currentIndexValue = req.query.currentIndexValue;
-
+    const newIndexValue = req.query.indexValue;
     const audienceId = req.query.audienceId;
-
 
     if (!audienceId) {
         res.status(400).json('audienceId is required');
         return;
     }
 
-    if ((!currentIndexValue) && (!previousIndexValue)) {
-        res.status(400).json('when currentIndexValue is null then previousIndexValue should be an integer');
-        return;
-    }
-
     try {
-        await Joi.number().integer().description('invalid previousIndexValue, only integer accepted (optional)').validateAsync(previousIndexValue);
-        await Joi.number().integer().description('invalid currentIndexValue, only integer accepted (optional)').validateAsync(currentIndexValue);
+        await Joi.number().integer().valid(0, 1, 2).validateAsync(newIndexValue);
     } catch (error) {
-        res.status(400).json(error);
+        res.status(400).json(` indexValue should be a valid integer (0,1,2) :${error}`);
         return;
     }
 
+    const _reactionDocKey = {
+        P_K: `CLUB#${clubId}`,
+        S_K: `REACT#${audienceId}`
+    };
 
+    const _oldReactionQuery = {
+        TableName: tableName,
+        Key: _reactionDocKey,
+    };
 
+    let _oldReactionDoc;
 
     const _transactQuery = { TransactItems: [] };
 
-    const _reactionCounterQuery = {         //by default => increment (Key required)
-        TableName: tableName,
-        UpdateExpression: 'set count = count + :counter',
-        ExpressionAttributeValues: {
-            ':counter': 1,
-        }
-    };
+    try {
+        _oldReactionDoc = (await dynamoClient.get(_oldReactionQuery).promise())['Item'];
+    } catch (error) {
+        console.log('error in fetching old reaction document: ', error);
+    }
 
-    if (currentIndexValue)                 // if a user select new reaction on club  
-    {
-        console.log('new reaction of user on club id:' + clubId + '     reaction: ' + currentIndexValue);
+
+    if (_oldReactionDoc) {
+
+        const previousIndexValue = _oldReactionDoc.indexValue;
+
+        // decrementing counter of previous reaction
+        _transactQuery['TransactItems'].push({
+            Update: {
+                TableName: tableName,
+                Key: {
+                    P_K: `CLUB#${clubId}`,
+                    S_K: `CountReaction#${previousIndexValue}`
+                },
+                UpdateExpression: 'set #cnt = #cnt - :counter',
+                ExpressionAttributeNames: {
+                    '#cnt': 'count'
+                },
+                ExpressionAttributeValues: {
+                    ':counter': 1
+                }
+            }
+        });
+
+        if (previousIndexValue === newIndexValue) {
+            _transactQuery['TransactItems'].push({
+                Delete: {
+                    TableName: tableName,
+                    Key: _reactionDocKey,
+                }
+            });
+        } else {
+
+            // incremeting counter of new reaction
+            transactQuery['TransactItems'].push({
+                Update: {
+                    TableName: tableName,
+                    Key: {
+                        P_K: `CLUB#${clubId}`,
+                        S_K: `CountReaction#${newIndexValue}`
+                    },
+                    UpdateExpression: 'set #cnt = #cnt + :counter',
+                    ExpressionAttributeNames: {
+                        '#cnt': 'count'
+                    },
+                    ExpressionAttributeValues: {
+                        ':counter': 1
+                    }
+                }
+            });
+
+            _oldReactionDoc['indexValue'] = newIndexValue;
+            _oldReactionDoc['timestamp'] = Date.now();
+
+            const _updatedReactionDoc = await ReactionSchemaWithDatabaseKeys.validateAsync(_oldReactionDoc);
+
+            // upadating index value of reaction doc
+            transactQuery['TransactItems'].push({
+                Update: {
+                    TableName: tableName,
+                    Key: _reactionDocKey,
+                    UpdateExpression: 'set #indVal = :val, #tsp = :tsp, #tspSort = :tspSort ',
+                    ExpressionAttributeNames: {
+                        '#indVal': 'indexValue',
+                        '#tsp': 'timestamp',
+                        '#tspSort': 'TimestampSortField'
+                    },
+                    ExpressionAttributeValues: {
+                        ':val': _updatedReactionDoc.indexValue,
+                        ":tsp": _updatedReactionDoc.timestamp,
+                        ':tspSort': _updatedReactionDoc.TimestampSortField
+                    }
+                }
+            });
+
+        }
+
+    } else {
+        // generating new reaction doc for user
+
 
         const _userSummaryQuery = {
             TableName: tableName,
@@ -67,6 +140,7 @@ router.post('/', async (req, res) => {
 
         try {
 
+            // fetching user summary data
             user = (await dynamoClient.get(_userSummaryQuery).promise())['Item'];
 
             if (!user) {
@@ -78,7 +152,7 @@ router.post('/', async (req, res) => {
             reactionDoc = await ReactionSchemaWithDatabaseKeys.validateAsync({
                 clubId: clubId,
                 user: user,
-                indexValue: currentIndexValue
+                indexValue: newIndexValue
             });
 
         } catch (error) {
@@ -86,44 +160,31 @@ router.post('/', async (req, res) => {
             return;
         }
 
+
         const _reactionDocQuery = {
             TableName: tableName,
             Item: reactionDoc
         };
-        _transactQuery['TransactItems'].push({ Put: _reactionDocQuery });   // created reaction document of user
-        const _incrementCounter = _reactionCounterQuery;
+        _transactQuery['TransactItems'].push({ Put: _reactionDocQuery });   // creating reaction document of user
 
-        _incrementCounter['Key'] = {        // by default set to increment the counter
-            P_K: `CLUB#${clubId}`,
-            S_K: `CountReaction#${reactionDoc.indexValue}`
-        };
-
-        _transactQuery['TransactItems'].push({ Update: _incrementCounter });    // incremented counter 
-
-
-    } else {       // if a user only un-react on club (i.e. remove reaction)
-        // then delete the reaction document, decrement counter will be handled by previousIndexValue 
-
-        const _removeReactionQuery = {
-            TableName: tableName,
-            Key: {
-                P_K: `CLUB#${clubId}`,
-                S_K: `REACT#${userId}`
+        // incremeting counter of new reaction
+        transactQuery['TransactItems'].push({
+            Update: {
+                TableName: tableName,
+                Key: {
+                    P_K: `CLUB#${clubId}`,
+                    S_K: `CountReaction#${newIndexValue}`
+                },
+                UpdateExpression: 'set #cnt = #cnt + :counter',
+                ExpressionAttributeNames: {
+                    '#cnt': 'count'
+                },
+                ExpressionAttributeValues: {
+                    ':counter': 1
+                }
             }
-        };
-        _transactQuery['TransactItems'].push({ Delete: _removeReactionQuery });
-    }
+        });
 
-
-    if (previousIndexValue) {
-        const _decrementCounter = _reactionCounterQuery;
-        _decrementCounter['Key'] = {
-            P_K: `CLUB#${clubId}`,
-            S_K: `CountReaction#${previousIndexValue}`
-        };
-        _decrementCounter['UpdateExpression'] = 'set count = count - :counter'; //  set to decrement the counter
-
-        _transactQuery['TransactItems'].push({ Update: _decrementCounter });    // decremented counter 
     }
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
@@ -134,6 +195,8 @@ router.post('/', async (req, res) => {
         }
     });
 });
+
+
 
 
 

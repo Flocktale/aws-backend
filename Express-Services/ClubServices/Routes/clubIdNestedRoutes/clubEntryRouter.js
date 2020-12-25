@@ -1,4 +1,4 @@
-const   router = require('express').Router();
+const router = require('express').Router();
 
 const { AudienceSchemaWithDatabaseKeys, AudienceSchema } = require('../../Schemas/Audience');
 
@@ -79,7 +79,10 @@ router.post('/', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: 'CountAudience#'
             },
-            UpdateExpression: 'set count = count + :counter',
+            UpdateExpression: 'set #cnt = #cnt + :counter',
+            ExpressionAttributeNames: {
+                '#cnt': 'count'
+            },
             ExpressionAttributeValues: {
                 ':counter': 1,
             }
