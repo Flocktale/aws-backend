@@ -12,10 +12,14 @@ router.use('/avatar', avatarRouter);
 router.use('/relations', relationsRouter);
 
 
+//query parameters - "primaryUserId"
 //! Get user by userId
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
 
     const userId = req.userId;
+    const primaryUserId = req.query.primaryUserId;
+
+
     const query = {
         Key: {
             P_K: `USER#${userId}`,
@@ -28,17 +32,36 @@ router.get("/", (req, res) => {
         ],
         TableName: tableName
     };
+    var relationQuery;
 
-    dynamoClient.get(query, (err, data) => {
-        if (err) {
-            console.log(err);
-            res.status(404).json(err);
+    if (primaryUserId) {
+        relationQuery = {
+            Key: {
+                P_K: `USER#${primaryUserId}`,
+                S_K: `RELATION#${userId}`
+            },
+            AttributesToGet: ["relationIndexObj"],
+            TableName: tableName,
+        };
+    }
+
+    try {
+        const userData = (await dynamoClient.get(query).promise())['Item'];
+        var relationIndexObj;
+        if (relationQuery) {
+            relationIndexObj = (await dynamoClient.get(relationQuery).promise())['Item'].relationIndexObj;
         }
-        else {
-            console.log(data);
-            res.status(200).json(data['Item']);
-        }
-    });
+
+
+        res.status(200).json({
+            user: data['Item'],
+            relationIndexObj: relationIndexObj,
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(404).json(err);
+    }
 
 });
 
