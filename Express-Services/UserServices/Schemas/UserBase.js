@@ -45,7 +45,6 @@ const UserBaseCompleteSchema = UserInputSchemaWithDatabaseKeys.append({
     followingCount: Joi.number().integer().min(0).default(0),
     clubsCreated: Joi.number().integer().min(0).default(0),
     clubsParticipated: Joi.number().integer().min(0).default(0),
-    kickedOutCount: Joi.number().integer().min(0).default(0),
     clubsJoinRequests: Joi.number().integer().min(0).default(0),
     clubsAttended: Joi.number().integer().min(0).default(0),
 

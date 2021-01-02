@@ -3,7 +3,6 @@ const Joi = require('joi');
 const AudienceSchema = Joi.object({
     clubId: Joi.string().required(),
 
-    isKickedOut: Joi.boolean().default(false),
     isPartcipant: Joi.boolean().default(false),
     joinRequested: Joi.boolean().default(false),
 
@@ -31,8 +30,7 @@ const AudienceSchemaWithDatabaseKeys = AudienceSchema.append({
         .default((parent, helpers) => {
             let counter = 0;
             let prefix;
-            if (parent.isKickedOut === true) { counter++; prefix = "KickedOut#"; }
-            else if (parent.isPartcipant === true) { counter++; prefix = "Participant#"; }
+            if (parent.isPartcipant === true) { counter++; prefix = "Participant#"; }
             else if (parent.joinRequested === true) { counter++; prefix = "ActiveJoinRequest#"; }
 
             if (counter === 1)

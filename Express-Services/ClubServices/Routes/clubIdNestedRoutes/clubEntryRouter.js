@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
             },
-            AttributesToGet: ['clubId', 'isKickedOut', 'isParticipant', 'joinRequested',
+            AttributesToGet: ['clubId', 'isParticipant', 'joinRequested',
                 'joinRequestAttempts', 'audience', 'timestamp'],
         };
 

@@ -12,7 +12,6 @@ router.post('/', async (req, res) => {
 
     const audienceId = req.query.audienceId;
 
-
     if (!audienceId) {
         res.status(400).json('audienceId is required');
         return;
@@ -23,8 +22,7 @@ router.post('/', async (req, res) => {
     const _attributeUpdates = {
         timestamp: { "Action": "PUT", "Value": newTimestamp },
         isPartcipant: { "Action": "PUT", "Value": false },
-        isKickedOut: { "Action": "PUT", "Value": true },
-        AudienceDynamicField: { "Action": "PUT", "Value": `KickedOut#${newTimestamp}#${audienceId}` },
+        AudienceDynamicField: { "Action": "DELETE" },
     };
 
     const _audienceKickedQuery = {
@@ -76,84 +74,5 @@ router.post('/', async (req, res) => {
     });
 });
 
-// required
-// headers - "lastevaluatedkey"  (optional)
-
-router.get('/', async (req, res) => {
-
-    const clubId = req.clubId;
-
-    const query = {
-        TableName: tableName,
-        IndexName: audienceDynamicDataIndex,
-        Limit: 30,
-        KeyConditions: {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`CLUB#${clubId}`]
-            },
-            "AudienceDynamicField": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": [`KickedOut#`]
-            },
-        },
-        AttributesToGet: ['audience', 'timestamp'],
-        ScanIndexForward: false,
-        ReturnConsumedCapacity: "INDEXES"
-    };
-
-    if (req.headers.lastevaluatedkey) {
-        query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
-    }
-
-    dynamoClient.query(query, (err, data) => {
-        if (err) res.status(404).json(err);
-        else {
-            console.log(data);
-            res.status(200).json({
-                "kickedOutParticipants": data["Items"],
-                'lastevaluatedkey': data["LastEvaluatedKey"]
-            });
-        }
-    });
-});
-
-
-//required
-// query parameters - "audienceId"
-
-router.post('/revoke', async (req, res) => {
-    const clubId = req.clubId;
-
-    const audienceId = req.query.audienceId;
-
-    if (!audienceId) {
-        res.status(400).json('audienceId is required');
-        return;
-    }
-
-    const _attributeUpdates = {
-        isKickedOut: { "Action": "PUT", "Value": false },
-        AudienceDynamicField: { "Action": "DELETE" },
-    };
-
-    const _audienceUnKickedQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `CLUB#${clubId}`,
-            S_K: `AUDIENCE#${audienceId}`
-        },
-        AttributeUpdates: _attributeUpdates,
-    }
-
-    dynamoClient.update(_audienceUnKickedQuery, (err, data) => {
-        if (err) res.status(404).json(`Error un-kicking the user: ${err}`);
-        else {
-            console.log(data);
-            res.status(201).json('Un-kicked the user');
-        }
-        return;
-    });
-});
 
 module.exports = router;

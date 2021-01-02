@@ -24,8 +24,6 @@
 # Response to join-request
 # Get Active Participant for club  (List with username, avatar and timestamp)
 # Kick out a participant
-# Get list of kicked out people by club
-# Un-Kick a user from club
 */
 
 

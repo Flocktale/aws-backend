@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const Joi = require('joi');
 
-
 const { sortedSocialRelationByUsernameIndex, dynamoClient, tableName } = require('../config');
 
 
@@ -28,7 +27,7 @@ router.get("/", async (req, res) => {
         AttributesToGet: [
             'userId', 'username', 'avatar', 'createdOn', 'modifiedOn', 'name', 'phone', 'email', 'bio', 'termsAccepted',
             'policyAccepted', 'lngPref', 'regionCode', 'geoLat', 'geoLong',
-            'followerCount', 'followingCount', 'clubsCreated', 'clubsParticipated', 'kickedOutCount', 'clubsJoinRequests', 'clubsAttended'
+            'followerCount', 'followingCount', 'clubsCreated', 'clubsParticipated', 'clubsJoinRequests', 'clubsAttended'
         ],
         TableName: tableName
     };

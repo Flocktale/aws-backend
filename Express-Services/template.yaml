@@ -205,18 +205,7 @@ Resources:
             Path: /clubs/{clubId}/kick
             Method: post
 
-        GetKickedOutPeopleList:
-          Type: Api
-          Properties:
-            Path: /clubs/{clubId}/kick
-            Method: get
-
-        UnKickAPerson:
-          Type: Api
-          Properties:
-            Path: /clubs/{clubId}/kick/revoke
-            Method: post
-
+      
 Outputs:
   UserServiceAPIs:
     Description: "API Gateway endpoint URL for Prod stage"

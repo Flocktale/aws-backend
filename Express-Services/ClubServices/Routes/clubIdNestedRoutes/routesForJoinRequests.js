@@ -74,7 +74,7 @@ router.post('/', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
             },
-            AttributesToGet: ['clubId', 'isKickedOut', 'isParticipant', 'joinRequested',
+            AttributesToGet: ['clubId', 'isParticipant', 'joinRequested',
                 'joinRequestAttempts', 'audience', 'timestamp'],
         };
 
@@ -93,12 +93,7 @@ router.post('/', async (req, res) => {
 
 
     try {
-        // We don't let kicked out people request to join club
-        if (audienceDoc.isKickedOut === true) {
-            // forbidden (403)
-            res.status(403).json('User is kicked out by owner, can not request to join!');
-            return;
-        } else if (audienceDoc.isPartcipant === true) {
+        if (audienceDoc.isPartcipant === true) {
             //  conflict (409) since user is already a partcipant.
             res.status(409).json('User is already a participant');
             return;
@@ -127,7 +122,6 @@ router.post('/', async (req, res) => {
                 ':request': true,
                 ':dynamicField': result.AudienceDynamicField,
                 ':counter': 1,
-
             }
         };
 
