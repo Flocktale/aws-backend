@@ -126,6 +126,14 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: WsTable
+        - DynamoDBCrudPolicy:
+            TableName: MyTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - "execute-api:ManageConnections"
+              Resource:
+                - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GeneralWebsocket}/*"
 
   OnConnectPermission:
     Type: AWS::Lambda::Permission
@@ -167,7 +175,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: WsTable
         - DynamoDBCrudPolicy:
-            TableName: myTable
+            TableName: MyTable
         - Statement:
             - Effect: Allow
               Action:
@@ -195,7 +203,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: WsTable
         - DynamoDBCrudPolicy:
-            TableName: myTable
+            TableName: MyTable
         - Statement:
             - Effect: Allow
               Action:

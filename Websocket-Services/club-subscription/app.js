@@ -6,7 +6,7 @@ AWS.config.update({
 const ddb = new AWS.DynamoDB.DocumentClient();
 
 const WsTable = 'WsTable';
-const myTable = 'myTable';
+const myTable = 'MyTable';
 const timestampSortIndex = 'TimestampSortIndex';
 
 exports.handler = async event => {
@@ -15,20 +15,27 @@ exports.handler = async event => {
     const clubId = event.headers.clubId;
 
     if ((!toggleMethod) || (!(toggleMethod === 'enter' || toggleMethod === 'exit')) || (!clubId)) {
-        return { statusCode: 400, body: 'Bad request. toggleMethod should be either enter or exit. ClubId should also exist in headers' };
+        return {
+            statusCode: 400,
+            body: 'Bad request. toggleMethod should be either enter or exit. ClubId should also exist in headers'
+        };
     }
 
 
     if (toggleMethod === 'enter') {
-        const putParams = {
+        const updateParams = {
             TableName: WsTable,
-            Item: {
-                connectionId: event.requestContext.connectionId,
-                skey: `CLUB#${clubId}`,
+            Key: {
+                connectionId: event.requestContext.connectionId
+            },
+            UpdateExpression: 'SET skey = :skey',
+            ExpressionAttributeValues: {
+                ':skey': `CLUB#${clubId}`,
             }
+
         };
         try {
-            await ddb.put(putParams).promise();
+            await ddb.update(updateParams).promise();
 
 
             const apigwManagementApi = new AWS.ApiGatewayManagementApi({
@@ -52,24 +59,42 @@ exports.handler = async event => {
             const oldComments = await ddb.query(_query).promise();
 
 
-            return { statusCode: 200, body: 'Subscribed to club: ' + clubId, oldComments: oldComments['Items'] };
+            return {
+                statusCode: 200,
+                body: 'Subscribed to club: ' + clubId,
+                oldComments: oldComments['Items']
+            };
         } catch (err) {
-            return { statusCode: 500, body: 'Failed to subscribe: ' + JSON.stringify(err) };
+            return {
+                statusCode: 500,
+                body: 'Failed to subscribe: ' + JSON.stringify(err)
+            };
         }
     } else if (toggleMethod === 'exit') {
-        const deleteParams = {
+        const updateParams = {
             TableName: WsTable,
-            Key: { connectionId: event.requestContext.connectionId }
-        }
+            Key: {
+                connectionId: event.requestContext.connectionId
+            },
+            UpdateExpression: 'REMOVE skey',
+        };
         try {
-            await ddb.delete(deleteParams).promise();
-            return { statusCode: 200, body: 'Unsubscribed from club: ' + clubId };
+            await ddb.update(updateParams).promise();
+            return {
+                statusCode: 200,
+                body: 'Unsubscribed from club: ' + clubId
+            };
         } catch (error) {
-            return { statusCode: 500, body: 'Failed to Unsubscribe: ' + JSON.stringify(err) };
+            return {
+                statusCode: 500,
+                body: 'Failed to Unsubscribe: ' + JSON.stringify(err)
+            };
         }
 
     } else {
-        return { statusCode: 500, body: 'Unexpected toggleMethod value, valid are - enter, exit' };
+        return {
+            statusCode: 500,
+            body: 'Unexpected toggleMethod value, valid are - enter, exit'
+        };
     }
-
 };

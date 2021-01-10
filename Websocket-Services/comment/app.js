@@ -1,7 +1,12 @@
-import { nanoid } from 'nanoid'
+const {
+    nanoid
+} = require('nanoid');
 const AWS = require('aws-sdk');
 
-const { CommentSchema, CommentSchemaWithDatabaseKeys } = require('./Schemas/Comment');
+const {
+    CommentSchema,
+    CommentSchemaWithDatabaseKeys
+} = require('./Schemas/Comment');
 
 AWS.config.update({
     region: "us-east-1",
@@ -10,7 +15,7 @@ AWS.config.update({
 const ddb = new AWS.DynamoDB.DocumentClient();
 
 const WsTable = 'WsTable';
-const myTable = 'myTable';
+const myTable = 'MyTable';
 const wsInvertIndex = 'wsInvertIndex';
 
 exports.handler = async event => {
@@ -18,7 +23,10 @@ exports.handler = async event => {
     const body = JSON.parse(event.body);
 
     if (!body) {
-        return { statusCode: 400, body: 'Body should exist.' };
+        return {
+            statusCode: 400,
+            body: 'Body should exist.'
+        };
     }
 
     const userId = body.userId;
@@ -38,15 +46,15 @@ exports.handler = async event => {
 
         const user = (await dynamoClient.get(_userSummaryQuery).promise())['Item'];
 
-        result = CommentSchemaWithDatabaseKeys.validateAsync({
+        result = await CommentSchemaWithDatabaseKeys.validateAsync({
             clubId: body.clubId,
             user: user,
             commentId: nanoid(),
             body: body.body,
         });
 
-        postComment = CommentSchema.validateAsync({
-            clubId: clubId,
+        postComment = await CommentSchema.validateAsync({
+            clubId: result.clubId,
             commentId: result.commentId,
             user: user,
             body: result.body,
@@ -54,7 +62,10 @@ exports.handler = async event => {
         });
 
     } catch (error) {
-        return { statusCode: 400, body: `Invalid data : ${error}` };
+        return {
+            statusCode: 400,
+            body: `Invalid data : ${error}`
+        };
     }
 
     const putParams = {
@@ -65,15 +76,18 @@ exports.handler = async event => {
     try {
         await ddb.put(putParams).promise();
     } catch (err) {
-        return { statusCode: 500, body: 'Failed to comment: ' + JSON.stringify(err) };
+        return {
+            statusCode: 500,
+            body: 'Failed to comment: ' + JSON.stringify(err)
+        };
     }
 
     const _query = {
         TableName: WsTable,
         IndexName: wsInvertIndex,
-        KeyConditionExpression: 'skey= :hkey',
+        KeyConditionExpression: 'skey= :skey',
         ExpressionAttributeValues: {
-            ":hkey": `CLUB#${result.clubId}`,
+            ":skey": `CLUB#${result.clubId}`,
         },
         AttributesToGet: ['connectionId'],
     };
@@ -83,7 +97,10 @@ exports.handler = async event => {
     try {
         connectionData = await ddb.query(_query).promise();
     } catch (e) {
-        return { statusCode: 500, body: e.stack };
+        return {
+            statusCode: 500,
+            body: e.stack
+        };
     }
 
     const apigwManagementApi = new AWS.ApiGatewayManagementApi({
@@ -91,17 +108,22 @@ exports.handler = async event => {
         endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
     });
 
-    const postCalls = connectionData.Items.map(async ({ connectionId }) => {
+    const postCalls = connectionData.Items.map(async ({
+        connectionId
+    }) => {
         try {
             await apigwManagementApi.postToConnection({
-                ConnectionId: connectionId, Data: postComment
+                ConnectionId: connectionId,
+                Data: JSON.stringify(postComment)
             }).promise();
         } catch (error) {
             if (error.statusCode === 410) {
                 console.log(`Found stale connection, deleting ${connectionId} of username: ${result.username} from club with clubId: ${result.clubId}`);
                 await ddb.delete({
                     TableName: WsTable,
-                    Key: { connectionId: connectionId }
+                    Key: {
+                        connectionId: connectionId
+                    }
                 }).promise();
             } else {
                 throw error;
@@ -112,8 +134,14 @@ exports.handler = async event => {
     try {
         await Promise.all(postCalls);
     } catch (e) {
-        return { statusCode: 500, body: e.stack };
+        return {
+            statusCode: 500,
+            body: e.stack
+        };
     }
 
-    return { statusCode: 200, body: 'Commented successfully .' };
+    return {
+        statusCode: 200,
+        body: 'Commented successfully .'
+    };
 };
