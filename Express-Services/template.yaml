@@ -205,7 +205,12 @@ Resources:
             Path: /clubs/{clubId}/kick
             Method: post
 
-      
+        GenerateAgoraToken:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/agora/token/create
+            Method: post
+
 Outputs:
   UserServiceAPIs:
     Description: "API Gateway endpoint URL for Prod stage"

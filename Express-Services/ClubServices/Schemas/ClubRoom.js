@@ -11,13 +11,14 @@ const ClubInputSchema = Joi.object({
         avatar: Joi.string().required(),
     }).required(),
 
+    agoraToken: Joi.string(),
 
-    timeWindow: Joi.number().integer().default(1800).min(300),  // expected duration of club entered at time of creation (default 1800 seconds i.e. 30 minutes)
+    timeWindow: Joi.number().integer().default(1800).min(300), // expected duration of club entered at time of creation (default 1800 seconds i.e. 30 minutes)
 
 
     category: Joi.string().valid(
         'Entrepreneurship', 'Education', 'Comedy', 'Travel', 'Society',
-        'Health', 'Finance', 'Sports', 'Other').required(),                  // GSI: ClubCategoryIndex 
+        'Health', 'Finance', 'Sports', 'Other').required(), // GSI: ClubCategoryIndex 
 
     createdOn: Joi.number().default(() => Date.now()),
     modifiedOn: Joi.number().default(Joi.ref('createdOn')),
@@ -43,15 +44,15 @@ const ClubInputSchemaWithDatabaseKeys = ClubInputSchema.append({
 
     S_K: Joi.string().default(Joi.expression('CLUBMETA#{{clubId}}')),
 
-    ClubCreatorIdField: Joi.string().default(Joi.expression('USER#{{creator.userId}}')),            // GSI: ClubCreatorIdIndex
+    ClubCreatorIdField: Joi.string().default(Joi.expression('USER#{{creator.userId}}')), // GSI: ClubCreatorIdIndex
 
-    PublicSearch: Joi.number().integer().valid(0, 1).default(1),                        // GSI : SearchByUsernameIndex
-    FilterDataName: Joi.string().default(Joi.expression('CLUB#{{clubName}}')),          // GSI : SearchByUsernameIndex
+    PublicSearch: Joi.number().integer().valid(0, 1).default(1), // GSI : SearchByUsernameIndex
+    FilterDataName: Joi.string().default(Joi.expression('CLUB#{{clubName}}')), // GSI : SearchByUsernameIndex
 
 });
 
 const ClubRoomCompleteSchema = ClubInputSchemaWithDatabaseKeys.append({
-    duration: Joi.number().integer().min(300),          // real duration (real playtime of club)   
+    duration: Joi.number().integer().min(300), // real duration (real playtime of club)   
 });
 
 

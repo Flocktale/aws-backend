@@ -1,6 +1,10 @@
 const router = require('express').Router();
 
-const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../config');
+const {
+    audienceDynamicDataIndex,
+    dynamoClient,
+    tableName
+} = require('../config');
 
 
 const avatarRouter = require('./clubIdNestedRoutes/avatarRoutes');
@@ -10,12 +14,16 @@ const reportRouter = require('./clubIdNestedRoutes/reportRoutes');
 const joinRequestRouter = require('./clubIdNestedRoutes/routesForJoinRequests');
 const kickFeatureRouter = require('./clubIdNestedRoutes/kickFeatureRoutes');
 
+const agoraRouter = require('./clubIdNestedRoutes/agoraRoutes');
+
 router.use('/avatar', avatarRouter);
 router.use('/enter', clubEntryRouter);
 router.use('/reactions', reactionRouter);
 router.use('/reports', reportRouter);
 router.use('/join-request', joinRequestRouter);
 router.use('/kick', kickFeatureRouter);
+
+router.use('/agora', agoraRouter);
 
 // _________________________________________________________________________________________________________________________________________________________
 // _________________________________________________________________________________________________________________________________________________________
@@ -36,8 +44,7 @@ router.get('/', async (req, res) => {
         if (err) {
             console.log(err);
             res.status(404).json(err);
-        }
-        else {
+        } else {
             console.log(data);
             res.status(200).json(data['Item']);
         }

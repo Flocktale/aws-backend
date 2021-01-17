@@ -6,6 +6,7 @@
   "author": "Mohit Mangal <mohimangal.ece18@itbhu.ac.in>",
   "license": "MIT",
   "dependencies": {
+    "agora-access-token": "^2.0.4",
     "aws-sdk": "~2.782.0",
     "aws-serverless-express": "~3.3.8",
     "cors": "~2.8.5",

@@ -28,6 +28,9 @@ const timestampSortIndex = "TimestampSortIndex";
 const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
 const searchByUsernameIndex = "SearchByUsernameIndex";
 
+const agoraAppId = "7c3800483bbc473bbf341e1d68f04a40";
+const agoraPrimaryCertificate = "8b55b57e5db34a41bf974321c8671339";
+
 
 
 module.exports = {
@@ -41,4 +44,7 @@ module.exports = {
     timestampSortIndex,
     audienceDynamicDataIndex,
     searchByUsernameIndex,
+
+    agoraAppId,
+    agoraPrimaryCertificate,
 };
