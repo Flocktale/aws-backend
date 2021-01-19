@@ -114,7 +114,11 @@ exports.handler = async event => {
         try {
             await apigwManagementApi.postToConnection({
                 ConnectionId: connectionId,
-                Data: JSON.stringify(postComment)
+                Data: JSON.stringify({
+                    user: postComment.user,
+                    body: postComment.body,
+                    timestamp: postComment.timestamp,
+                })
             }).promise();
         } catch (error) {
             if (error.statusCode === 410) {
