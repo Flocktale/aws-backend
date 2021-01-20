@@ -1,7 +1,11 @@
 const router = require('express').Router();
 const Joi = require('joi');
 
-const { searchByUsernameIndex, dynamoClient, tableName } = require('../config');
+const {
+    searchByUsernameIndex,
+    dynamoClient,
+    tableName
+} = require('../config');
 
 
 // required
@@ -14,7 +18,7 @@ router.get("/", async (req, res) => {
     const username = req.query.username;
 
     try {
-        const _schema = Joi.string().min(3).max(25).token().required();
+        const _schema = Joi.string().max(25).token().required();
         await _schema.validateAsync(username);
     } catch (e) {
         res.status(400).json(e);

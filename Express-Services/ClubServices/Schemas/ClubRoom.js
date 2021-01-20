@@ -29,7 +29,7 @@ const ClubInputSchema = Joi.object({
     //normal fields
 
     clubAvatar: Joi.string(),
-    decription: Joi.string(),
+    description: Joi.string(),
 
     isLocal: Joi.boolean().default(true),
     isGlobal: Joi.boolean().default(false),
