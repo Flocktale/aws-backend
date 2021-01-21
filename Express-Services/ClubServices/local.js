@@ -17,26 +17,18 @@ const {
 
 
 async function testing() {
-    const clubId = "hHvOI2XuLI_702QzsktgI";
-    const _clubQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `CLUB#${clubId}`,
-            S_K: `CLUBMETA#${clubId}`,
-        },
-        AttributesToGet: ['creator.userId', 'creator.username', 'creator'],
+    const ab = {
+        ran: 5,
+        def: 8
     };
 
-    try {
-        const _clubData = (await dynamoClient.get(_clubQuery).promise())['Item'];
-        console.log('data', _clubData);
-        console.log('data', _clubData.creator);
-        console.log('data', _clubData.creator.userId);
-    } catch (error) {
-        console.log('error', error);
+    const x = {
+        ...ab
+    };
+    x["jk"] = 10;
 
-    }
-
+    console.log(ab);
+    console.log(x);
 }
 
 testing();

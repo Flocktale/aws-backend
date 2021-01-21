@@ -109,6 +109,12 @@ Resources:
             Path: /clubs/query
             Method: get
 
+        UnifiedSearch:
+          Type: Api
+          Properties:
+            Path: /query
+            Method: get
+
         CreateClub:
           Type: Api
           Properties:

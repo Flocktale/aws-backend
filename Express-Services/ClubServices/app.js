@@ -36,11 +36,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const { clubCategoryIndex, dynamoClient, tableName } = require('./config');
+const {
+    clubCategoryIndex,
+    dynamoClient,
+    tableName
+} = require('./config');
 
 app.get("/clubs", async (req, res) => {
     var categoryList = ['Entrepreneurship', 'Education', 'Comedy', 'Travel', 'Society',
-        'Health', 'Finance', 'Sports', 'Other'];
+        'Health', 'Finance', 'Sports', 'Other'
+    ];
 
     var latestClubs = {
         categoryClubs: []
@@ -85,18 +90,21 @@ const queryClubRouter = require('./Routes/queryRoutes');
 
 const clubIdRouter = require('./Routes/clubIdRoutes');
 
+const unifiedQueryRouter = require('./Routes/QueryRoutes/unifiedQueryRoutes');
+
 app.use('/clubs/create', createClubRouter);
 
 app.use('/myclubs', myClubRouter);
 
 app.use('/clubs/query', queryClubRouter);
 
+app.use('/query', unifiedQueryRouter);
+
 app.use('/clubs/:clubId',
     (req, res, next) => {
         req.clubId = req.params.clubId;
         next();
-    }
-    , clubIdRouter
+    }, clubIdRouter
 );
 
 
