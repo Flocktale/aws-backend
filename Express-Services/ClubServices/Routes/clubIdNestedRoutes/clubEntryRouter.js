@@ -10,9 +10,10 @@ const { dynamoClient, tableName } = require('../../config');
 // body: AudienceSchemaWithDatabaseKeys validated
 
 router.post('/', async (req, res) => {
-
+    
     const clubId = req.clubId;
     const audienceId = req.query.userId;
+    
     if (!audienceId) {
         res.status(400).json('user id is required in query parameters');
         return;

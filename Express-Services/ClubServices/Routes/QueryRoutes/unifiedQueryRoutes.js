@@ -7,15 +7,36 @@ const {
     tableName
 } = require('../../config');
 
+
+
+async function getSearchResult(searchString,_query,type,attributes,req) {
+    const _specificQuery = {
+        ..._query
+    };
+    _specificQuery["Limit"] = 10;
+
+    var filterKey;
+    filterKey = `${type}#${searchString}`;
+    _specificQuery["AttributesToGet"] = attributes;
+    _specificQuery["KeyConditions"]["FilterDataName"]["AttributeValueList"] = [filterKey];
+
+    if (req.headers.lastevaluatedkey) {
+        _specificQuery['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
+    }
+
+    const specificData = await dynamoClient.query(_specificQuery).promise();
+    return specificData;
+}
+
+
+
 // required
 // query parameters - "searchString" , "type" (values are - "unified","clubs","users")
 // headers - "lastevaluatedkey"  (optional)
-
 router.get('/', async (req, res) => {
 
     const searchString = req.query.searchString;
     const type = req.query.type;
-
     try {
         await Joi.string().max(25).required().validateAsync(searchString);
         await Joi.string().valid("unified", "clubs", "users").required().validateAsync(type);
@@ -48,23 +69,11 @@ router.get('/', async (req, res) => {
 
 
     if (type === "unified") {
-        const _unifiedClubQuery = {
-            ..._query
-        };
-
-        _unifiedClubQuery["KeyConditions"]["FilterDataName"]["AttributeValueList"] = [`CLUB#${searchString}`];
-        _unifiedClubQuery["AttributesToGet"] = clubAttributes;
+       
 
 
-        const _unifiedUserQuery = {
-            ..._query
-        };
-        _unifiedUserQuery["KeyConditions"]["FilterDataName"]["AttributeValueList"] = [`USER#${searchString}`];
-        _unifiedUserQuery["AttributesToGet"] = userAttributes;
-
-
-        const clubData = await dynamoClient.query(_unifiedClubQuery).promise();
-        const userData = await dynamoClient.query(_unifiedUserQuery).promise();
+        const clubData = await getSearchResult(searchString,_query,"CLUB",clubAttributes,req);
+        const userData = await getSearchResult(searchString,_query,"USER",userAttributes,req)
 
         return res.status(200).json({
             clubs: clubData['Items'],
@@ -74,36 +83,18 @@ router.get('/', async (req, res) => {
             userlastevaluatedkey: userData["LastEvaluatedKey"],
         });
     } else {
-        const _specificQuery = {
-            ..._query
-        };
-        _specificQuery["Limit"] = 10;
-
-        var filterKey, attributes;
-
-        if (type === "clubs") {
-            attributes = clubAttributes;
-            filterKey = `CLUB#${searchString}`;
-        } else {
-            attributes = userAttributes;
-            filterKey = `USER#${searchString}`;
-        }
-
-        _specificQuery["AttributesToGet"] = attributes;
-        _specificQuery["KeyConditions"]["FilterDataName"]["AttributeValueList"] = [filterKey];
-
-        if (req.headers.lastevaluatedkey) {
-            _specificQuery['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
-        }
-
-        const specificData = await dynamoClient.query(_specificQuery).promise();
+        
         var result = {};
         if (type === "clubs") {
+            const specificData  = await getSearchResult(searchString,_query,"CLUB",clubAttributes,req)
             result["clubs"] = specificData["Items"];
+            result["lastevaluatedkey"] = specificData["LastEvaluatedKey"];
         } else {
+            // result["users"] = specificData["Items"];
+            const specificData  = await getSearchResult(searchString,_query,"USER",userAttributes,req)
             result["users"] = specificData["Items"];
+            result["lastevaluatedkey"] = specificData["LastEvaluatedKey"];
         }
-        result["lastevaluatedkey"] = specificData["LastEvaluatedKey"];
 
         return res.status(200).json(result);
     }
