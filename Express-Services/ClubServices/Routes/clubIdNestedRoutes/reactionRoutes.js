@@ -12,7 +12,7 @@ const Joi = require('joi');
 router.post('/', async (req, res) => {
 
     const clubId = req.clubId;
-    const newIndexValue = req.query.indexValue;
+    var newIndexValue = req.query.indexValue;
     const audienceId = req.query.audienceId;
 
     if (!audienceId) {
@@ -21,7 +21,8 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        await Joi.number().integer().valid(0, 1, 2).validateAsync(newIndexValue);
+        newIndexValue = await Joi.number().integer().valid(0, 1, 2).validateAsync(newIndexValue);
+        
     } catch (error) {
         res.status(400).json(` indexValue should be a valid integer (0,1,2) :${error}`);
         return;
@@ -47,7 +48,6 @@ router.post('/', async (req, res) => {
         console.log('error in fetching old reaction document: ', error);
     }
 
-
     if (_oldReactionDoc) {
 
         const previousIndexValue = _oldReactionDoc.indexValue;
@@ -69,7 +69,7 @@ router.post('/', async (req, res) => {
                 }
             }
         });
-
+        console.log(previousIndexValue,newIndexValue);
         if (previousIndexValue === newIndexValue) {
             _transactQuery['TransactItems'].push({
                 Delete: {
@@ -185,8 +185,10 @@ router.post('/', async (req, res) => {
             }
         });
 
-    }
+    }  
 
+    // _transactQuery.TransactItems.forEach((e)=>console.log(e));
+    
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
         if (err) res.status(404).json(`Error modifying reaction: ${err}`);
         else {

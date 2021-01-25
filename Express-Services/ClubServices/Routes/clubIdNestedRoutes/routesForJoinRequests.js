@@ -211,7 +211,7 @@ router.delete('/', async (req, res) => {
 router.post('/:resp', async (req, res) => {
 
     const clubId = req.clubId;
-
+  
     const requestAction = req.params.resp;
 
     const audienceId = req.query.audienceId;
@@ -220,6 +220,7 @@ router.post('/:resp', async (req, res) => {
         res.status(400).json('audienceId is required');
         return;
     }
+   
 
     try {
         const _schema = Joi.string().valid('accept', 'cancel').required();
@@ -228,7 +229,7 @@ router.post('/:resp', async (req, res) => {
         res.status(400).json('invalid response , valid => accept or cancel');
         return;
     }
-
+    
 
     let audienceDoc;
 
@@ -255,6 +256,7 @@ router.post('/:resp', async (req, res) => {
         return;
     }
 
+    
 
     if (audienceDoc.joinRequested !== true) {
         res.status(404).json("This user has no active join request.");
@@ -269,8 +271,10 @@ router.post('/:resp', async (req, res) => {
         audienceDoc['joinRequested'] = false;
         audienceDoc['isPartcipant'] = true;
         audienceDoc['timestamp'] = newTimestamp;
+        audienceDoc['clubId'] = clubId;
 
         var result;
+        
         try {
             result = await AudienceSchemaWithDatabaseKeys.validateAsync(audienceDoc);
         } catch (error) {
@@ -316,7 +320,7 @@ router.post('/:resp', async (req, res) => {
         const _transactQuery = {
             TransactItems: [
                 { Update: _audienceUpdateQuery },
-                { Update: _counterUpdateQuery }
+                // { Update: _counterUpdateQuery }
             ]
         };
 

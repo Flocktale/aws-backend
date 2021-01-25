@@ -17,6 +17,11 @@ router.post('/', async (req, res) => {
     const clubId = req.clubId;
     const userId = req.query.userId;
 
+    const reportBody = req.body.body;
+
+    if(!reportBody){
+        res.status(400).json('Body is Required');
+    }
 
     if (!userId) {
         res.status(400).json('userId is required');
@@ -50,7 +55,7 @@ router.post('/', async (req, res) => {
             clubId: clubId,
             user: user,
             reportId: reportId,
-            body: req.body.body,
+            body: reportBody,
         });
 
         const _putQuery = {
