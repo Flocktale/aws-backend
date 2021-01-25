@@ -80,7 +80,7 @@ router.post('/', async (req, res) => {
         } else {
 
             // incremeting counter of new reaction
-            transactQuery['TransactItems'].push({
+            _transactQuery['TransactItems'].push({
                 Update: {
                     TableName: tableName,
                     Key: {
@@ -103,7 +103,7 @@ router.post('/', async (req, res) => {
             const _updatedReactionDoc = await ReactionSchemaWithDatabaseKeys.validateAsync(_oldReactionDoc);
 
             // upadating index value of reaction doc
-            transactQuery['TransactItems'].push({
+            _transactQuery['TransactItems'].push({
                 Update: {
                     TableName: tableName,
                     Key: _reactionDocKey,
@@ -168,7 +168,7 @@ router.post('/', async (req, res) => {
         _transactQuery['TransactItems'].push({ Put: _reactionDocQuery });   // creating reaction document of user
 
         // incremeting counter of new reaction
-        transactQuery['TransactItems'].push({
+        _transactQuery['TransactItems'].push({
             Update: {
                 TableName: tableName,
                 Key: {
