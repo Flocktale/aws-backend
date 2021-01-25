@@ -196,7 +196,7 @@ Resources:
         RespondToJoinRequest:
           Type: Api
           Properties:
-            Path: /clubs/{clubId}/join-request/{resp}
+            Path: /clubs/{clubId}/join-request/response
             Method: post
 
         GetActiveParticipantsOfClub:

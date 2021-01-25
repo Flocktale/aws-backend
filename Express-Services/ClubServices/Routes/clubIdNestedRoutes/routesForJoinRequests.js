@@ -1,10 +1,20 @@
 const router = require('express').Router();
 const Joi = require('joi');
 
-const { AudienceSchemaWithDatabaseKeys, AudienceSchema } = require('../../Schemas/Audience');
-const { CountParticipantSchema, CountJoinRequestSchema } = require('../../Schemas/AtomicCountSchemas');
+const {
+    AudienceSchemaWithDatabaseKeys,
+    AudienceSchema
+} = require('../../Schemas/Audience');
+const {
+    CountParticipantSchema,
+    CountJoinRequestSchema
+} = require('../../Schemas/AtomicCountSchemas');
 
-const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../../config');
+const {
+    audienceDynamicDataIndex,
+    dynamoClient,
+    tableName
+} = require('../../config');
 
 
 // required
@@ -75,7 +85,8 @@ router.post('/', async (req, res) => {
                 S_K: `AUDIENCE#${audienceId}`,
             },
             AttributesToGet: ['clubId', 'isParticipant', 'joinRequested',
-                'joinRequestAttempts', 'audience', 'timestamp'],
+                'joinRequestAttempts', 'audience', 'timestamp'
+            ],
         };
 
         audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -125,7 +136,9 @@ router.post('/', async (req, res) => {
             }
         };
 
-        const counterDoc = await CountJoinRequestSchema.validateAsync({ clubId: clubId });
+        const counterDoc = await CountJoinRequestSchema.validateAsync({
+            clubId: clubId
+        });
 
         const _counterUpdateQuery = {
             TableName: tableName,
@@ -143,9 +156,12 @@ router.post('/', async (req, res) => {
         }
 
         const _transactQuery = {
-            TransactItems: [
-                { Update: _audienceUpdateQuery },
-                { Update: _counterUpdateQuery }
+            TransactItems: [{
+                    Update: _audienceUpdateQuery
+                },
+                {
+                    Update: _counterUpdateQuery
+                }
             ]
         };
 
@@ -206,13 +222,13 @@ router.delete('/', async (req, res) => {
 });
 
 
-// query parameters - "audienceId"
+// query parameters - "audienceId", "action"
 
-router.post('/:resp', async (req, res) => {
+router.post('/response', async (req, res) => {
 
     const clubId = req.clubId;
-  
-    const requestAction = req.params.resp;
+
+    const requestAction = req.query.action;
 
     const audienceId = req.query.audienceId;
 
@@ -220,7 +236,7 @@ router.post('/:resp', async (req, res) => {
         res.status(400).json('audienceId is required');
         return;
     }
-   
+
 
     try {
         const _schema = Joi.string().valid('accept', 'cancel').required();
@@ -229,7 +245,7 @@ router.post('/:resp', async (req, res) => {
         res.status(400).json('invalid response , valid => accept or cancel');
         return;
     }
-    
+
 
     let audienceDoc;
 
@@ -256,7 +272,7 @@ router.post('/:resp', async (req, res) => {
         return;
     }
 
-    
+
 
     if (audienceDoc.joinRequested !== true) {
         res.status(404).json("This user has no active join request.");
@@ -274,7 +290,7 @@ router.post('/:resp', async (req, res) => {
         audienceDoc['clubId'] = clubId;
 
         var result;
-        
+
         try {
             result = await AudienceSchemaWithDatabaseKeys.validateAsync(audienceDoc);
         } catch (error) {
@@ -283,23 +299,24 @@ router.post('/:resp', async (req, res) => {
             return;
         }
 
-        const _attributeUpdates = {
-            joinRequested: { "Action": "PUT", "Value": false },
-            AudienceDynamicField: { "Action": "PUT", "Value": result.AudienceDynamicField },
-            isPartcipant: { "Action": "PUT", "Value": true }
-        };
-
         const _audienceUpdateQuery = {
             TableName: tableName,
             Key: {
                 P_K: result.P_K,
                 S_K: result.S_K
             },
-            AttributeUpdates: _attributeUpdates,
+            UpdateExpression: 'SET joinRequested = :fal, AudienceDynamicField = :adf, isPartcipant = :tr',
+            ExpressionAttributeValues: {
+                ':fal': false,
+                ':tr': true,
+                ':adf': result.AudienceDynamicField,
+            },
         };
 
 
-        const counterDoc = await CountParticipantSchema.validateAsync({ clubId: clubId });
+        const counterDoc = await CountParticipantSchema.validateAsync({
+            clubId: clubId
+        });
 
         const _counterUpdateQuery = {
             TableName: tableName,
@@ -307,7 +324,7 @@ router.post('/:resp', async (req, res) => {
                 P_K: counterDoc.P_K,
                 S_K: counterDoc.S_K
             },
-            UpdateExpression: 'set #cnt = #cnt + :counter',       //incrementing
+            UpdateExpression: 'set #cnt = #cnt + :counter', //incrementing
             ExpressionAttributeNames: {
                 '#cnt': 'count'
             },
@@ -318,8 +335,9 @@ router.post('/:resp', async (req, res) => {
 
 
         const _transactQuery = {
-            TransactItems: [
-                { Update: _audienceUpdateQuery },
+            TransactItems: [{
+                    Update: _audienceUpdateQuery
+                },
                 // { Update: _counterUpdateQuery }
             ]
         };
@@ -336,19 +354,17 @@ router.post('/:resp', async (req, res) => {
 
     } else if (requestAction === 'cancel') {
 
-        const _attributeUpdates = {
-            joinRequested: { "Action": "PUT", "Value": false },
-            AudienceDynamicField: { "Action": "DELETE" },
-        };
-
-
         const _audienceUpdateQuery = {
             TableName: tableName,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`
             },
-            AttributeUpdates: _attributeUpdates,
+            UpdateExpression: 'SET joinRequested = :fal REMOVE AudienceDynamicField',
+            ExpressionAttributeValues: {
+                ':fal': false,
+            },
+
         };
 
         dynamoClient.update(_audienceUpdateQuery, (err, data) => {
