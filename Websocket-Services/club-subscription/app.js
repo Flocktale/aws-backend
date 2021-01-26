@@ -156,7 +156,7 @@ async function _getReactionCount(clubId, index, callback) {
 
     return callback(null, {
         what: "reactionCount",
-        indexValue: doc.indexValue,
+        indexValue: indexValue,
         count: doc.count,
     });
 }

@@ -35,7 +35,7 @@ exports.handler = async event => {
     const userId = body.userId;
 
     const _userSummaryQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`,
