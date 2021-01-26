@@ -47,7 +47,7 @@ exports.handler = async event => {
 
     try {
 
-        const user = (await dynamoClient.get(_userSummaryQuery).promise())['Item'];
+        const user = (await ddb.get(_userSummaryQuery).promise())['Item'];
 
         result = await CommentSchemaWithDatabaseKeys.validateAsync({
             clubId: body.clubId,
@@ -65,6 +65,7 @@ exports.handler = async event => {
         });
 
     } catch (error) {
+        console.log("error in getting user try catch block: ", error);
         return {
             statusCode: 400,
             body: `Invalid data : ${error}`
@@ -79,6 +80,7 @@ exports.handler = async event => {
     try {
         await ddb.put(putParams).promise();
     } catch (err) {
+        console.log('error in putting comment in table: ', err);
         return {
             statusCode: 500,
             body: 'Failed to comment: ' + JSON.stringify(err)
@@ -92,7 +94,7 @@ exports.handler = async event => {
         ExpressionAttributeValues: {
             ":skey": `CLUB#${result.clubId}`,
         },
-        AttributesToGet: ['connectionId'],
+        ProjectionExpression: 'connectionId',
     };
 
     var connectionData;
@@ -100,6 +102,7 @@ exports.handler = async event => {
     try {
         connectionData = await ddb.query(_query).promise();
     } catch (e) {
+        console.log('error in getting connectionData: ', e);
         return {
             statusCode: 500,
             body: e.stack
@@ -118,6 +121,7 @@ exports.handler = async event => {
             await apigwManagementApi.postToConnection({
                 ConnectionId: connectionId,
                 Data: JSON.stringify({
+                    what: "newComment",
                     user: postComment.user,
                     body: postComment.body,
                     timestamp: postComment.timestamp,
@@ -141,6 +145,7 @@ exports.handler = async event => {
     try {
         await Promise.all(postCalls);
     } catch (e) {
+        console.log('overall error:', e);
         return {
             statusCode: 500,
             body: e.stack

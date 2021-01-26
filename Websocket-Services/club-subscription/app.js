@@ -125,15 +125,27 @@ async function _getOldComments(clubId, callback) {
             ":hkey": `CLUB#${clubId}`,
             ":filter": `COMMENT-SORT-TIMESTAMP#`
         },
-        AttributesToGet: ['user', 'body', 'timestamp'],
+        ProjectionExpression: '#usr, #bdy, #tsp',
+        ExpressionAttributeNames: {
+            '#usr': 'user',
+            '#bdy': 'body',
+            '#tsp': 'timestamp',
+        },
         ScanIndexForward: false,
         Limit: 30,
     };
-    const oldComments = (await ddb.query(_commentQuery).promise())['Items'];
-    return callback({
-        what: "oldComments",
-        oldComments: oldComments
-    });
+    try {
+
+        const oldComments = (await ddb.query(_commentQuery).promise())['Items'];
+        console.log('old Comments: ', oldComments);
+        return callback({
+            what: "oldComments",
+            oldComments: oldComments
+        });
+
+    } catch (error) {
+        console.log('error in fetching old comments: ', error);
+    }
 }
 
 
@@ -156,7 +168,7 @@ async function _getReactionCount(clubId, index, callback) {
 
     return callback(null, {
         what: "reactionCount",
-        indexValue: indexValue,
+        indexValue: index,
         count: doc.count,
     });
 }
