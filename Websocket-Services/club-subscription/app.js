@@ -1,7 +1,5 @@
 const AWS = require('aws-sdk');
-const {
-    tableName
-} = require('../../Express-Services/ClubServices/config');
+
 AWS.config.update({
     region: "us-east-1",
 });
@@ -14,8 +12,11 @@ const timestampSortIndex = 'TimestampSortIndex';
 
 exports.handler = async event => {
 
-    const toggleMethod = event.headers.toggleMethod;
-    const clubId = event.headers.clubId;
+    console.log(event);
+
+    const body = JSON.parse(event.body);
+    const toggleMethod = body.toggleMethod;
+    const clubId = body.clubId;
 
     if ((!toggleMethod) || (!(toggleMethod === 'enter' || toggleMethod === 'exit')) || (!clubId)) {
         return {
@@ -89,7 +90,7 @@ exports.handler = async event => {
         const updateParams = {
             TableName: WsTable,
             Key: {
-                connectionId: event.requestContext.connectionId
+                connectionId: connectionId
             },
             UpdateExpression: 'REMOVE skey',
         };
@@ -143,7 +144,7 @@ async function _getReactionCount(clubId, index, callback) {
         return callback('invalid index value');
     }
     const _reactionQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CountReaction#${index}`
@@ -162,7 +163,7 @@ async function _getReactionCount(clubId, index, callback) {
 
 async function _getAudienceCount(clubId, callback) {
     const _audienceQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CountAudience#`

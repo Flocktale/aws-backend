@@ -10,11 +10,14 @@ const myTable = 'MyTable';
 const clubCategoryIndex = 'ClubCategoryIndex';
 
 
-//required userId in headers
+// key in headers are automatically transformed in lowercase
+//required userid in headers
 
 exports.handler = async event => {
 
-    const userId = event.headers.userId;
+    console.log(event);
+
+    const userId = event.headers.userid;
 
     if (!userId) {
         // TODO: disconnect
