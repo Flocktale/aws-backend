@@ -1,8 +1,20 @@
 const router = require('express').Router();
 
-const { CountParticipantSchema } = require('../../Schemas/AtomicCountSchemas');
+const {
+    CountParticipantSchema
+} = require('../../Schemas/AtomicCountSchemas');
 
-const { audienceDynamicDataIndex, dynamoClient, tableName } = require('../../config');
+const {
+    audienceDynamicDataIndex,
+    dynamoClient,
+    tableName
+} = require('../../config');
+
+
+const {
+    postParticipantListToWebsocketUsers
+} = require('./websocketFunctions');
+
 
 
 // required
@@ -20,9 +32,17 @@ router.post('/', async (req, res) => {
     const newTimestamp = Date.now();
 
     const _attributeUpdates = {
-        timestamp: { "Action": "PUT", "Value": newTimestamp },
-        isPartcipant: { "Action": "PUT", "Value": false },
-        AudienceDynamicField: { "Action": "DELETE" },
+        timestamp: {
+            "Action": "PUT",
+            "Value": newTimestamp
+        },
+        isPartcipant: {
+            "Action": "PUT",
+            "Value": false
+        },
+        AudienceDynamicField: {
+            "Action": "DELETE"
+        },
     };
 
     const _audienceKickedQuery = {
@@ -36,7 +56,9 @@ router.post('/', async (req, res) => {
 
     var counterDoc;
     try {
-        counterDoc = await CountParticipantSchema.validateAsync({ clubId: clubId });
+        counterDoc = await CountParticipantSchema.validateAsync({
+            clubId: clubId
+        });
     } catch (error) {
         res.status(400).json(`error in  validation of CountParticipantSchema: ${error}`);
     }
@@ -47,7 +69,7 @@ router.post('/', async (req, res) => {
             P_K: counterDoc.P_K,
             S_K: counterDoc.S_K
         },
-        UpdateExpression: 'set #cnt = #cnt - :counter',       // decrementing
+        UpdateExpression: 'set #cnt = #cnt - :counter', // decrementing
         ExpressionAttributeNames: {
             '#cnt': 'count'
         },
@@ -58,9 +80,12 @@ router.post('/', async (req, res) => {
 
 
     const _transactQuery = {
-        TransactItems: [
-            { Update: _audienceKickedQuery },
-            { Update: _counterUpdateQuery }
+        TransactItems: [{
+                Update: _audienceKickedQuery
+            },
+            {
+                Update: _counterUpdateQuery
+            }
         ]
     };
 
@@ -69,8 +94,11 @@ router.post('/', async (req, res) => {
         else {
             console.log(data);
             res.status(201).json('kicked out participant');
+
+            // sending new participant list to all connected users.
+            postParticipantListToWebsocketUsers(clubId);
+
         }
-        return;
     });
 });
 

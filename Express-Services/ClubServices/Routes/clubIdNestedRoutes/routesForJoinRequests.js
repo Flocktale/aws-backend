@@ -16,6 +16,10 @@ const {
     tableName
 } = require('../../config');
 
+const {
+    postParticipantListToWebsocketUsers
+} = require('./websocketFunctions');
+
 
 // required
 // headers - "lastevaluatedkey"  (optional)
@@ -342,14 +346,18 @@ router.post('/response', async (req, res) => {
             ]
         };
 
-        dynamoClient.transactWrite(_transactQuery, (err, data) => {
-            if (err) res.status(404).json(`Error accepting join request: ${err}`);
-            else {
-                console.log(data);
-                res.status(201).json('Accepted join request');
-            }
-            return;
-        });
+        try {
+            await dynamoClient.transactWrite(_transactQuery).promise();
+            res.status(201).json('Accepted join request');
+
+            // sending new participant list to all connected users.
+            postParticipantListToWebsocketUsers(clubId);
+
+        } catch (error) {
+            res.status(404).json(`Error accepting join request: ${error}`);
+        }
+
+
 
 
     } else if (requestAction === 'cancel') {

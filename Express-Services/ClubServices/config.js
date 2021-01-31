@@ -9,6 +9,11 @@ AWS.config.update({
 const dynamoClient = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
 
+const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+    apiVersion: '2018-11-29',
+    endpoint: 'https://jpkq996li6.execute-api.us-east-1.amazonaws.com' + '/' + 'Dev'
+});
+
 const imageUploadConstParams = {
     ACL: 'public-read',
     Bucket: 'mootclub-public',
@@ -17,6 +22,11 @@ const imageUploadConstParams = {
 };
 
 const tableName = "MyTable";
+
+
+const WsTable = 'WsTable';
+const wsInvertIndex = 'wsInvertIndex';
+
 
 const clubCategoryIndex = "ClubCategoryIndex";
 
@@ -36,8 +46,14 @@ const agoraPrimaryCertificate = "8b55b57e5db34a41bf974321c8671339";
 module.exports = {
     dynamoClient,
     s3,
+    apigwManagementApi,
+
     imageUploadConstParams,
     tableName,
+
+    WsTable,
+    wsInvertIndex,
+
     clubCategoryIndex,
     clubCreatorIdIndex,
     sortKeyWithTimestampIndex,

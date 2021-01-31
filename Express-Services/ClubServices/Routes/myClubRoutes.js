@@ -1,12 +1,17 @@
 const router = require('express').Router();
 
-const { clubCreatorIdIndex, sortKeyWithTimestampIndex, dynamoClient, tableName } = require('../config');
+const {
+    clubCreatorIdIndex,
+    sortKeyWithTimestampIndex,
+    dynamoClient,
+    tableName
+} = require('../config');
 
 
 // required
 // headers - "lastevaluatedkey"  (optional)
 
-router.get('/:userId/organized', (req, res) => {
+router.get('/:userId/organized', async (req, res) => {
 
     const userId = req.params.userId;
 
@@ -58,7 +63,7 @@ router.get('/:userId/organized', (req, res) => {
 // required
 // headers - "lastevaluatedkey"  (optional)
 
-router.get('/:userId/history', (req, res) => {
+router.get('/:userId/history', async (req, res) => {
     const userId = req.params.userId;
     const query = {
         TableName: tableName,
@@ -103,7 +108,9 @@ router.get('/:userId/history', (req, res) => {
                 });
             });
 
-            const _transactQuery = { TransactItems: _transactItems };
+            const _transactQuery = {
+                TransactItems: _transactItems
+            };
 
             dynamoClient.transactGet(_transactQuery, (err, data) => {
                 if (err) res.status(404).json(`Error getting club history for user: ${err}`);
