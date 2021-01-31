@@ -7,8 +7,11 @@ AWS.config.update({
 const ddb = new AWS.DynamoDB.DocumentClient();
 
 const WsTable = 'WsTable';
+
 const myTable = 'MyTable';
 const timestampSortIndex = 'TimestampSortIndex';
+const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
+
 
 exports.handler = async event => {
 
@@ -65,6 +68,13 @@ exports.handler = async event => {
                     ConnectionId: connectionId,
                     Data: JSON.stringify(data)
                 }).promise();
+            });
+
+            await _getParticipantList(clubId, async data => {
+                await apigwManagementApi.postToConnection({
+                    ConnectionId: connectionId,
+                    Data: JSON.stringify(data)
+                }).promise();
             })
 
             await _getOldComments(clubId, async data => {
@@ -73,7 +83,6 @@ exports.handler = async event => {
                     Data: JSON.stringify(data)
                 }).promise();
             });
-
 
             return {
                 statusCode: 200,
@@ -114,6 +123,45 @@ exports.handler = async event => {
         };
     }
 };
+
+
+async function _getParticipantList(clubId, callback) {
+    if (!clubId) return;
+
+    const _participantQuery = {
+        TableName: myTable,
+        IndexName: audienceDynamicDataIndex,
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "AudienceDynamicField": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`Participant#`]
+            },
+        },
+        AttributesToGet: ['audience'],
+    }
+
+
+    try {
+        const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'].map(({
+            audience
+        }) => {
+            return audience;
+        });
+        console.log('participantList: ', participantList);
+
+        return callback({
+            what: "participantList",
+            participantList: participantList,
+        });
+
+    } catch (error) {
+        console.log('error in fetching participant list: ', error);
+    }
+}
 
 // returns callback with oldComments
 async function _getOldComments(clubId, callback) {
