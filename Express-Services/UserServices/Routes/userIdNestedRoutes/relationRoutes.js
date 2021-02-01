@@ -1,9 +1,16 @@
 const router = require('express').Router();
 const Joi = require('joi');
 
-const { UserRelationSchemaWithDatabaseKeys } = require('../../Schemas/UserRelation');
+const {
+    UserRelationSchemaWithDatabaseKeys
+} = require('../../Schemas/UserRelation');
 
-const { usernameSortIndex, timestampSortIndex, dynamoClient, tableName } = require('../../config');
+const {
+    usernameSortIndex,
+    timestampSortIndex,
+    dynamoClient,
+    tableName
+} = require('../../config');
 
 
 // required
@@ -28,12 +35,17 @@ router.get('/', async (req, res) => {
 
     let bitChecker;
 
-    if (socialRelation === "followings") { bitChecker = 'B5'; }
-    else if (socialRelation === "followers") { bitChecker = 'B4'; }
-    else if (socialRelation === "requests_sent") { bitChecker = 'B3'; }
-    else if (socialRelation === "requests_received") { bitChecker = 'B2'; }
-    else if (socialRelation === "friends") { bitChecker = 'B1'; }
-    else {
+    if (socialRelation === "followings") {
+        bitChecker = 'B5';
+    } else if (socialRelation === "followers") {
+        bitChecker = 'B4';
+    } else if (socialRelation === "requests_sent") {
+        bitChecker = 'B3';
+    } else if (socialRelation === "requests_received") {
+        bitChecker = 'B2';
+    } else if (socialRelation === "friends") {
+        bitChecker = 'B1';
+    } else {
         res.status(501).json('request has hit a dead end');
         return;
     }
@@ -45,7 +57,9 @@ router.get('/', async (req, res) => {
         QueryFilter: {
             'relationIndexObj': {
                 ComparisonOperator: 'EQ',
-                AttributeValueList: [{ bitChecker: true }]
+                AttributeValueList: [{
+                    bitChecker: true
+                }]
 
             },
         },
@@ -92,7 +106,7 @@ router.get('/', async (req, res) => {
         else {
             console.log(data);
             res.status(200).json({
-                socialRelation: data["Items"],
+                'users': data["Items"],
                 'lastevaluatedkey': data["LastEvaluatedKey"]
             });
         }
@@ -217,8 +231,7 @@ router.post('/add', async (req, res) => {
                 ':tsp': newTimestmap,
             };
 
-        }
-        else if (addAction === "accept_friend_request") {
+        } else if (addAction === "accept_friend_request") {
             primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b4 = :fal, #rIO.#b1 = :tr, #tsp = :tsp  ';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
                 '#rIO': 'relationIndexObj',
@@ -249,11 +262,13 @@ router.post('/add', async (req, res) => {
         }
 
         _transactQuery = {
-            TransactItems:
-                [
-                    { Update: primaryUserRelationDocUpdateQuery },
-                    { Update: foreignUserRelationDocUpdateQuery },
-                ]
+            TransactItems: [{
+                    Update: primaryUserRelationDocUpdateQuery
+                },
+                {
+                    Update: foreignUserRelationDocUpdateQuery
+                },
+            ]
         };
 
     } else {
@@ -272,8 +287,7 @@ router.post('/add', async (req, res) => {
             newPrimaryUserRelationDoc["relationIndexObj"]["B5"] = true;
 
             newForeignUserRelationDoc["relationIndexObj"]["B4"] = true;
-        }
-        else if (addAction === "send_friend_request") {
+        } else if (addAction === "send_friend_request") {
             newPrimaryUserRelationDoc["relationIndexObj"]["B5"] = true;
             newPrimaryUserRelationDoc["relationIndexObj"]["B3"] = true;
 
@@ -293,9 +307,12 @@ router.post('/add', async (req, res) => {
         }
 
         _transactQuery = {
-            TransactItems: [
-                { Put: newPrimaryUserRelationDocQuery },
-                { Put: newForeignUserRelationDocQuery },
+            TransactItems: [{
+                    Put: newPrimaryUserRelationDocQuery
+                },
+                {
+                    Put: newForeignUserRelationDocQuery
+                },
             ]
         };
 
@@ -471,9 +488,12 @@ router.post('/remove', async (req, res) => {
     }
 
     const _transactQuery = {
-        TransactItems: [
-            { Update: primaryUserRelationDocUpdateQuery },
-            { Update: foreignUserRelationDocUpdateQuery },
+        TransactItems: [{
+                Update: primaryUserRelationDocUpdateQuery
+            },
+            {
+                Update: foreignUserRelationDocUpdateQuery
+            },
         ]
     };
 
@@ -500,8 +520,7 @@ router.post('/remove', async (req, res) => {
             };
 
             const _deleteTransactQuery = {
-                TransactItems: [
-                    {
+                TransactItems: [{
                         Delete: {
                             ..._conditionalDeleteQuery,
                             Key: {

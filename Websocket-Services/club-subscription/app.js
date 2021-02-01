@@ -146,7 +146,7 @@ async function _getParticipantList(clubId, callback) {
 
 
     try {
-        const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'].map(({
+        const participantList = (await ddb.query(_participantQuery).promise())['Items'].map(({
             audience
         }) => {
             return audience;
