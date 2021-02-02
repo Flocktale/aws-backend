@@ -55,7 +55,7 @@ router.post('/token/create', async (req, res) => {
 
 
         const channelName = clubId; // using clubId as unique channel name
-        const uid = 1; //! Do not know use of it 
+        const uid = 0; //! No authentication using UID to connect to agora 
         const role = RtcRole.PUBLISHER; // this role is required in case of broadcasting 
         const privilegeExpiredTs = 0; // setting it to 0 generate token with expiry of 24 hrs (max expiry time)
 
