@@ -9,7 +9,7 @@ const {
 
 
 
-async function getSearchResult(searchString,_query,type,attributes,req) {
+async function getSearchResult(searchString, _query, type, attributes, req) {
     const _specificQuery = {
         ..._query
     };
@@ -65,15 +65,15 @@ router.get('/', async (req, res) => {
 
     const clubAttributes = ['clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration'];
 
-    const userAttributes = ['userId', 'username', 'name', 'avatar'];
+    const userAttributes = ['userId', 'username', 'tagline', 'name', 'avatar'];
 
 
     if (type === "unified") {
-       
 
 
-        const clubData = await getSearchResult(searchString,_query,"CLUB",clubAttributes,req);
-        const userData = await getSearchResult(searchString,_query,"USER",userAttributes,req)
+
+        const clubData = await getSearchResult(searchString, _query, "CLUB", clubAttributes, req);
+        const userData = await getSearchResult(searchString, _query, "USER", userAttributes, req)
 
         return res.status(200).json({
             clubs: clubData['Items'],
@@ -83,15 +83,15 @@ router.get('/', async (req, res) => {
             userlastevaluatedkey: userData["LastEvaluatedKey"],
         });
     } else {
-        
+
         var result = {};
         if (type === "clubs") {
-            const specificData  = await getSearchResult(searchString,_query,"CLUB",clubAttributes,req)
+            const specificData = await getSearchResult(searchString, _query, "CLUB", clubAttributes, req)
             result["clubs"] = specificData["Items"];
             result["lastevaluatedkey"] = specificData["LastEvaluatedKey"];
         } else {
             // result["users"] = specificData["Items"];
-            const specificData  = await getSearchResult(searchString,_query,"USER",userAttributes,req)
+            const specificData = await getSearchResult(searchString, _query, "USER", userAttributes, req)
             result["users"] = specificData["Items"];
             result["lastevaluatedkey"] = specificData["LastEvaluatedKey"];
         }

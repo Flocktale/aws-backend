@@ -10,10 +10,15 @@ const UserInputSchema = Joi.object({
     modifiedOn: Joi.number().default(Joi.ref('createdOn')),
 
     // normal fields
+
     name: Joi.string().min(3).max(100),
     phone: Joi.string(),
     email: Joi.string().email(),
+
+    tagline: Joi.string().max(100),
     bio: Joi.string(),
+
+    online: Joi.number().default(0), // this field is, "0" when user is online and represent timestamp when user is offline.
 
     termsAccepted: Joi.boolean().equal(true),
     policyAccepted: Joi.boolean().equal(true),
@@ -26,15 +31,14 @@ const UserInputSchema = Joi.object({
     geoLat: Joi.number(),
     geoLong: Joi.number(),
 
-
 });
 
 const UserInputSchemaWithDatabaseKeys = UserInputSchema.append({
     P_K: Joi.string().default(Joi.expression('USER#{{userId}}')),
     S_K: Joi.string().default(Joi.expression('USERMETA#{{userId}}')),
 
-    PublicSearch: Joi.number().integer().valid(0, 1).default(1),                        // GSI : SearchByUsernameIndex
-    FilterDataName: Joi.string().default(Joi.expression('USER#{{username}}')),          // GSI : SearchByUsernameIndex
+    PublicSearch: Joi.number().integer().valid(0, 1).default(1), // GSI : SearchByUsernameIndex
+    FilterDataName: Joi.string().default(Joi.expression('USER#{{username}}')), // GSI : SearchByUsernameIndex
 
 });
 

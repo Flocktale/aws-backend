@@ -22,7 +22,11 @@ router.use('/story', storyRouter);
 router.get("/", async (req, res) => {
 
     const userId = req.userId;
-    const primaryUserId = req.query.primaryUserId;
+    let primaryUserId = req.query.primaryUserId;
+
+    if (!primaryUserId) {
+        primaryUserId = userId;
+    }
 
 
     const query = {
@@ -31,7 +35,7 @@ router.get("/", async (req, res) => {
             S_K: `USERMETA#${userId}`
         },
         AttributesToGet: [
-            'userId', 'username', 'avatar', 'createdOn', 'modifiedOn', 'name', 'phone', 'email', 'bio', 'termsAccepted',
+            'userId', 'username', 'avatar', 'createdOn', 'modifiedOn', 'name', 'phone', 'email', 'tagline', 'bio', 'termsAccepted',
             'policyAccepted', 'lngPref', 'regionCode', 'geoLat', 'geoLong',
             'followerCount', 'followingCount', 'clubsCreated', 'clubsParticipated', 'clubsJoinRequests', 'clubsAttended'
         ],
@@ -39,7 +43,7 @@ router.get("/", async (req, res) => {
     };
     var relationQuery;
 
-    if (primaryUserId) {
+    if (primaryUserId !== userId) {
         relationQuery = {
             Key: {
                 P_K: `USER#${primaryUserId}`,
