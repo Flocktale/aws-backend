@@ -32,17 +32,6 @@ router.get('/:userId/organized', async (req, res) => {
         ReturnConsumedCapacity: "INDEXES"
     };
 
-    console.log(req.headers.lastevaluatedkey);
-    console.log(req.headers.lastevaluatedkey);
-    console.log(req.headers.lastevaluatedkey);
-    console.log(req.headers.lastevaluatedkey);
-    console.log(req.headers.lastevaluatedkey);
-    console.log(req.headers.lastevaluatedkey);
-    console.log(req.headers.lastevaluatedkey);
-    console.log(req.headers.lastevaluatedkey);
-    console.log(req.headers.lastevaluatedkey);
-    console.log(req.headers.lastevaluatedkey);
-
     if (req.headers.lastevaluatedkey) {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
     }

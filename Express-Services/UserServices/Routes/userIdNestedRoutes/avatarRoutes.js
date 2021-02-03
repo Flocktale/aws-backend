@@ -1,13 +1,16 @@
 const router = require('express').Router();
 
-const { imageUploadConstParams, s3 } = require('../../config');
+const {
+    imageUploadConstParams,
+    s3
+} = require('../../config');
 
 
 // required
 // body.image = base 64 encoded image
 // TODO: Analyze this file and check if it is an image and then apply some image processing to validate image content.
 
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     const userId = req.userId;
 
     if (!req.body || !req.body.image) {
@@ -29,8 +32,7 @@ router.post("/", (req, res) => {
         if (err) {
             res.json(`Error occured while trying to upload: ${err}`);
             return;
-        }
-        else if (data) {
+        } else if (data) {
             res.status(201).json('Image uploaded successfully');
         }
     });

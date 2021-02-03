@@ -83,6 +83,24 @@ Resources:
             Path: /users/{userId}/relations/remove
             Method: post
 
+        CreateStory:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/story
+            Method: post
+
+        GetIndividualUserStories:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/story
+            Method: get
+
+        GetAllHomepageStories:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/story/home/all
+            Method: get
+
   ClubServiceFunction:
     Type: AWS::Serverless::Function
     Properties:

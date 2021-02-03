@@ -18,6 +18,8 @@ const WsTable = 'WsTable';
 const myTable = 'MyTable';
 const wsInvertIndex = 'wsInvertIndex';
 
+// TODO: Convert it to a REST API which registers this comment and query WsTable to fetch club subscribed users to push this comment to all of them.
+
 exports.handler = async event => {
 
     console.log(event);

@@ -1,14 +1,20 @@
 const router = require('express').Router();
 const Joi = require('joi');
 
-const { sortedSocialRelationByUsernameIndex, dynamoClient, tableName } = require('../config');
+const {
+    sortedSocialRelationByUsernameIndex,
+    dynamoClient,
+    tableName
+} = require('../config');
 
 
 const avatarRouter = require('./userIdNestedRoutes/avatarRoutes');
 const relationsRouter = require('./userIdNestedRoutes/relationRoutes');
+const storyRouter = require('./userIdNestedRoutes/storyRoutes');
 
 router.use('/avatar', avatarRouter);
 router.use('/relations', relationsRouter);
+router.use('/story', storyRouter);
 
 
 //query parameters - "primaryUserId"
@@ -74,7 +80,10 @@ router.patch("/", async (req, res) => {
         S_K: `USERMETA#${userId}`
     };
 
-    const _getQuery = { Key: _key, TableName: tableName };
+    const _getQuery = {
+        Key: _key,
+        TableName: tableName
+    };
 
     var _oldItem;
     try {
@@ -94,7 +103,10 @@ router.patch("/", async (req, res) => {
     for (let key of _newItemKeys) {
         if (_oldItem[key] !== req.body[key]) {
             console.log(key, _oldItem[key] + " => ", req.body[key]);
-            attributeUpdates[key] = { "Action": "PUT", "Value": req.body[key] };
+            attributeUpdates[key] = {
+                "Action": "PUT",
+                "Value": req.body[key]
+            };
         }
     }
 
@@ -125,8 +137,7 @@ router.patch("/", async (req, res) => {
         if (err) {
             console.log(err);
             res.status(404).json("Error updating profile");
-        }
-        else res.status(200).json('User profile updated successfully');
+        } else res.status(200).json('User profile updated successfully');
     });
 
 });

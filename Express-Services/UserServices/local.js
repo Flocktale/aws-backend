@@ -4,31 +4,31 @@ app.listen(3000, () => {
 });
 
 
-const Joi = require('joi');
+// const Joi = require('joi');
 
-async function testing() {
+// async function testing() {
 
-    const UserRelationSchema = Joi.object({
-        relationIndexObj: Joi.object({
-            B1: Joi.bool().default(false),                   // (isFriend)
-            B2: Joi.bool().default(false),                   // (f -> p request)
-            B3: Joi.bool().default(false),                   // (p -> f request)
-            B4: Joi.bool().default(false),                   // (f follows p)
-            B5: Joi.bool().default(false),                   // (p follows f)
-        }).required(),
 
-        timestamp: Joi.number().default(() => Date.now()),
+//     const a = [{
+//         'k': 'a1'
+//     }, {
+//         'k': 'a2'
+//     }];
+//     console.log(a);
+//     const d = a.map(({
+//         k
+//     }) => {
+//         return k.split('a')[1]
+//     });
 
-    });
+//     for (var z in d) {
+//         console.log(z);
+//     }
 
-    try {
-        const data = await UserRelationSchema.validateAsync({ relationIndexObj: {} });
-        console.log(data);
-    } catch (error) {
-        console.log(error);
+//     d.push('3');
+//     console.log(d);
 
-    }
 
-}
+// }
 
-testing();
+// testing();
