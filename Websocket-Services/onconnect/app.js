@@ -37,9 +37,33 @@ exports.handler = async event => {
         }
     };
 
+    const _onlineStatusUpdateParamas = {
+        TableName: myTable,
+        Key: {
+            P_K: `USER#${userId}`,
+            S_K: `USERMETA#${userId}`
+        },
+        AttributeUpdates: {
+            "online": {
+                "Action": "PUT",
+                "Value": 0,
+            }
+        },
+    };
+
     try {
 
         await ddb.put(putParams).promise();
+
+        // this function is not awaited as it is additional operation.
+        ddb.update(_onlineStatusUpdateParamas, (err, data) => {
+            if (err) {
+                console.log('error in modifying online status: ', err);
+            }
+            if (data) {
+                console.log('user is online now');
+            }
+        });
 
     } catch (err) {
         return {
