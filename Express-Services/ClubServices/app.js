@@ -86,7 +86,6 @@ app.get("/clubs", async (req, res) => {
 
 const createClubRouter = require('./Routes/createClubRoutes');
 const myClubRouter = require('./Routes/myClubRoutes');
-const queryClubRouter = require('./Routes/queryRoutes');
 
 const clubIdRouter = require('./Routes/clubIdRoutes');
 
@@ -96,7 +95,6 @@ app.use('/clubs/create', createClubRouter);
 
 app.use('/myclubs', myClubRouter);
 
-app.use('/clubs/query', queryClubRouter);
 
 app.use('/query', unifiedQueryRouter);
 

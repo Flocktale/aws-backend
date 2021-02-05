@@ -21,7 +21,6 @@ const cors = require('cors');
 const app = express();
 
 
-const queryRouter = require('./Routes/queryRoutes');
 const createRouter = require('./Routes/createUserRoutes');
 const userIdRouter = require('./Routes/userIdRoutes');
 
@@ -39,7 +38,6 @@ app.get("/users", (req, res) => {
     res.json('You have hit a TODO: Send list of users )');
 });
 
-app.use('/users/query', queryRouter);
 
 app.use('/users/create', createRouter);
 
@@ -47,8 +45,7 @@ app.use('/users/:userId',
     (req, res, next) => {
         req.userId = req.params.userId;
         next();
-    }
-    , userIdRouter
+    }, userIdRouter
 );
 
 
