@@ -7,6 +7,10 @@ const {
     tableName
 } = require('../config');
 
+const {
+    RelationIndexObjectSchema
+} = require('../Schemas/UserRelation');
+
 
 const avatarRouter = require('./userIdNestedRoutes/avatarRoutes');
 const relationsRouter = require('./userIdNestedRoutes/relationRoutes');
@@ -15,6 +19,7 @@ const storyRouter = require('./userIdNestedRoutes/storyRoutes');
 router.use('/avatar', avatarRouter);
 router.use('/relations', relationsRouter);
 router.use('/story', storyRouter);
+
 
 
 //query parameters - "primaryUserId"
@@ -59,6 +64,10 @@ router.get("/", async (req, res) => {
         var relationIndexObj;
         if (relationQuery) {
             relationIndexObj = (await dynamoClient.get(relationQuery).promise())['Item'].relationIndexObj;
+        } else {
+            relationIndexObj = (await RelationIndexObjectSchema.validateAsync({
+                relationIndexObj: {}
+            })).relationIndexObj;
         }
 
 

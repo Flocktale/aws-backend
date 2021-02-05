@@ -30,8 +30,19 @@ const Joi = require('joi');
 // 1 0 0 1 0 =>     Both users are friend. Other user follows me.                                                           
 // 1 0 0 1 1 =>     Both users are friend and both follows each other.                                                      
 
+const RelationIndexObjectSchema = Joi.object({
 
-const UserRelationSchema = Joi.object({
+    relationIndexObj: Joi.object({
+        B1: Joi.bool().default(false), // (isFriend)
+        B2: Joi.bool().default(false), // (f -> p request)
+        B3: Joi.bool().default(false), // (p -> f request)
+        B4: Joi.bool().default(false), // (f follows p)
+        B5: Joi.bool().default(false), // (p follows f)
+    }).required(),
+
+});
+
+const UserRelationSchema = RelationIndexObjectSchema.append({
     primaryUser: Joi.object({
         userId: Joi.string().required(),
         username: Joi.string().required(),
@@ -46,17 +57,11 @@ const UserRelationSchema = Joi.object({
         avatar: Joi.string().required(),
     }).required(),
 
-    relationIndexObj: Joi.object({
-        B1: Joi.bool().default(false),                   // (isFriend)
-        B2: Joi.bool().default(false),                   // (f -> p request)
-        B3: Joi.bool().default(false),                   // (p -> f request)
-        B4: Joi.bool().default(false),                   // (f follows p)
-        B5: Joi.bool().default(false),                   // (p follows f)
-    }).required(),
 
     timestamp: Joi.number().default(() => Date.now()),
 
 });
+
 
 const UserRelationSchemaWithDatabaseKeys = UserRelationSchema.append({
 
@@ -66,9 +71,10 @@ const UserRelationSchemaWithDatabaseKeys = UserRelationSchema.append({
         Joi.expression('RELATION#{{foreignUser.userId}}')
     ),
 
-    UsernameSortField: Joi.string().default(Joi.expression('RELATION-SORT-USERNAME#{{foreignUser.username}}')),    //GSI: UsernameSortIndex
-    TimestampSortField: Joi.string().default(Joi.expression('RELATION-SORT-TIMESTAMP#{{timestamp}}#{{foreignUser.userId}}')),    //GSI: TimestampSortIndex
+    UsernameSortField: Joi.string().default(Joi.expression('RELATION-SORT-USERNAME#{{foreignUser.username}}')), //GSI: UsernameSortIndex
+    TimestampSortField: Joi.string().default(Joi.expression('RELATION-SORT-TIMESTAMP#{{timestamp}}#{{foreignUser.userId}}')), //GSI: TimestampSortIndex
 });
 
+exports.RelationIndexObjectSchema = RelationIndexObjectSchema;
 exports.UserRelationSchema = UserRelationSchema;
 exports.UserRelationSchemaWithDatabaseKeys = UserRelationSchemaWithDatabaseKeys;
