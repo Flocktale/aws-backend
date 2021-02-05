@@ -64,11 +64,14 @@ router.get("/", async (req, res) => {
         var relationIndexObj;
         if (relationQuery) {
             relationIndexObj = (await dynamoClient.get(relationQuery).promise())['Item'].relationIndexObj;
-        } else {
-            relationIndexObj = (await RelationIndexObjectSchema.validateAsync({
-                relationIndexObj: {}
-            })).relationIndexObj;
+
+            if (!relationIndexObj) {
+                relationIndexObj = (await RelationIndexObjectSchema.validateAsync({
+                    relationIndexObj: {}
+                })).relationIndexObj;
+            }
         }
+
 
 
         res.status(200).json({
