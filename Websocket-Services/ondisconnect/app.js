@@ -48,6 +48,7 @@ exports.handler = async event => {
     await ddb.delete(deleteParams).promise();
     await ddb.update(_onlineStatusUpdateParamas).promise();
   } catch (err) {
+    console.log('error in on disconnect funciton: ', err);
     return {
       statusCode: 500,
       body: 'Failed to disconnect: ' + JSON.stringify(err)
