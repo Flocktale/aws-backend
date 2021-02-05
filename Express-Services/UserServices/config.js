@@ -8,6 +8,7 @@ AWS.config.update({
 
 const dynamoClient = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
+const sns = new AWS.SNS();
 
 const imageUploadConstParams = {
     ACL: 'public-read',
@@ -25,6 +26,7 @@ const usernameSortIndex = "UsernameSortIndex";
 module.exports = {
     dynamoClient,
     s3,
+    sns,
     imageUploadConstParams,
     tableName,
     searchByUsernameIndex,

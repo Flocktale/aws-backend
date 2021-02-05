@@ -22,6 +22,8 @@ Resources:
         - S3CrudPolicy:
             BucketName: "mootclub-public"
 
+        - AmazonSNSFullAccess
+
       Events:
         APIRoot:
           Type: Api
@@ -39,6 +41,12 @@ Resources:
           Type: Api
           Properties:
             Path: /users/create
+            Method: post
+
+        RegisterUserDeviceToken:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/register-device-token
             Method: post
 
         GetUserById:
