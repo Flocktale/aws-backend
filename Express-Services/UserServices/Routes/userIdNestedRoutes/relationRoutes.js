@@ -6,10 +6,15 @@ const {
 } = require('../../Schemas/UserRelation');
 
 const {
+    NotificationSchemaWithDatabaseKeys
+} = require('../../Schemas/notificationSchema')
+
+const {
     usernameSortIndex,
     timestampSortIndex,
     dynamoClient,
-    tableName
+    tableName,
+    sns
 } = require('../../config');
 
 
@@ -126,6 +131,18 @@ router.post('/add', async (req, res) => {
     const userId = req.userId;
     const foreignUserId = req.query.foreignUserId;
 
+    // preparing notification object to be sent to foreign user in context.
+    var notificationObj = {
+        userId: foreignUserId,
+        data: {
+            type: "undefined",
+            title: "undefined",
+            avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${foreignUserId}`,
+            targetResourceId: userId,
+            timestamp: Date.now(),
+        },
+    };
+
     if (userId === foreignUserId) {
         res.status(400).json('both user id should be unique');
         return;
@@ -178,6 +195,8 @@ router.post('/add', async (req, res) => {
         }
 
         if (addAction === "follow") {
+            notificationObj.data.type = "FLW#new";
+            notificationObj.data.title = oldRelationDoc.primaryUser.username + " has started following you.";
 
             primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #tsp = :tsp';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
@@ -205,6 +224,10 @@ router.post('/add', async (req, res) => {
 
 
         } else if (addAction === "send_friend_request") {
+
+            notificationObj.data.type = "FR#new";
+            notificationObj.data.title = oldRelationDoc.primaryUser.username + " would like to be your friend.";
+
             primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b3 = :tr, #tsp = :tsp  ';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
                 '#rIO': 'relationIndexObj',
@@ -232,6 +255,10 @@ router.post('/add', async (req, res) => {
             };
 
         } else if (addAction === "accept_friend_request") {
+
+            notificationObj.data.type = "FR#accepted";
+            notificationObj.data.title = "You and " + oldRelationDoc.primaryUser.username + " are now bound in a great friendship pact.";
+
             primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b4 = :fal, #rIO.#b1 = :tr, #tsp = :tsp  ';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
                 '#rIO': 'relationIndexObj',
@@ -284,10 +311,17 @@ router.post('/add', async (req, res) => {
             return;
         }
         if (addAction === "follow") {
+            notificationObj.data.type = "FLW#new";
+            notificationObj.data.title = primaryUser.username + " has started following you.";
+
             newPrimaryUserRelationDoc["relationIndexObj"]["B5"] = true;
 
             newForeignUserRelationDoc["relationIndexObj"]["B4"] = true;
         } else if (addAction === "send_friend_request") {
+
+            notificationObj.data.type = "FR#new";
+            notificationObj.data.title = primaryUser.username + " would like to be your friend.";
+
             newPrimaryUserRelationDoc["relationIndexObj"]["B5"] = true;
             newPrimaryUserRelationDoc["relationIndexObj"]["B3"] = true;
 
@@ -323,12 +357,76 @@ router.post('/add', async (req, res) => {
             console.log(err);
             res.status(404).json(err);
         } else {
+
+            // handling notification part
+            _sendAndSaveNotification(notificationObj);
+
             res.status(202).json(`${addAction} successfull!`);
         }
     });
 
 
 });
+
+async function _sendAndSaveNotification(notificationObj) {
+    if (!notificationObj) {
+        console.log('no notificationObj was passed when _sendAndSaveNotification was called');
+        return;
+    }
+
+    // first saving the notification in database.
+
+    const notifData = await NotificationSchemaWithDatabaseKeys.validateAsync(notificationObj);
+
+    const _notificationPutQuery = {
+        TableName: tableName,
+        Item: notifData,
+    }
+
+    await dynamoClient.put(_notificationPutQuery).promise();
+
+
+    // fetching endpoint arn to publish notification.
+
+    const _endpointQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: 'SNS_DATA#',
+            S_K: `USER#${notifData.userId}`,
+        },
+        AttributesToGet: ['endpointArn'],
+    };
+
+    const endpointData = (await dynamoClient.get(_endpointQuery).promise())['Item'];
+
+    if (!endpointData) {
+        return console.log('no device token is registered for userId: ', notifData.userId);
+    }
+
+    // now publishing to push notification via sns.
+
+    const snsPushNotificationObj = {
+        GCM: JSON.stringify({
+            notification: {
+                title: notifData.data.title,
+                image: notifData.data.avatar,
+                sound: "default",
+                click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                priority: 'high',
+            },
+        }),
+    };
+
+
+    var notifParams = {
+        Message: JSON.stringify(snsPushNotificationObj),
+        MessageStructure: 'json',
+        TargetArn: endpointData.endpointArn,
+    };
+
+    await sns.publish(notifParams).promise();
+
+}
 
 async function _getUserSummaryData(userId) {
     const userDocQuery = {
