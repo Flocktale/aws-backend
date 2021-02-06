@@ -1,0 +1,163 @@
+const router = require('express').Router();
+
+
+const {
+    dynamoClient,
+    tableName,
+    sns,
+} = require('../../config');
+
+const {
+    SNSEndpointSchemaWithDatabaseKeys
+} = require('../../Schemas/snsEndpointSchema');
+
+
+// required
+// body - {"deviceToken"}
+router.post("/register-device-token", async (req, res) => {
+    const userId = req.userId;
+    const deviceToken = req.body.deviceToken;
+
+    if (!deviceToken) {
+        return res.status(400).json("deviceToken is required");
+    }
+
+    const _tokenQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: 'SNS_DATA#',
+            S_K: `USER#${userId}`
+        },
+        AttributesToGet: ['deviceToken'],
+    }
+    var oldDeviceToken;
+    try {
+        const oldData = (await dynamoClient.get(_tokenQuery).promise())['Item'];
+        if (oldData) {
+            oldDeviceToken = oldData['deviceToken'];
+        }
+    } catch (error) {
+        console.log('error while fetching old token data: ', error);
+    }
+
+    if (oldDeviceToken === deviceToken) {
+        console.log('device token is already registered');
+        return res.status(201).json('Token registered successfully');
+    }
+
+    // creating platform endpoint in sns (using platform application - "mootclub" which is GCM (FCM) enabled )
+    const params = {
+        PlatformApplicationArn: 'arn:aws:sns:us-east-1:556316647006:app/GCM/mootclub',
+        Token: deviceToken,
+    };
+
+    try {
+        const endpointArn = (await sns.createPlatformEndpoint(params).promise()).EndpointArn;
+        const snsData = await SNSEndpointSchemaWithDatabaseKeys.validateAsync({
+            userId: userId,
+            deviceToken: deviceToken,
+            endpointArn: endpointArn,
+        });
+
+        const _putQuery = {
+            TableName: tableName,
+            Item: snsData,
+        }
+
+        await dynamoClient.put(_putQuery).promise();
+
+        return res.status(201).json('Token registered successfully');
+
+    } catch (error) {
+        console.log('error in registering endpoint: ', error);
+        return res.status(500).json('error in registering endpoint');
+    }
+
+});
+
+
+
+// required
+// headers - "lastevaluatedkey"  (optional)
+router.get("/", async (req, res) => {
+    const userId = req.userId;
+    const query = {
+        TableName: tableName,
+        KeyConditions: {
+            'P_K': {
+                ComparisonOperator: 'EQ',
+                AttributeValueList: [`USER#${userId}`]
+            },
+            'S_K': {
+                ComparisonOperator: 'BEGINS_WITH',
+                AttributeValueList: [`NOTIFICATIONS#`]
+            }
+        },
+        AttributesToGet: ['data'],
+        ScanIndexForward: false,
+        Limit: 20,
+
+    }
+    if (req.headers.lastevaluatedkey) {
+        query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
+    }
+
+    try {
+
+        const notifData = await dynamoClient.query(query).promise();
+        if (notifData.Items) {
+            const notifList = notifData.Items.map(({
+                data
+            }) => {
+                return data;
+            });
+
+            return res.status(200).json({
+                notifications: notifList,
+                lastevaluatedkey: notifData['LastEvaluatedKey'],
+            });
+        } else {
+            return res.status(200).json({
+                notifications: [],
+            });
+        }
+
+    } catch (error) {
+        console.log('error while fetching notifications list : ', error);
+        return res.status(404).json('error in fetching notifications');
+    }
+
+});
+
+router.post("/opened/{timestamp}", async (req, res) => {
+    const userId = req.userId;
+    const timestamp = req.params.timestamp;
+    const _updateQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `USER#${userId}`,
+            S_K: `NOTIFICATIONS#${timestamp}`,
+        },
+        ConditionExpression: '#data.#opened = :fal ',
+        UpdateExpression: 'SET #data.#opened = :tr',
+        ExpressionAttributeNames: {
+            '#data': 'data',
+            '#opened': 'opened'
+        },
+        ExpressionAttributeValues: {
+            ":fal": false,
+            ":tr": true,
+        }
+    };
+
+    try {
+        await dynamoClient.update(_updateQuery).promise();
+        return res.status(202).json('Notification open status saved successfully');
+    } catch (error) {
+        console.log('error in modifying notification open status: ', error);
+        return res.status(400).json('error in modifying notification open status');
+    }
+});
+
+
+module.exports = router;
