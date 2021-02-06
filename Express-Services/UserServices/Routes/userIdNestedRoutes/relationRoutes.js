@@ -540,11 +540,11 @@ router.post('/remove', async (req, res) => {
         // in this case, we are not checking if user deleted an already sent request or cancelled an incoming request.
         // because anyways it will not affect the following/follower relation between users.
 
-        primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b3 = :fal, #rIO.#b2 = :fal, #tsp = :tsp';
+        primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b4 = :fal, #rIO.#3 = :fal, #tsp = :tsp';
         primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
             '#rIO': 'relationIndexObj',
             '#b3': 'B3',
-            '#b2': 'B2',
+            '#b4': 'B4',
             '#tsp': 'timestamp',
         };
         primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
