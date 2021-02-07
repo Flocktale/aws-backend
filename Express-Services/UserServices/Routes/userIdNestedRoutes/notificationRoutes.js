@@ -14,7 +14,7 @@ const {
 
 // required
 // body - {"deviceToken"}
-router.post("/register-device-token", async (req, res) => {
+router.post("/device-token", async (req, res) => {
     const userId = req.userId;
     const deviceToken = req.body.deviceToken;
 
@@ -28,13 +28,14 @@ router.post("/register-device-token", async (req, res) => {
             P_K: 'SNS_DATA#',
             S_K: `USER#${userId}`
         },
-        AttributesToGet: ['deviceToken'],
+        AttributesToGet: ['deviceToken', 'endpointArn'],
     }
-    var oldDeviceToken;
+    var oldDeviceToken, oldEndpoint;
     try {
         const oldData = (await dynamoClient.get(_tokenQuery).promise())['Item'];
         if (oldData) {
             oldDeviceToken = oldData['deviceToken'];
+            oldEndpoint = oldData['endpointArn'];
         }
     } catch (error) {
         console.log('error while fetching old token data: ', error);
@@ -45,6 +46,7 @@ router.post("/register-device-token", async (req, res) => {
         return res.status(201).json('Token registered successfully');
     }
 
+
     // creating platform endpoint in sns (using platform application - "mootclub" which is GCM (FCM) enabled )
     const params = {
         PlatformApplicationArn: 'arn:aws:sns:us-east-1:556316647006:app/GCM/mootclub',
@@ -52,6 +54,15 @@ router.post("/register-device-token", async (req, res) => {
     };
 
     try {
+
+        // if this user already had a platform endpoint then delete it first.
+        if (oldEndpoint) {
+            await sns.deleteEndpoint({
+                EndpointArn: oldEndpoint
+            }).promise();
+        }
+
+
         const endpointArn = (await sns.createPlatformEndpoint(params).promise()).EndpointArn;
         const snsData = await SNSEndpointSchemaWithDatabaseKeys.validateAsync({
             userId: userId,
@@ -71,6 +82,36 @@ router.post("/register-device-token", async (req, res) => {
     } catch (error) {
         console.log('error in registering endpoint: ', error);
         return res.status(500).json('error in registering endpoint');
+    }
+
+});
+
+router.delete("/device-token", async (req, res) => {
+    const userId = req.userId;
+
+    const _tokenDeleteQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: 'SNS_DATA#',
+            S_K: `USER#${userId}`
+        },
+        ReturnValues: 'ALL_OLD',
+    }
+    try {
+        const oldData = (await dynamoClient.delete(_tokenQuery).promise())['Attributes'];
+        if (oldData) {
+            const oldEndpoint = oldData['endpointArn'];
+            await sns.deleteEndpoint({
+                EndpointArn: oldEndpoint
+            }).promise();
+
+        }
+
+        return res.status(201).json('Token deleted successfully');
+
+    } catch (error) {
+        console.log('error while fetching/deleting old token data: ', error);
+        return res.status(400).json('error while deleting token');
     }
 
 });
@@ -104,9 +145,9 @@ router.get("/", async (req, res) => {
 
     try {
 
-        const notifData = await dynamoClient.query(query).promise();
-        if (notifData.Items) {
-            const notifList = notifData.Items.map(({
+        const notifData = (await dynamoClient.query(query).promise())['Items'];
+        if (notifData) {
+            const notifList = notifData.map(({
                 data
             }) => {
                 return data;

@@ -64,8 +64,14 @@ Resources:
         RegisterUserDeviceToken:
           Type: Api
           Properties:
-            Path: /users/{userId}/notifications/register-device-token
+            Path: /users/{userId}/notifications/device-token
             Method: post
+
+        DeleteUserDeviceToken:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/notifications/device-token
+            Method: delete
 
         GetNotificationList:
           Type: Api
