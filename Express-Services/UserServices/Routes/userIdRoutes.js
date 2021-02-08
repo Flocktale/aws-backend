@@ -44,7 +44,7 @@ router.get("/", async (req, res) => {
         AttributesToGet: [
             'userId', 'username', 'avatar', 'createdOn', 'modifiedOn', 'name', 'phone', 'email', 'tagline', 'bio', 'termsAccepted',
             'policyAccepted', 'lngPref', 'regionCode', 'geoLat', 'geoLong',
-            'followerCount', 'followingCount', 'clubsCreated', 'clubsParticipated', 'clubsJoinRequests', 'clubsAttended'
+            'followerCount', 'followingCount', 'friendsCount', 'clubsCreated', 'clubsParticipated', 'clubsJoinRequests', 'clubsAttended'
         ],
         TableName: tableName
     };
@@ -66,7 +66,7 @@ router.get("/", async (req, res) => {
         var relationIndexObj;
         if (relationQuery) {
             var tmp = (await dynamoClient.get(relationQuery).promise())['Item'];
-            if(tmp) relationIndexObj = tmp.relationIndexObj;
+            if (tmp) relationIndexObj = tmp.relationIndexObj;
             if (!relationIndexObj) {
                 relationIndexObj = (await RelationIndexObjectSchema.validateAsync({
                     relationIndexObj: {}

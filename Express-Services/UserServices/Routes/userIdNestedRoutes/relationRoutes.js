@@ -158,6 +158,40 @@ router.post('/add', async (req, res) => {
         return;
     }
 
+    const _primaryUserUpdateQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `USER#${userId}`,
+            S_K: `USERMETA#${userId}`
+        },
+        UpdateExpression: "SET friendsCount = friendsCount + :friendCounter, followingCount = followingCount + :followingCounter",
+        ExpressionAttributeValues: {
+            ':friendCounter': 0,
+            ':followingCounter': 1, // default, in case of already following, it has to be changed to 0.
+        },
+    };
+
+    const _foreignUserUpdateQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `USER#${foreignUserId}`,
+            S_K: `USERMETA#${foreignUserId}`
+        },
+
+        UpdateExpression: "SET friendsCount = friendsCount + :friendCounter, followerCount = followerCount + :followerCounter",
+        ExpressionAttributeValues: {
+            ':friendCounter': 0,
+            ':followerCounter': 1, // default, in case of already being followed, it has to be changed to 0.
+        },
+    };
+
+    if (addAction === "accept_friend_request") {
+
+        _primaryUserUpdateQuery['ExpressionAttributeValues'][':friendCounter'] = 1;
+        _foreignUserUpdateQuery['ExpressionAttributeValues'][':friendCounter'] = 1;
+
+    }
+
 
     const oldRelationDocQuery = {
         TableName: tableName,
@@ -165,6 +199,7 @@ router.post('/add', async (req, res) => {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`
         },
+        AttributesToGet: ['primaryUser', 'relationIndexObj'], // primary user to get username for notification, relationIndexObj for conditions
     };
     let oldRelationDoc;
     try {
@@ -194,9 +229,20 @@ router.post('/add', async (req, res) => {
             },
         }
 
+        // user might already be following foreign user so we have to check for it (in case different than "follow" for which B5 is always false)
+        if (oldRelationDoc.relationIndexObj.B5 === true) {
+            //  user already follow, so no need to increment counts
+            _primaryUserUpdateQuery['ExpressionAttributeValues'][':followingCounter'] = 0;
+
+            _foreignUserUpdateQuery['ExpressionAttributeValues'][':followerCounter'] = 0;
+
+        }
+
         if (addAction === "follow") {
             notificationObj.data.type = "FLW#new";
             notificationObj.data.title = oldRelationDoc.primaryUser.username + " has started following you.";
+
+
 
             primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #tsp = :tsp';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
@@ -225,8 +271,11 @@ router.post('/add', async (req, res) => {
 
         } else if (addAction === "send_friend_request") {
 
+
             notificationObj.data.type = "FR#new";
             notificationObj.data.title = oldRelationDoc.primaryUser.username + " would like to be your friend.";
+
+
 
             primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b3 = :tr, #tsp = :tsp  ';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
@@ -259,11 +308,12 @@ router.post('/add', async (req, res) => {
             notificationObj.data.type = "FR#accepted";
             notificationObj.data.title = "You and " + oldRelationDoc.primaryUser.username + " are now bound in a great friendship pact.";
 
-            primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b4 = :fal, #rIO.#b1 = :tr, #tsp = :tsp  ';
+
+            primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b2 = :fal, #rIO.#b1 = :tr, #tsp = :tsp  ';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
                 '#rIO': 'relationIndexObj',
                 '#b5': 'B5',
-                '#b4': 'B4',
+                '#b2': 'B2',
                 '#b1': 'B1',
                 '#tsp': 'timestamp',
             };
@@ -273,12 +323,12 @@ router.post('/add', async (req, res) => {
                 ':tsp': newTimestmap,
             };
 
-            foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b3 = :fal, #rIO.#b2 = :tr, #tsp = :tsp  ';
+            foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b4 = :tr, #rIO.#b3 = :fal, #rIO.#b1 = :tr, #tsp = :tsp  ';
             foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
                 '#rIO': 'relationIndexObj',
-                '#b5': 'B5',
+                '#b4': 'B4',
                 '#b3': 'B3',
-                '#b2': 'B2',
+                '#b1': 'B1',
                 '#tsp': 'timestamp',
             };
             foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
@@ -299,6 +349,10 @@ router.post('/add', async (req, res) => {
         };
 
     } else {
+
+        // since it is a brand new relation, so using default update queries for incrementing follow/following/friend counters. 
+
+
         const primaryUser = await _getUserSummaryData(userId);
         const foreignUser = await _getUserSummaryData(foreignUserId);
         const newTimestmap = Date.now();
@@ -317,6 +371,7 @@ router.post('/add', async (req, res) => {
             newPrimaryUserRelationDoc["relationIndexObj"]["B5"] = true;
 
             newForeignUserRelationDoc["relationIndexObj"]["B4"] = true;
+
         } else if (addAction === "send_friend_request") {
 
             notificationObj.data.type = "FR#new";
@@ -351,6 +406,14 @@ router.post('/add', async (req, res) => {
         };
 
     }
+
+    _transactQuery.TransactItems.push({
+        Update: _primaryUserUpdateQuery,
+    });
+
+    _transactQuery.TransactItems.push({
+        Update: _foreignUserUpdateQuery,
+    });
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
         if (err) {
@@ -496,6 +559,35 @@ router.post('/remove', async (req, res) => {
     }
     const newTimestmap = Date.now();
 
+    const _primaryUserUpdateQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `USER#${userId}`,
+            S_K: `USERMETA#${userId}`
+        },
+        UpdateExpression: "SET friendsCount = friendsCount - :friendCounter, followingCount = followingCount - :followingCounter",
+        ExpressionAttributeValues: {
+            ':friendCounter': 0,
+            ':followingCounter': 0,
+        },
+    };
+
+    const _foreignUserUpdateQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `USER#${foreignUserId}`,
+            S_K: `USERMETA#${foreignUserId}`
+        },
+
+        UpdateExpression: "SET friendsCount = friendsCount + :friendCounter, followerCount = followerCount - :followerCounter",
+        ExpressionAttributeValues: {
+            ':friendCounter': 0,
+            ':followerCounter': 0,
+        },
+    };
+
+
+
     const primaryUserRelationDocUpdateQuery = {
         TableName: tableName,
         Key: {
@@ -513,6 +605,12 @@ router.post('/remove', async (req, res) => {
     };
 
     if (removeAction === "unfollow") {
+
+        _primaryUserUpdateQuery["ExpressionAttributeValues"][":followingCounter"] = 1;
+        _foreignUserUpdateQuery["ExpressionAttributeValues"][":followerCounter"] = 1;
+
+
+
         primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :fal, #tsp = :tsp';
         primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
             '#rIO': 'relationIndexObj',
@@ -540,6 +638,8 @@ router.post('/remove', async (req, res) => {
         // in this case, we are not checking if user deleted an already sent request or cancelled an incoming request.
         // because anyways it will not affect the following/follower relation between users.
 
+        // no effect on counts of following and follower
+
         primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b2 = :fal, #rIO.#b3 = :fal, #tsp = :tsp';
         primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
             '#rIO': 'relationIndexObj',
@@ -557,13 +657,26 @@ router.post('/remove', async (req, res) => {
         foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'];
 
     } else if (removeAction === "unfriend") {
-        // unfriend and unfollow
+        // only unfriend (no effect on follower/following count)
 
-        primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b1 = :fal, #rIO.#b5 = :fal, #tsp = :tsp';
+        // TODO: 
+        //  * try to find a way to also unfollow the foreign user because unfriend means no further business with somebody
+        //  * but we can not blindly decrase follow/following count for corresponding users.
+        //  * what if user has already unfollowed, in that case followingCount will not decrease for user and same for followerCount of foreignUser
+        //  * so we have to check for that condition, but we can not use UpdateExpressionCondition as this is cross doc update (update on user doc with condition check on relation doc )  
+        //  * one simple method is to fetch relationDocs to check for required conditions, but in this way, atomicity of transaction will break as we may serve according to stale data.(relationDocs)
+        //  * stale data can be obtained in case of multiple api calls for same corresponding user hitting different lambda instances. 
+
+        _primaryUserUpdateQuery["ExpressionAttributeValues"][":friendCounter"] = 1;
+
+        _foreignUserUpdateQuery["ExpressionAttributeValues"][":friendCounter"] = 1;
+
+
+
+        primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b1 = :fal, #tsp = :tsp';
         primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
             '#rIO': 'relationIndexObj',
             '#b1': 'B1',
-            '#b5': 'B5',
             '#tsp': 'timestamp',
         };
         primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
@@ -572,11 +685,10 @@ router.post('/remove', async (req, res) => {
         };
 
 
-        foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b1 = :fal, #rIO.#b4 = :fal, #tsp = :tsp';
+        foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b1 = :fal, #tsp = :tsp';
         foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
             '#rIO': 'relationIndexObj',
             '#b1': 'B1',
-            '#b4': 'B4',
             '#tsp': 'timestamp',
         };
         foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
@@ -594,6 +706,16 @@ router.post('/remove', async (req, res) => {
             },
         ]
     };
+
+    // except for deleting friend request, count values change for users.
+    if (removeAction !== "delete_friend_request") {
+        _transactQuery.TransactItems.push({
+            Update: _primaryUserUpdateQuery
+        });
+        _transactQuery.TransactItems.push({
+            Update: _foreignUserUpdateQuery
+        });
+    }
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
         if (err) {
