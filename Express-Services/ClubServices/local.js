@@ -1,34 +1,40 @@
 const app = require('./app');
 
-const Joi = require('joi');
-
-
 app.listen(3000, () => {
     console.log("Listening on port 3000");
 });
 
-const {
-    dynamoClient,
-    tableName
-} = require('./config');
-const {
-    string
-} = require('joi');
+// const {
+//     dynamoClient,
+//     tableName
+// } = require('./config');
+
+// const Joi = require('joi');
+
+// const {
+//     string
+// } = require('joi');
 
 
-async function testing() {
-    const ab = {
-        ran: 5,
-        def: 8
-    };
+// async function testing() {
 
-    const x = {
-        ...ab
-    };
-    x["jk"] = 10;
+//     const schema = Joi.object({
+//         a: Joi.number().required(),
+//         z: Joi.string().default((parents, helpers) => {
+//             if (parents.a === 4) {
+//                 return 'maza aayega';
+//             }
 
-    console.log(ab);
-    console.log(x);
-}
+//             // return;
+//         }),
+//     });
 
-testing();
+//     console.log(await schema.validateAsync({
+//         a: 4
+//     }));
+//     console.log(await schema.validateAsync({
+//         a: 5
+//     }));
+// }
+
+// testing();

@@ -21,11 +21,18 @@ const imageUploadConstParams = {
     // Key:             populate it
 };
 
+
+const agoraAppId = "7c3800483bbc473bbf341e1d68f04a40";
+const agoraPrimaryCertificate = "8b55b57e5db34a41bf974321c8671339";
+
+
 const tableName = "MyTable";
 
 
 const WsTable = 'WsTable';
 const wsInvertIndex = 'wsInvertIndex';
+
+
 
 
 const clubCategoryIndex = "ClubCategoryIndex";
@@ -34,12 +41,10 @@ const clubCreatorIdIndex = "ClubCreatorIdIndex";
 
 const sortKeyWithTimestampIndex = "SortKeyWithTimestampIndex";
 
+const usernameSortIndex = "UsernameSortIndex";
 const timestampSortIndex = "TimestampSortIndex";
 const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
 const searchByUsernameIndex = "SearchByUsernameIndex";
-
-const agoraAppId = "7c3800483bbc473bbf341e1d68f04a40";
-const agoraPrimaryCertificate = "8b55b57e5db34a41bf974321c8671339";
 
 
 
@@ -57,6 +62,8 @@ module.exports = {
     clubCategoryIndex,
     clubCreatorIdIndex,
     sortKeyWithTimestampIndex,
+
+    usernameSortIndex,
     timestampSortIndex,
     audienceDynamicDataIndex,
     searchByUsernameIndex,

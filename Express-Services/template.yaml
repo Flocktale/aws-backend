@@ -219,6 +219,12 @@ Resources:
             Path: /clubs/{clubId}/join-request
             Method: get
 
+        SearchJoiningRequestsByUsername:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/join-request/query
+            Method: get
+
         DeleteJoinRequestByRequester:
           Type: Api
           Properties:

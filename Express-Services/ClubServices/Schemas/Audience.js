@@ -30,16 +30,29 @@ const AudienceSchemaWithDatabaseKeys = AudienceSchema.append({
         .default((parent, helpers) => {
             let counter = 0;
             let prefix;
-            if (parent.isPartcipant === true) { counter++; prefix = "Participant#"; }
-            else if (parent.joinRequested === true) { counter++; prefix = "ActiveJoinRequest#"; }
+            if (parent.isPartcipant === true) {
+                counter++;
+                prefix = "Participant#";
+            } else if (parent.joinRequested === true) {
+                counter++;
+                prefix = "ActiveJoinRequest#";
+            }
 
             if (counter === 1)
                 return prefix + parent.timestamp + "#" + parent.audience.userId;
 
             if (counter > 1) throw new Error('more than one boolean attribute is true');
-        }),                                                                           // GSI: AudienceDynamicDataIndex
+        }), // GSI: AudienceDynamicDataIndex
 
-    TimestampSortField: Joi.string().default(Joi.expression('AUDIENCE-SORT-TIMESTAMP#{{timestamp}}#{{audience.userId}}')),       // GSI: TimestampSortIndex
+    TimestampSortField: Joi.string().default(Joi.expression('AUDIENCE-SORT-TIMESTAMP#{{timestamp}}#{{audience.userId}}')), // GSI: TimestampSortIndex
+
+    UsernameSortField: Joi.string().default((parent, helpers) => {
+        if (parent.joinRequested === true) {
+            return 'JOIN-REQUESTER-USERNAME-SORT#' + parent.audience.username;
+        }
+        return;
+    }), //GSI: UsernameSortIndex
+
 
 });
 

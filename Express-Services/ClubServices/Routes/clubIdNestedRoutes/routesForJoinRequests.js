@@ -13,7 +13,8 @@ const {
 const {
     audienceDynamicDataIndex,
     dynamoClient,
-    tableName
+    tableName,
+    usernameSortIndex,
 } = require('../../config');
 
 const {
@@ -42,7 +43,7 @@ router.get('/', async (req, res) => {
                 "AttributeValueList": [`ActiveJoinRequest#`]
             },
         },
-        AttributesToGet: ['audience', 'joinRequestAttempts', 'timestamp'],
+        AttributesToGet: ['audience', 'timestamp'],
         ScanIndexForward: false,
         ReturnConsumedCapacity: "INDEXES"
     };
@@ -56,6 +57,56 @@ router.get('/', async (req, res) => {
         else {
             console.log(data);
             res.status(200).json({
+                "activeJoinRequestUsers": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
+    });
+
+});
+
+
+// required         // search join requesters by their username
+// query parameters - "searchString"
+// headers - "lastevaluatedkey"  (optional)
+
+router.get('/query', async (req, res) => {
+
+    const clubId = req.clubId;
+    const searchString = req.query.searchString;
+
+    if (!searchString) {
+        return res.status(400).json('searchString is required');
+    }
+
+    const query = {
+        TableName: tableName,
+        IndexName: usernameSortIndex,
+        Limit: 10,
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "UsernameSortField": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`JOIN-REQUESTER-USERNAME-SORT#${searchString}`]
+            },
+        },
+        AttributesToGet: ['audience', 'timestamp'],
+        ScanIndexForward: false,
+        ReturnConsumedCapacity: "INDEXES"
+    };
+
+    if (req.headers.lastevaluatedkey) {
+        query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
+    }
+
+    dynamoClient.query(query, (err, data) => {
+        if (err) res.status(404).json(err);
+        else {
+            console.log(data);
+            return res.status(200).json({
                 "activeJoinRequestUsers": data["Items"],
                 'lastevaluatedkey': data["LastEvaluatedKey"]
             });
@@ -132,11 +183,12 @@ router.post('/', async (req, res) => {
                 P_K: result.P_K,
                 S_K: result.S_K
             },
-            UpdateExpression: 'set joinRequested = :request, AudienceDynamicField = :dynamicField, joinRequestAttempts = joinRequestAttempts + :counter',
+            UpdateExpression: 'set joinRequested = :request, AudienceDynamicField = :dynamicField, joinRequestAttempts = joinRequestAttempts + :counter, UsernameSortField = :usf',
             ExpressionAttributeValues: {
                 ':request': true,
                 ':dynamicField': result.AudienceDynamicField,
                 ':counter': 1,
+                ':usf': result.UsernameSortField,
             }
         };
 
@@ -208,7 +260,7 @@ router.delete('/', async (req, res) => {
             S_K: `AUDIENCE#${audienceId}`,
         },
         ConditionExpression: ' joinRequested = :tr ',
-        UpdateExpression: 'SET joinRequested = :fal REMOVE AudienceDynamicField',
+        UpdateExpression: 'SET joinRequested = :fal REMOVE AudienceDynamicField, UsernameSortField',
         ExpressionAttributeValues: {
             ':tr': true,
             ':fal': false,
@@ -309,7 +361,7 @@ router.post('/response', async (req, res) => {
                 P_K: result.P_K,
                 S_K: result.S_K
             },
-            UpdateExpression: 'SET joinRequested = :fal, AudienceDynamicField = :adf, isPartcipant = :tr',
+            UpdateExpression: 'SET joinRequested = :fal, AudienceDynamicField = :adf, isPartcipant = :tr REMOVE UsernameSortField',
             ExpressionAttributeValues: {
                 ':fal': false,
                 ':tr': true,
@@ -342,7 +394,9 @@ router.post('/response', async (req, res) => {
             TransactItems: [{
                     Update: _audienceUpdateQuery
                 },
-                // { Update: _counterUpdateQuery }
+                {
+                    Update: _counterUpdateQuery
+                },
             ]
         };
 
@@ -368,7 +422,7 @@ router.post('/response', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`
             },
-            UpdateExpression: 'SET joinRequested = :fal REMOVE AudienceDynamicField',
+            UpdateExpression: 'SET joinRequested = :fal REMOVE AudienceDynamicField, UsernameSortField',
             ExpressionAttributeValues: {
                 ':fal': false,
             },
