@@ -36,6 +36,15 @@ exports.handler = async event => {
       P_K: `USER#${userId}`,
       S_K: `USERMETA#${userId}`
     },
+    Expected: {
+      'P_K': {
+        Exists: true,
+      },
+      'S_K': {
+        Exists: true,
+      },
+
+    },
     AttributeUpdates: {
       "online": {
         "Action": "PUT",
