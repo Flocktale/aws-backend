@@ -15,7 +15,8 @@ const {
     StorySchemaWithDatabaseKeys
 } = require('../../Schemas/StorySchema');
 
-// TODO: Add a method to automatically (delete or move to archives) the stale stories.
+// TODO: Add a method to automatically (delete or move to archives) the stale stories. 
+// Configure and use TTL attribute (set to 24 hrs)
 
 
 // required
@@ -178,7 +179,7 @@ router.get("/home/all", async (req, res) => {
 
     const allStories = [];
 
-    for (var followId in _followingsIds) {
+    for (var followId of _followingsIds) {
         const _storySearchQuery = {
             TableName: tableName,
             IndexName: timestampSortIndex,

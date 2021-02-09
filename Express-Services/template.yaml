@@ -249,6 +249,18 @@ Resources:
             Path: /clubs/{clubId}/kick
             Method: post
 
+        InviteUsers:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/invite
+            Method: post
+
+        InviteAllFollowers:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/invite/all-followers
+            Method: post
+
         GenerateAgoraToken:
           Type: Api
           Properties:

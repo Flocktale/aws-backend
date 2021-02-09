@@ -16,6 +16,8 @@ const kickFeatureRouter = require('./clubIdNestedRoutes/kickFeatureRoutes');
 
 const agoraRouter = require('./clubIdNestedRoutes/agoraRoutes');
 
+const inviteRouter = require('./clubIdNestedRoutes/inviteRoutes');
+
 router.use('/avatar', avatarRouter);
 router.use('/enter', clubEntryRouter);
 router.use('/reactions', reactionRouter);
@@ -25,8 +27,14 @@ router.use('/kick', kickFeatureRouter);
 
 router.use('/agora', agoraRouter);
 
+router.use('/invite', inviteRouter);
+
 // _________________________________________________________________________________________________________________________________________________________
 // _________________________________________________________________________________________________________________________________________________________
+
+
+
+
 
 router.get('/', async (req, res) => {
 
