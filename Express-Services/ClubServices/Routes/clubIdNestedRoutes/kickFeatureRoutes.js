@@ -15,6 +15,9 @@ const {
     postParticipantListToWebsocketUsers
 } = require('./websocketFunctions');
 
+const {
+    publishNotification
+} = require('./notificationFunctions')
 
 
 // required
@@ -98,9 +101,44 @@ router.post('/', async (req, res) => {
             // sending new participant list to all connected users.
             postParticipantListToWebsocketUsers(clubId);
 
+            _getClubData(clubId, ({
+                clubName
+            }) => {
+                var notifData = {
+                    title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
+                    image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+                }
+                publishNotification({
+                    userId: audienceId,
+                    notifData: notifData,
+                })
+            })
+
         }
     });
 });
+
+async function _getClubData(clubId, callback) {
+    if (!clubId) {
+        return;
+    }
+    const _clubQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `CLUBMETA#${clubId}`
+        },
+        AttributesToGet: ['clubName'],
+    }
+
+
+    const data = (await dynamoClient.get(_clubQuery).promise())['Item'];
+    if (data) {
+        callback(data);
+    }
+}
+
+
 
 
 module.exports = router;
