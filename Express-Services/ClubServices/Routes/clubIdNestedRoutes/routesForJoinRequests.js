@@ -21,6 +21,9 @@ const {
     postParticipantListToWebsocketUsers
 } = require('./websocketFunctions');
 
+const {
+    publishNotification
+} = require('./notificationFunctions');
 
 // required
 // headers - "lastevaluatedkey"  (optional)
@@ -240,7 +243,7 @@ router.post('/', async (req, res) => {
                         title: 'New join request from ' + audienceDoc.audience.username + ' on' + clubName,
                     }
 
-                    _sendJRNotifications({
+                    publishNotification({
                         userId: creator.userId,
                         notifData: notificationObj
                     });
@@ -441,7 +444,7 @@ router.post('/response', async (req, res) => {
                 clubName
             }) => {
                 notificationObj['title'] = 'Congratulations, you are now a panelist on ' + clubName;
-                _sendJRNotifications({
+                publishNotification({
                     userId: audienceId,
                     notifData: notificationObj
                 });
@@ -484,7 +487,7 @@ router.post('/response', async (req, res) => {
                     clubName
                 }) => {
                     notificationObj['title'] = 'Your request to speak could not be fulfilled on  ' + clubName;
-                    _sendJRNotifications({
+                    publishNotification({
                         userId: audienceId,
                         notifData: notificationObj
                     });
@@ -526,58 +529,6 @@ async function _getClubData({
     }
 }
 
-async function _sendJRNotifications({
-    userId,
-    notifData,
-}) {
-
-    if (!userId || !notifData) {
-        return;
-    }
-
-    const _endpointQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: 'SNS_DATA#',
-            S_K: `USER#${userId}`,
-        },
-        AttributesToGet: ['endpointArn'],
-    };
-
-    const endpointData = (await dynamoClient.get(_endpointQuery).promise())['Item'];
-
-    if (!endpointData) {
-        return console.log('no device token is registered for userId: ', userId);
-    }
-
-    // now publishing to push notification via sns.
-
-    const snsPushNotificationObj = {
-        GCM: JSON.stringify({
-            notification: {
-                title: notifData.title,
-                image: notifData.image,
-                sound: "default",
-                click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                priority: 'high',
-            },
-        }),
-    };
-
-
-    var notifParams = {
-        Message: JSON.stringify(snsPushNotificationObj),
-        MessageStructure: 'json',
-        TargetArn: endpointData.endpointArn,
-    };
-
-    try {
-        await sns.publish(notifParams).promise();
-
-    } catch (error) {
-        console.log('error while publishing notification for club invitation: ', error);
-    }
-}
 
 
 module.exports = router;

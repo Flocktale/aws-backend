@@ -5,12 +5,15 @@ const Joi = require('joi');
 const {
     dynamoClient,
     tableName,
-    sns,
 } = require('../../config');
 
 const {
     NotificationSchemaWithDatabaseKeys
 } = require('../../Schemas/notificationSchema');
+
+const {
+    publishNotification
+} = require('./notificationFunctions');
 
 
 //required
@@ -118,51 +121,13 @@ async function _sendAndSaveNotification(notificationObj) {
 
     await dynamoClient.put(_notificationPutQuery).promise();
 
-
-    // fetching endpoint arn to publish notification.
-
-    const _endpointQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: 'SNS_DATA#',
-            S_K: `USER#${notifData.userId}`,
-        },
-        AttributesToGet: ['endpointArn'],
-    };
-
-    const endpointData = (await dynamoClient.get(_endpointQuery).promise())['Item'];
-
-    if (!endpointData) {
-        return console.log('no device token is registered for userId: ', notifData.userId);
-    }
-
-    // now publishing to push notification via sns.
-
-    const snsPushNotificationObj = {
-        GCM: JSON.stringify({
-            notification: {
-                title: notifData.data.title,
-                image: notifData.data.secondaryAvatar,
-                sound: "default",
-                click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                priority: 'high',
-            },
-        }),
-    };
-
-
-    var notifParams = {
-        Message: JSON.stringify(snsPushNotificationObj),
-        MessageStructure: 'json',
-        TargetArn: endpointData.endpointArn,
-    };
-
-    try {
-        await sns.publish(notifParams).promise();
-
-    } catch (error) {
-        console.log('error while publishing notification for club invitation: ', error);
-    }
+    await publishNotification({
+        userId: notifData.userId,
+        notifData: {
+            title: notifData.data.title,
+            image: notifData.data.secondaryAvatar
+        }
+    });
 }
 
 // to send audience notification to all followers of sponsor
