@@ -18,6 +18,8 @@ const agoraRouter = require('./clubIdNestedRoutes/agoraRoutes');
 
 const inviteRouter = require('./clubIdNestedRoutes/inviteRoutes');
 
+const blockFeatureRouter = require('./clubIdNestedRoutes/blockFeatureRoutes');
+
 router.use('/avatar', avatarRouter);
 router.use('/enter', clubEntryRouter);
 router.use('/reactions', reactionRouter);
@@ -28,6 +30,8 @@ router.use('/kick', kickFeatureRouter);
 router.use('/agora', agoraRouter);
 
 router.use('/invite', inviteRouter);
+
+router.use('/block', blockFeatureRouter)
 
 // _________________________________________________________________________________________________________________________________________________________
 // _________________________________________________________________________________________________________________________________________________________

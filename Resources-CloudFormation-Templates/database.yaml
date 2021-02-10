@@ -16,6 +16,9 @@ Resources:
         - AttributeName: skey
           AttributeType: S
 
+        - AttributeName: userId
+          AttributeType: S
+
       KeySchema:
         - AttributeName: connectionId
           KeyType: HASH
@@ -28,6 +31,14 @@ Resources:
 
             - AttributeName: connectionId
               KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+        - IndexName: wsUserIdIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+
           Projection:
             ProjectionType: ALL
 

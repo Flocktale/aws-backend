@@ -4,7 +4,8 @@ const {
     apigwManagementApi,
     tableName,
     WsTable,
-    wsInvertIndex
+    wsInvertIndex,
+    wsUserIdIndex,
 } = require('../../config');
 
 
@@ -75,6 +76,40 @@ async function postParticipantListToWebsocketUsers(clubId) {
     await Promise.all(postCalls);
 }
 
+
+// blockAction can be "blocked" or "unblocked"
+async function postBlockMessageToWebsocketUser({
+    clubId,
+    userId,
+    blockAction,
+}) {
+
+    if (!clubId || (blockAction !== "blocked" && blockAction !== "unblocked") || !userId) {
+        console.log('wrong input for postBlockMessageToWebsocketUser, ', clubId, ' , ', blockAction, ' ,', userId);
+    }
+
+    const _connectionQuery = {
+        TableName: WsTable,
+        IndexName: wsUserIdIndex,
+        Key: {
+            userId: userId
+        },
+        AttributesToGet: ['connectionId']
+    };
+    const connectionData = (await dynamoClient.get(_connectionQuery).promise())['Item'];
+
+    if (data) {
+        await apigwManagementApi.postToConnection({
+            ConnectionId: connectionData.connectionId,
+            Data: Json.stringify({
+                what: blockAction,
+                clubId: clubId,
+            })
+        }).promise();
+    }
+}
+
 module.exports = {
     postParticipantListToWebsocketUsers,
+    postBlockMessageToWebsocketUser,
 };

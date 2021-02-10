@@ -142,7 +142,7 @@ router.post('/', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
             },
-            AttributesToGet: ['clubId', 'isParticipant', 'joinRequested',
+            AttributesToGet: ['clubId', 'isParticipant', 'joinRequested', 'isBlocked',
                 'joinRequestAttempts', 'audience', 'timestamp'
             ],
         };
@@ -162,13 +162,17 @@ router.post('/', async (req, res) => {
 
 
     try {
-        if (audienceDoc.isPartcipant === true) {
+        if (audienceDoc.isParticipant === true) {
             //  conflict (409) since user is already a partcipant.
             res.status(409).json('User is already a participant');
             return;
         } else if (audienceDoc.joinRequested === true) {
             //  conflict (409) since user already have an active join request.
             res.status(409).json('Join request is already pending!');
+            return;
+        } else if (audienceDoc.isBlocked === true) {
+            //  conflict (409) since user is blocked.
+            res.status(409).json('User is blocked from club!!!, better watch for it.');
             return;
         }
 
@@ -371,7 +375,7 @@ router.post('/response', async (req, res) => {
         const newTimestamp = Date.now();
 
         audienceDoc['joinRequested'] = false;
-        audienceDoc['isPartcipant'] = true;
+        audienceDoc['isParticipant'] = true;
         audienceDoc['timestamp'] = newTimestamp;
         audienceDoc['clubId'] = clubId;
 
@@ -391,7 +395,7 @@ router.post('/response', async (req, res) => {
                 P_K: result.P_K,
                 S_K: result.S_K
             },
-            UpdateExpression: 'SET joinRequested = :fal, AudienceDynamicField = :adf, isPartcipant = :tr REMOVE UsernameSortField',
+            UpdateExpression: 'SET joinRequested = :fal, AudienceDynamicField = :adf, isParticipant = :tr REMOVE UsernameSortField',
             ExpressionAttributeValues: {
                 ':fal': false,
                 ':tr': true,

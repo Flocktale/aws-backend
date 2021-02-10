@@ -3,8 +3,10 @@ const Joi = require('joi');
 const AudienceSchema = Joi.object({
     clubId: Joi.string().required(),
 
-    isPartcipant: Joi.boolean().default(false),
+    isParticipant: Joi.boolean().default(false),
     joinRequested: Joi.boolean().default(false),
+
+    isBlocked: Joi.boolean().default(false),
 
     joinRequestAttempts: Joi.number().default(0),
 
@@ -30,7 +32,10 @@ const AudienceSchemaWithDatabaseKeys = AudienceSchema.append({
         .default((parent, helpers) => {
             let counter = 0;
             let prefix;
-            if (parent.isPartcipant === true) {
+            if (parent.isBlocked === true) {
+                counter++;
+                prefix = "Blocked#";
+            } else if (parent.isParticipant === true) {
                 counter++;
                 prefix = "Participant#";
             } else if (parent.joinRequested === true) {
@@ -43,6 +48,7 @@ const AudienceSchemaWithDatabaseKeys = AudienceSchema.append({
 
             if (counter > 1) throw new Error('more than one boolean attribute is true');
         }), // GSI: AudienceDynamicDataIndex
+
 
     TimestampSortField: Joi.string().default(Joi.expression('AUDIENCE-SORT-TIMESTAMP#{{timestamp}}#{{audience.userId}}')), // GSI: TimestampSortIndex
 

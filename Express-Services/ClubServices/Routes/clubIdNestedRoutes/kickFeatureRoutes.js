@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
             "Action": "PUT",
             "Value": newTimestamp
         },
-        isPartcipant: {
+        isParticipant: {
             "Action": "PUT",
             "Value": false
         },

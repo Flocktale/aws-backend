@@ -32,7 +32,7 @@ const tableName = "MyTable";
 
 const WsTable = 'WsTable';
 const wsInvertIndex = 'wsInvertIndex';
-
+const wsUserIdIndex = 'wsUserIdIndex';
 
 
 
@@ -60,6 +60,7 @@ module.exports = {
 
     WsTable,
     wsInvertIndex,
+    wsUserIdIndex,
 
     clubCategoryIndex,
     clubCreatorIdIndex,

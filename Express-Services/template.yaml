@@ -249,6 +249,12 @@ Resources:
             Path: /clubs/{clubId}/kick
             Method: post
 
+        BlockClubUser:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/block
+            Method: post
+
         InviteUsers:
           Type: Api
           Properties:

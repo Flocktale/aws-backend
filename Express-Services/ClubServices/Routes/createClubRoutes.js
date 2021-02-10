@@ -72,7 +72,7 @@ router.post('/', async (req, res) => {
                 avatar: newClub.creator.avatar,
             },
 
-            isPartcipant: true,
+            isParticipant: true,
             timestamp: newClub.scheduleTime,
             AudienceDynamicField: `Participant#${newClub.scheduleTime}#${newClub.creator.userId}`
         });
