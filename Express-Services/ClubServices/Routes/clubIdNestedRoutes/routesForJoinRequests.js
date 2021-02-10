@@ -226,6 +226,25 @@ router.post('/', async (req, res) => {
             else {
                 console.log(data);
                 res.status(201).json('posted join request');
+
+                // sending notification
+                _getClubData({
+                    clubId: clubId,
+                    creatorAttr: true,
+                }, ({
+                    clubName,
+                    creator,
+                }) => {
+                    // we don't need to save these notifications in database as they are temporary.
+                    var notificationObj = {
+                        title: 'New join request from ' + audienceDoc.audience.username + ' on' + clubName,
+                    }
+
+                    _sendJRNotifications({
+                        userId: creator.userId,
+                        notifData: notificationObj
+                    });
+                });
             }
         });
 
@@ -335,9 +354,17 @@ router.post('/response', async (req, res) => {
         return;
     }
 
+    // we don't need to save these notifications in database as they are temporary.
+    var notificationObj = {
+        title: 'undefined',
+        image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+    }
+
 
 
     if (requestAction === 'accept') {
+
+
         const newTimestamp = Date.now();
 
         audienceDoc['joinRequested'] = false;
@@ -407,6 +434,20 @@ router.post('/response', async (req, res) => {
             // sending new participant list to all connected users.
             postParticipantListToWebsocketUsers(clubId);
 
+            // sending notification
+            _getClubData({
+                clubId: clubId
+            }, ({
+                clubName
+            }) => {
+                notificationObj['title'] = 'Congratulations, you are now a panelist on ' + clubName;
+                _sendJRNotifications({
+                    userId: audienceId,
+                    notifData: notificationObj
+                });
+
+            });
+
         } catch (error) {
             res.status(404).json(`Error accepting join request: ${error}`);
         }
@@ -415,6 +456,7 @@ router.post('/response', async (req, res) => {
 
 
     } else if (requestAction === 'cancel') {
+
 
         const _audienceUpdateQuery = {
             TableName: tableName,
@@ -434,6 +476,20 @@ router.post('/response', async (req, res) => {
             else {
                 console.log(data);
                 res.status(202).json('Cancelled join request');
+
+                // sending notification
+                _getClubData({
+                    clubId: clubId
+                }, ({
+                    clubName
+                }) => {
+                    notificationObj['title'] = 'Your request to speak could not be fulfilled on  ' + clubName;
+                    _sendJRNotifications({
+                        userId: audienceId,
+                        notifData: notificationObj
+                    });
+
+                });
             }
         });
 
@@ -443,6 +499,85 @@ router.post('/response', async (req, res) => {
     }
 
 });
+
+async function _getClubData({
+    clubId,
+    nameAttr = true,
+    creatorAttr = false,
+}, callback) {
+    if (!clubId) {
+        return;
+    }
+    const _clubQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `CLUBMETA#${clubId}`
+        },
+        AttributesToGet: ['clubName'],
+    }
+    if (creatorAttr === true) {
+        _clubQuery['AttributesToGet'].push('creator');
+    }
+
+    const data = (await dynamoClient.get(_clubQuery).promise())['Item'];
+    if (data) {
+        callback(data);
+    }
+}
+
+async function _sendJRNotifications({
+    userId,
+    notifData,
+}) {
+
+    if (!userId || !notifData) {
+        return;
+    }
+
+    const _endpointQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: 'SNS_DATA#',
+            S_K: `USER#${userId}`,
+        },
+        AttributesToGet: ['endpointArn'],
+    };
+
+    const endpointData = (await dynamoClient.get(_endpointQuery).promise())['Item'];
+
+    if (!endpointData) {
+        return console.log('no device token is registered for userId: ', userId);
+    }
+
+    // now publishing to push notification via sns.
+
+    const snsPushNotificationObj = {
+        GCM: JSON.stringify({
+            notification: {
+                title: notifData.title,
+                image: notifData.image,
+                sound: "default",
+                click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                priority: 'high',
+            },
+        }),
+    };
+
+
+    var notifParams = {
+        Message: JSON.stringify(snsPushNotificationObj),
+        MessageStructure: 'json',
+        TargetArn: endpointData.endpointArn,
+    };
+
+    try {
+        await sns.publish(notifParams).promise();
+
+    } catch (error) {
+        console.log('error while publishing notification for club invitation: ', error);
+    }
+}
 
 
 module.exports = router;

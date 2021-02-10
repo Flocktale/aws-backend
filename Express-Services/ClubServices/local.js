@@ -13,19 +13,24 @@
 
 
 async function testing() {
+    const notifData = {};
 
-    const a = ['a', 'b'];
-    for (var item of a) {
-        console.log(item);
-        abc(item);
-    }
+    const snsPushNotificationObj = {
+        GCM: JSON.stringify({
+            notification: {
+                title: 'abrake davra',
+                image: notifData.image,
+                sound: "default",
+                click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                priority: 'high',
+            },
+        }),
+    };
+
+    console.log(JSON.stringify(snsPushNotificationObj));
 
 }
 
-function abc(z) {
-    setTimeout(function () {
-        console.log('hey' + z);
-    }, 1000);
-}
+
 
 testing();
