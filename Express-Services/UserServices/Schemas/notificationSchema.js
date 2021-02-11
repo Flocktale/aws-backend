@@ -38,6 +38,14 @@ const NotificationSchema = Joi.object({
         }),
 
     }).required(),
+
+    // this is a TTL attribute, formatted in Unix epoch time (in seconds) (set for 8 weeks )       
+    // dynamodb uses time in seconds instead of milliseconds for TTL settings.
+    expiryTime: Joi.number().default(() => {
+        const currentDate = new Date();
+        currentDate.setDate(currentDate.getDate() + 56);
+        return Math.floor(Date.parse(currentDate) / 1000);
+    }),
 });
 
 const NotificationSchemaWithDatabaseKeys = NotificationSchema.append({
