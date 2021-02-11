@@ -25,6 +25,39 @@ const {
 } = require('./websocketFunctions');
 
 
+router.get('/', async (req, res) => {
+
+    const clubId = req.clubId;
+
+    const query = {
+        TableName: tableName,
+        IndexName: audienceDynamicDataIndex,
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "AudienceDynamicField": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`Blocked#`]
+            },
+        },
+        AttributesToGet: ['audience', 'timestamp'],
+        ScanIndexForward: false,
+        ReturnConsumedCapacity: "INDEXES"
+    };
+
+    dynamoClient.query(query, (err, data) => {
+        if (err) res.status(404).json(err);
+        else {
+            console.log(data);
+            res.status(200).json(data['Items']);
+        }
+    });
+
+});
+
+
 // required
 // query parameters - "audienceId"
 router.post('/', async (req, res) => {
@@ -44,17 +77,23 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
         },
-        AttributesToGet: ['audience', 'isParticipant'],
+        AttributesToGet: ['audience', 'isParticipant', 'isBlocked'],
     };
 
     var audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
 
-    const wasParticipant = audienceDoc.isParticipant;
 
     if (!audienceDoc) {
         res.status(404).json("This user doesn't exist as audience");
         return;
     }
+
+    if (audienceDoc.isBlocked === true) {
+        res.status(404).json('This user is already blocked');
+        return;
+    }
+
+    const wasParticipant = audienceDoc.isParticipant;
 
     audienceDoc['clubId'] = clubId;
     audienceDoc['isBlocked'] = true;
@@ -145,10 +184,10 @@ router.post('/', async (req, res) => {
 
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
-        if (err) res.status(404).json(`Error in blocking from club : ${err}`);
+        if (err) res.status(400).json(`Error in blocking from club : ${err}`);
         else {
             console.log(data);
-            res.status(201).json('blocked participant');
+            res.status(202).json('blocked user');
 
             // send notification to affected user
             _getClubData(clubId, ({
@@ -201,5 +240,120 @@ async function _getClubData(clubId, callback) {
         callback(data);
     }
 }
+
+// required
+// query parameters - "audienceId"
+
+router.delete('/', async (req, res) => {
+    const clubId = req.clubId;
+
+    const audienceId = req.query.audienceId;
+
+    if (!audienceId) {
+        res.status(400).json('audienceId is required');
+        return;
+    }
+
+    // fetching audience info for this club
+    const _audienceDocQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `AUDIENCE#${audienceId}`,
+        },
+        AttributesToGet: ['audience', 'isBlocked'],
+    };
+
+    var audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
+
+    if (!audienceDoc) {
+        res.status(404).json("This user doesn't exist for this club");
+        return;
+    }
+
+    if (audienceDoc.isBlocked !== true) {
+        res.status(404).json('This user is unblocked already. ')
+        return;
+    }
+
+
+    audienceDoc['clubId'] = clubId;
+    audienceDoc['isBlocked'] = false;
+    audienceDoc['timestamp'] = Date.now();
+
+    try {
+        audienceDoc = await AudienceSchemaWithDatabaseKeys.validateAsync(audienceDoc);
+    } catch (error) {
+        console.log('error in validating audience schema while blocking user: ', error);
+        return res.status(500).json('error in validating audience schema');
+    }
+
+    // updating all possible attriubtes
+    const _attributeUpdates = {
+        timestamp: {
+            "Action": "PUT",
+            "Value": audienceDoc.timestamp
+        },
+
+        isBlocked: {
+            "Action": "PUT",
+            "Value": false
+        },
+        AudienceDynamicField: {
+            "Action": "DELETE"
+        },
+        TimestampSortField: {
+            "Action": "PUT",
+            "Value": audienceDoc.TimestampSortField,
+        },
+    };
+
+    const _audienceUnblockQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `AUDIENCE#${audienceId}`
+        },
+        AttributeUpdates: _attributeUpdates,
+    }
+
+
+    // audience counter is not incremented here, as it was not decremented when blocking user
+    // to prevent blocked user data being shown up in list of all audience, we delete TimestampSortField,
+    /// which is used by GSI TimestampSortIndex to display list of audience.
+
+    dynamoClient.update(_audienceUnblockQuery, (err, data) => {
+        if (err) res.status(400).json(`Error in unblocking from club : ${err}`);
+        else {
+            res.status(202).json('unblocked user');
+
+            // send notification to affected user
+            _getClubData(clubId, ({
+                clubName
+            }) => {
+                var notifData = {
+                    title: 'No more blocking from  ' + clubName + '. You can listen to it now.',
+                    image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+                }
+                publishNotification({
+                    userId: audienceId,
+                    notifData: notifData
+                });
+            });
+
+            // send a message through websocket to user.
+            postBlockMessageToWebsocketUser({
+                clubId: clubId,
+                blockAction: "unblocked",
+                userId: audienceId
+            });
+
+        }
+
+    });
+
+
+
+})
 
 module.exports = router;

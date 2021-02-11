@@ -28,6 +28,7 @@ const AudienceSchemaWithDatabaseKeys = AudienceSchema.append({
         Joi.expression('AUDIENCE#{{audience.userId}}')
     ),
 
+    // this field is not for just audience
     AudienceDynamicField: Joi.string()
         .default((parent, helpers) => {
             let counter = 0;

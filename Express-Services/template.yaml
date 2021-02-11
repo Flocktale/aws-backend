@@ -249,11 +249,23 @@ Resources:
             Path: /clubs/{clubId}/kick
             Method: post
 
+        GetAllBlockedUsers:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/block
+            Method: get
+
         BlockClubUser:
           Type: Api
           Properties:
             Path: /clubs/{clubId}/block
             Method: post
+
+        UnblockClubUser:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/block
+            Method: delete
 
         InviteUsers:
           Type: Api
