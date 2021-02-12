@@ -109,7 +109,40 @@ async function postBlockMessageToWebsocketUser({
     }
 }
 
+async function postMuteMessageToWebsocketUser({
+    userId,
+    clubId
+}) {
+
+    if (!userId || !clubId) return;
+
+    const _connectionQuery = {
+        TableName: WsTable,
+        IndexName: wsUserIdIndex,
+        Key: {
+            userId: userId
+        },
+        AttributesToGet: ['connectionId']
+    };
+    const connectionData = (await dynamoClient.get(_connectionQuery).promise())['Item'];
+
+    if (data) {
+        // sending two times to lessen the chances of message drop
+        for (var i = 0; i < 2; i++) {
+            await apigwManagementApi.postToConnection({
+                ConnectionId: connectionData.connectionId,
+                Data: Json.stringify({
+                    what: 'muteParticipant',
+                    clubId: clubId,
+                })
+            }).promise();
+        }
+    }
+
+}
+
 module.exports = {
     postParticipantListToWebsocketUsers,
     postBlockMessageToWebsocketUser,
+    postMuteMessageToWebsocketUser,
 };

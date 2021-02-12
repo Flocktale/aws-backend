@@ -267,6 +267,12 @@ Resources:
             Path: /clubs/{clubId}/block
             Method: delete
 
+        MuteParticipants:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/mute
+            Method: post
+
         InviteUsers:
           Type: Api
           Properties:
