@@ -1,4 +1,7 @@
 const Joi = require('joi');
+const {
+    nanoid
+} = require('nanoid');
 
 // FR# - Friend Request related notifications
 ///     new - for a new incoming friend request
@@ -13,6 +16,8 @@ const Joi = require('joi');
 
 const NotificationSchema = Joi.object({
     userId: Joi.string().required(),
+    notificationId: Joi.string().default(() => nanoid()),
+
     data: Joi.object({
 
         type: Joi.string().valid('FR#new', 'FR#accepted', 'FLW#new', 'CLUB#INV#prt', 'CLUB#INV#adc').required(),
@@ -50,7 +55,9 @@ const NotificationSchema = Joi.object({
 
 const NotificationSchemaWithDatabaseKeys = NotificationSchema.append({
     P_K: Joi.string().default(Joi.expression('USER#{{userId}}')),
-    S_K: Joi.string().default(Joi.expression('NOTIFICATIONS#{{data.timestamp}}')),
+    S_K: Joi.string().default(Joi.expression('NOTIFICATION#{{notificationId}}')),
+
+    TimestampSortField: Joi.string().default(Joi.expression('NOTIF-SORT-TIMESTAMP#{{data.timestamp}}')), // GSI: TimestampSortIndex
 });
 
 exports.NotificationSchema = NotificationSchema;

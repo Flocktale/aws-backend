@@ -5,6 +5,7 @@ const {
     dynamoClient,
     tableName,
     sns,
+    timestampSortIndex,
 } = require('../../config');
 
 const {
@@ -124,14 +125,15 @@ router.get("/", async (req, res) => {
     const userId = req.userId;
     const query = {
         TableName: tableName,
+        IndexName: timestampSortIndex,
         KeyConditions: {
             'P_K': {
                 ComparisonOperator: 'EQ',
                 AttributeValueList: [`USER#${userId}`]
             },
-            'S_K': {
+            'TimestampSortField': {
                 ComparisonOperator: 'BEGINS_WITH',
-                AttributeValueList: [`NOTIFICATIONS#`]
+                AttributeValueList: [`NOTIF-SORT-TIMESTAMP#`]
             }
         },
         AttributesToGet: ['data'],
@@ -170,14 +172,24 @@ router.get("/", async (req, res) => {
 
 });
 
-router.post("/opened/{timestamp}", async (req, res) => {
+
+
+// required
+// query parameters - "notificationId"
+router.post("/opened", async (req, res) => {
     const userId = req.userId;
-    const timestamp = req.params.timestamp;
+    const notificationId = req.query.notificationId;
+
+    if (!notificationId) {
+        return res.status(400).json('notificationId is required in query parameters');
+    }
+
+
     const _updateQuery = {
         TableName: tableName,
         Key: {
             P_K: `USER#${userId}`,
-            S_K: `NOTIFICATIONS#${timestamp}`,
+            S_K: `NOTIFICATION#${notificationId}`,
         },
         ConditionExpression: '#data.#opened = :fal ',
         UpdateExpression: 'SET #data.#opened = :tr',

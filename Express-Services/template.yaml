@@ -88,7 +88,7 @@ Resources:
         NotificationOpenedStatus:
           Type: Api
           Properties:
-            Path: /users/{userId}/notifications/opened/{timestamp}
+            Path: /users/{userId}/notifications/opened
             Method: post
 
         ListSocialRelatives:
