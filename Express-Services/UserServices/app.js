@@ -20,6 +20,11 @@ const cors = require('cors');
 
 const app = express();
 
+const {
+    isUsernameAvailable
+} = require('./Functions/username_availability');
+
+
 
 const createRouter = require('./Routes/createUserRoutes');
 const userIdRouter = require('./Routes/userIdRoutes');
@@ -36,6 +41,22 @@ app.get("/", (req, res) => {
 app.get("/users", (req, res) => {
     // TODO: send list of users
     res.json('You have hit a TODO: Send list of users )');
+});
+
+// required
+// query parameters - "username"
+app.get('/users/username-availability', async (req, res) => {
+
+    const username = req.query.username;
+    if (!username) {
+        return res.status(400).json('send some username to check for');
+    }
+
+    const result = await isUsernameAvailable(username);
+    return res.status(200).json({
+        isAvailable: result
+    });
+
 });
 
 

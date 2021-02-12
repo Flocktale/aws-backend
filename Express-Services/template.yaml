@@ -37,6 +37,12 @@ Resources:
             Path: /users
             Method: get
 
+        CheckUsernameAvailability:
+          Type: Api
+          Properties:
+            Path: /users/username-availability
+            Method: get
+
         CreateUser:
           Type: Api
           Properties:

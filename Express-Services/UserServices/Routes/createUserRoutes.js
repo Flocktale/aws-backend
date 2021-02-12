@@ -1,17 +1,35 @@
 const router = require('express').Router();
 const fs = require('fs');
-const { UserBaseCompleteSchema } = require('../Schemas/UserBase');
-const { imageUploadConstParams, dynamoClient, s3, tableName } = require('../config');
+const {
+    UserBaseCompleteSchema
+} = require('../Schemas/UserBase');
+const {
+    imageUploadConstParams,
+    dynamoClient,
+    s3,
+    tableName
+} = require('../config');
+
+const {
+    isUsernameAvailable
+} = require('../Functions/username_availability');
 
 
 
 // required
 // body : UserBaseCompleteSchema validated
+// username must be unique.
 
 router.post("/", async (req, res) => {
     try {
         req.body['avatar'] = `https://mootclub-public.s3.amazonaws.com/userAvatar/${req.body.userId}`;
         const result = await UserBaseCompleteSchema.validateAsync(req.body);
+
+        const _availability = await isUsernameAvailable(result.username);
+        if (_availability !== true) {
+            return res.status(400).json('username is not available');
+        }
+
         const query = {
             TableName: tableName,
             Item: result,
@@ -21,12 +39,12 @@ router.post("/", async (req, res) => {
                 ":skey": result.S_K
             }
         };
+
         dynamoClient.put(query, (err, data) => {
             if (err) {
                 console.log(err);
                 res.status(404).json(`Error creating profile: ${err}`);
-            }
-            else {
+            } else {
                 const fileName = result.userId;
                 var params = {
                     ...imageUploadConstParams,
@@ -39,8 +57,7 @@ router.post("/", async (req, res) => {
                         console.log(`Error occured while trying to upload: ${err}`);
                         console.log(data);
                         return;
-                    }
-                    else if (data) {
+                    } else if (data) {
                         console.log('Default profile pic uploaded successfully!');
                         console.log(data);
                     }

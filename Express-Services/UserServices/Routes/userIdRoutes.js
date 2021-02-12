@@ -1,14 +1,17 @@
 const router = require('express').Router();
 
 const {
-    sortedSocialRelationByUsernameIndex,
     dynamoClient,
-    tableName
+    tableName,
 } = require('../config');
 
 const {
     RelationIndexObjectSchema,
 } = require('../Schemas/UserRelation');
+
+const {
+    isUsernameAvailable
+} = require('../Functions/username_availability');
 
 
 const avatarRouter = require('./userIdNestedRoutes/avatarRoutes');
@@ -21,6 +24,7 @@ router.use('/avatar', avatarRouter);
 router.use('/relations', relationsRouter);
 router.use('/story', storyRouter);
 router.use('/notifications', notificationRouter);
+
 
 
 
@@ -118,13 +122,28 @@ router.patch("/", async (req, res) => {
     const attributeUpdates = {};
 
     console.log(req.body);
+
+    var isUsernameModified = false;
+
     for (let key of _newItemKeys) {
         if (_oldItem[key] !== req.body[key]) {
+
+            if (key === 'username') {
+                isUsernameModified = true;
+            }
+
             console.log(key, _oldItem[key] + " => ", req.body[key]);
             attributeUpdates[key] = {
                 "Action": "PUT",
                 "Value": req.body[key]
             };
+        }
+    }
+
+    if (isUsernameModified === true) {
+        const isAvalaible = await isUsernameAvailable(req.body['username']);
+        if (isAvalaible !== true) {
+            return res.status(400).json('username is not available');
         }
     }
 

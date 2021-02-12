@@ -1,34 +1,31 @@
-const app = require('./app');
-app.listen(9999, () => {
-    console.log("Listening on port 9999");
-});
+// const app = require('./app');
+// app.listen(9999, () => {
+//     console.log("Listening on port 9999");
+// });
 
 
 // const Joi = require('joi');
+const {
+    isUsernameAvailable
+} = require('./Functions/username_availability');
 
-// async function testing() {
-
-
-//     const a = [{
-//         'k': 'a1'
-//     }, {
-//         'k': 'a2'
-//     }];
-//     console.log(a);
-//     const d = a.map(({
-//         k
-//     }) => {
-//         return k.split('a')[1]
-//     });
-
-//     for (var z in d) {
-//         console.log(z);
-//     }
-
-//     d.push('3');
-//     console.log(d);
+const {
+    tableName,
+    searchByUsernameIndex,
+    dynamoClient
+} = require('./config');
 
 
-// }
+async function testing() {
+    const username = 'mohit';
 
-// testing();
+    try {
+        const result = await isUsernameAvailable(username);
+        console.log(result);
+    } catch (error) {
+        console.log(error);
+    }
+
+}
+
+testing();
