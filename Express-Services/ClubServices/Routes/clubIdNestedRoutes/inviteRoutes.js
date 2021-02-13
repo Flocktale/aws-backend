@@ -12,6 +12,10 @@ const {
 } = require('../../Schemas/notificationSchema');
 
 const {
+    AudienceSchemaWithDatabaseKeys
+} = require('../../Schemas/Audience');
+
+const {
     publishNotification
 } = require('./notificationFunctions');
 
@@ -95,16 +99,95 @@ router.post('/', async (req, res) => {
         notificationObj['data']['title'] = 'Get along with ' + _sponsorData.username + ' on ' + clubData.clubName + ' , their interest might intrigue you too.';
     }
 
+    // asynchronously sending and saving notifications for all invitee.
     for (var userId of invitation.invitee) {
         notificationObj['userId'] = userId;
-        _sendAndSaveNotification(notificationObj); // asynchronously sending and saving notifications for all invitee.
+
+
+        if (invitation.type === 'participant') {
+
+            // checking if an audience doc already exists or not for this user.
+            const _oldAudienceDocQuery = {
+                TableName: tableName,
+                Key: {
+                    P_K: `CLUB#${clubId}`,
+                    S_K: `AUDIENCE#${userId}`,
+                },
+                AttributesToGet: ['isBlocked', 'isParticipant']
+            };
+
+            const oldAudienceDoc = (await dynamoClient.get(_oldAudienceDocQuery).promise())['Item'];
+
+            var _userData;
+
+            if (oldAudienceDoc) {
+                if (oldAudienceDoc.isBlocked === true || oldAudienceDoc.isParticipant === true) {
+                    console.error('invitation was being intended to be sent to wrong user, audience data for that user, isBlocked: ', oldAudienceDoc.isBlocked, ', isParticipant: ', oldAudienceDoc.isParticipant, '............. this is an example of bad implementation, fix this.');
+                    // skip the loop
+                    continue;
+                }
+            } else {
+                const _userQuery = {
+                    TableName: tableName,
+                    Key: {
+                        P_K: `USER#${userId}`,
+                        S_K: `USERMETA#${userId}`,
+                    },
+                    AttributesToGet: ['username', 'avatar'],
+                }
+                _userData = (await dynamoClient.get(_userQuery).promise())['Item'];
+            }
+
+            _sendAndSaveNotification(notificationObj, async (notificationId) => {
+
+                if (oldAudienceDoc) {
+                    // updating oldAudienceDoc
+                    const _audienceUpdateQuery = {
+                        TableName: tableName,
+                        Key: {
+                            P_K: `CLUB#${clubId}`,
+                            S_K: `AUDIENCE#${userId}`
+                        },
+                        UpdateExpression: 'SET invitationId = :invId',
+                        ExpressionAttributeValues: {
+                            ':invId': notificationId,
+                        },
+                    }
+
+                    await dynamoClient.update(_audienceUpdateQuery).promise();
+
+                } else {
+
+                    // creating audience doc for this user and storing notificationId for invitation
+
+                    const _audienceDoc = await AudienceSchemaWithDatabaseKeys.validateAsync({
+                        clubId: clubId,
+                        audience: {
+                            userId: userId,
+                            username: _userData.username,
+                            avatar: _userData.avatar,
+                        },
+                        invitationId: notificationId,
+                    });
+
+                    const _audiencePutQuery = {
+                        TableName: tableName,
+                        Item: _audienceDoc,
+                    };
+                    await dynamoClient.put(_audiencePutQuery).promise();
+                }
+
+            });
+        } else {
+            _sendAndSaveNotification(notificationObj);
+        }
     }
 
     return res.status(202).json('Notifications sent to invitee');
 
 });
 
-async function _sendAndSaveNotification(notificationObj) {
+async function _sendAndSaveNotification(notificationObj, callback) {
     if (!notificationObj) {
         console.log('no notificationObj was passed when _sendAndSaveNotification was called');
         return;
@@ -120,6 +203,11 @@ async function _sendAndSaveNotification(notificationObj) {
     }
 
     await dynamoClient.put(_notificationPutQuery).promise();
+
+    if (callback) {
+        // sending back notificationId for further use.
+        callback(notifData.notificationId);
+    }
 
     await publishNotification({
         userId: notifData.userId,

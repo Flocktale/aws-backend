@@ -10,7 +10,6 @@ const AudienceSchema = Joi.object({
 
     joinRequestAttempts: Joi.number().default(0),
 
-
     audience: Joi.object({
         userId: Joi.string().required(),
         username: Joi.string().required(),
@@ -18,6 +17,10 @@ const AudienceSchema = Joi.object({
     }).required(),
 
     timestamp: Joi.number().default(() => Date.now()),
+
+
+    //invitationId exists when user has a pending invitation for participation in club, otherwise it is deleted/non-existent. 
+    invitationId: Joi.string(),
 
 });
 

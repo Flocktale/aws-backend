@@ -143,7 +143,7 @@ router.post('/', async (req, res) => {
                 S_K: `AUDIENCE#${audienceId}`,
             },
             AttributesToGet: ['clubId', 'isParticipant', 'joinRequested', 'isBlocked',
-                'joinRequestAttempts', 'audience', 'timestamp'
+                'joinRequestAttempts', 'audience', 'timestamp', 'invitationId'
             ],
         };
 
@@ -184,7 +184,7 @@ router.post('/', async (req, res) => {
 
         const result = await AudienceSchemaWithDatabaseKeys.validateAsync(audienceDoc);
 
-        const _audienceUpdateQuery = {
+        var _audienceUpdateQuery = {
             TableName: tableName,
             Key: {
                 P_K: result.P_K,
@@ -198,6 +198,13 @@ router.post('/', async (req, res) => {
                 ':usf': result.UsernameSortField,
             }
         };
+
+        if (audienceDoc.invitationId) {
+            // if any pending invitation exists (which should not exists while on this api, this is a case of bad implementation)
+            //  we are removing this now
+            console.error('invitationId existed when calling join request api, which should not be, amend required implementations');
+            _audienceUpdateQuery['UpdateExpression'] += ' REMOVE invitationId';
+        }
 
         const counterDoc = await CountJoinRequestSchema.validateAsync({
             clubId: clubId
@@ -339,7 +346,7 @@ router.post('/response', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
             },
-            AttributesToGet: ['joinRequested', 'audience', 'timestamp'],
+            AttributesToGet: ['joinRequested', 'audience', 'timestamp', 'invitationId'],
         };
 
         audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -402,6 +409,14 @@ router.post('/response', async (req, res) => {
                 ':adf': result.AudienceDynamicField,
             },
         };
+
+        if (audienceDoc.invitationId) {
+            // if any pending invitation exists
+
+            // we don't need to mention REMOVE word here as it is already in there.
+            _audienceUpdateQuery['UpdateExpression'] += ', invitationId';
+
+        }
 
 
         const counterDoc = await CountParticipantSchema.validateAsync({
@@ -477,6 +492,15 @@ router.post('/response', async (req, res) => {
             },
 
         };
+
+
+        if (audienceDoc.invitationId) {
+            // if any pending invitation exists
+
+            // we don't need to mention REMOVE word here as it is already in there.
+            _audienceUpdateQuery['UpdateExpression'] += ', invitationId';
+
+        }
 
         dynamoClient.update(_audienceUpdateQuery, (err, data) => {
             if (err) res.status(404).json(`Error in cancelling join request: ${err}`);

@@ -6,30 +6,26 @@
 //     console.log("Listening on port 3000");
 // });
 
-// const {
-//     dynamoClient,
-//     tableName
-// } = require('./config');
+const {
+    dynamoClient,
+    tableName
+} = require('./config');
 
 
 async function testing() {
-    const notifData = {};
 
-    const snsPushNotificationObj = {
-        GCM: JSON.stringify({
-            notification: {
-                title: 'abrake davra',
-                image: notifData.image,
-                sound: "default",
-                click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                priority: 'high',
-            },
-        }),
+    const a = {
+        a: 'abc'
     };
-
-    console.log(JSON.stringify(snsPushNotificationObj));
+    a.a += '   def';
+    console.error(a);
+    if (a.b) {
+        console.log(a.b);
+    }
 
 }
+
+
 
 
 
