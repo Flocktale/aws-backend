@@ -175,13 +175,121 @@ router.get("/", async (req, res) => {
 
 
 // required
-// query parameters - "notificationId"
+// query parameters - 
+///     "notificationId"
+///     "action" (valid values are "accept","cancel") (required in case club invitation type)
 router.post("/opened", async (req, res) => {
     const userId = req.userId;
     const notificationId = req.query.notificationId;
+    const action = req.query.action;
 
     if (!notificationId) {
         return res.status(400).json('notificationId is required in query parameters');
+    }
+
+    const _notificationQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `USER#${userId}`,
+            S_K: `NOTIFICATION#${notificationId}`,
+        },
+        ProjectionExpression: 'data.type, data.opened, data.targetResourceId',
+    }
+
+    const _notification = (await dynamoClient.get(_notificationQuery).promise())['Item'];
+    if (!_notification) {
+        return res.status(404).json('No notification found');
+    }
+    if (_notification.data.opened === true) {
+        return res.status(200).json('Notification is already opened');
+    }
+
+    var responseString;
+
+    // handling club participation type invitation
+    if (_notification.data.type === 'CLUB#INV#prt') {
+        if (!(action !== 'accept' && action !== 'cancel')) {
+            return res.status(400).json('action value is required in query parameters for this notification');
+        }
+
+        const clubId = _notification.data.targetResourceId;
+
+        const _audienceQuery = {
+            TableName: tableName,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `AUDIENCE#${userId}`,
+            },
+            AttributesToGet: ['invitationId', 'joinRequested'],
+        }
+
+        const _audienceData = (await dynamoClient.get(_audienceQuery).promise())['Item'];
+
+        if (!_audienceData.invitationId) {
+            responseString = 'INVITATION_EXPIRED';
+        } else {
+
+            const _audienceUpdateQuery = {
+                TableName: tableName,
+                Key: {
+                    P_K: `CLUB#${clubId}`,
+                    S_K: `AUDIENCE#${userId}`,
+                },
+                AttributeUpdates: {
+                    invitationId: {
+                        "Action": "DELETE"
+                    }
+                },
+            };
+            const _transactQuery = {
+                TransactItems: []
+            };
+
+            if (action === 'accept') {
+                if (_audienceData.joinRequested === true) {
+                    _audienceUpdateQuery['AttributeUpdates']['joinRequested'] = {
+                        "Action": "PUT",
+                        "Value": false
+                    };
+                }
+
+                _audienceUpdateQuery['AttributeUpdates']['isParticipant'] = {
+                    "Action": "PUT",
+                    "Value": true
+                };
+
+                _audienceUpdateQuery['AttributeUpdates']['AudienceDynamicField'] = {
+                    "Action": "PUT",
+                    "Value": 'Participant#' + Date.now() + '#' + userId,
+                };
+
+                const _updateParticipantCounterQuery = {
+                    TableName: tableName,
+                    Key: {
+                        P_K: `CLUB#${clubId}`,
+                        S_K: `CountParticipant#`,
+                    },
+                    UpdateExpression: 'set #cnt = #cnt + :counter', // incrementing
+                    ExpressionAttributeNames: {
+                        '#cnt': 'count'
+                    },
+                    ExpressionAttributeValues: {
+                        ':counter': 1,
+                    }
+                }
+                _transactQuery.TransactItems.push({
+                    Update: _updateParticipantCounterQuery,
+                });
+            }
+
+            _transactQuery.TransactItems.push({
+                Update: _audienceUpdateQuery,
+            });
+
+            await dynamoClient.transactWrite(_transactQuery).promise();
+
+        }
+
     }
 
 
@@ -191,12 +299,8 @@ router.post("/opened", async (req, res) => {
             P_K: `USER#${userId}`,
             S_K: `NOTIFICATION#${notificationId}`,
         },
-        ConditionExpression: '#data.#opened = :fal ',
-        UpdateExpression: 'SET #data.#opened = :tr',
-        ExpressionAttributeNames: {
-            '#data': 'data',
-            '#opened': 'opened'
-        },
+        ConditionExpression: 'data.opened = :fal ',
+        UpdateExpression: 'SET data.opened = :tr',
         ExpressionAttributeValues: {
             ":fal": false,
             ":tr": true,
@@ -205,7 +309,10 @@ router.post("/opened", async (req, res) => {
 
     try {
         await dynamoClient.update(_updateQuery).promise();
-        return res.status(202).json('Notification open status saved successfully');
+        if (!responseString) {
+            responseString = 'Notification open status saved successfully';
+        }
+        return res.status(202).json(responseString);
     } catch (error) {
         console.log('error in modifying notification open status: ', error);
         return res.status(400).json('error in modifying notification open status');

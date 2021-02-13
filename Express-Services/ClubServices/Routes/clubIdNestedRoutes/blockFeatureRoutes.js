@@ -77,7 +77,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
         },
-        AttributesToGet: ['audience', 'isParticipant', 'isBlocked'],
+        AttributesToGet: ['audience', 'isParticipant', 'isBlocked', 'invitationId'],
     };
 
     var audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -140,6 +140,13 @@ router.post('/', async (req, res) => {
             "Action": "DELETE"
         },
     };
+
+    if (audienceDoc.invitationId) {
+        // if any invitation exists for this user, delete that.
+        _attributeUpdates['invitationId'] = {
+            "Action": "DELETE"
+        };
+    }
 
     const _audienceBlockQuery = {
         TableName: tableName,

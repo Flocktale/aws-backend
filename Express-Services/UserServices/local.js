@@ -17,14 +17,7 @@ const {
 
 
 async function testing() {
-    const username = 'mohit';
-
-    try {
-        const result = await isUsernameAvailable(username);
-        console.log(result);
-    } catch (error) {
-        console.log(error);
-    }
+    console.log('abcd: ' + Date.now() + ' hello');
 
 }
 
