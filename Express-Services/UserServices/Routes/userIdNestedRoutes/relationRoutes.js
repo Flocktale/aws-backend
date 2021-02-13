@@ -54,54 +54,41 @@ router.get('/', async (req, res) => {
         res.status(501).json('request has hit a dead end');
         return;
     }
+
+    var _indexName, _sortKey, _sortField;
+
+    if (req.query.sortby === 'username') {
+        _indexName = usernameSortIndex;
+        _sortKey = 'UsernameSortField';
+        _sortField = 'RELATION-SORT-USERNAME#';
+
+    } else {
+        _indexName = timestampSortIndex;
+        _sortKey = 'TimestampSortField';
+        _sortField = 'RELATION-SORT-TIMESTAMP#';
+    }
+
     const query = {
         TableName: tableName,
-        AttributesToGet: [
-            'foreignUser', 'relationIndexObj', 'timestamp'
-        ],
-        QueryFilter: {
-            'relationIndexObj': {
-                ComparisonOperator: 'EQ',
-                AttributeValueList: [{
-                    bitChecker: true
-                }]
+        IndexName: _indexName,
+        FilterExpression: 'relationIndexObj.#bit = :tr',
+        KeyConditionExpression: 'P_K = :pk and begins_with(#sk,:sk)',
 
-            },
+        ExpressionAttributeNames: {
+            '#bit': bitChecker,
+            '#sk': _sortKey,
         },
+        ExpressionAttributeValues: {
+            ':tr': true,
+            ':pk': `USER#${userId}`,
+            ':sk': _sortField,
+        },
+        ProjectionExpression: 'foreignUser',
         ScanIndexForward: false,
-        Limit: 10,
-        ReturnConsumedCapacity: "INDEXES"
+        Limit: 20,
     };
 
 
-    if (req.query.sortby === 'username') {
-        query["IndexName"] = usernameSortIndex;
-
-        query["KeyConditions"] = {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`USER#${userId}`]
-            },
-            "UsernameSortField": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": ['RELATION-SORT-USERNAME#']
-            },
-        };
-
-    } else {
-        query["IndexName"] = timestampSortIndex;
-
-        query["KeyConditions"] = {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`USER#${userId}`]
-            },
-            "TimestampSortField": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": ['RELATION-SORT-TIMESTAMP#']
-            },
-        };
-    }
     if (req.headers.lastevaluatedkey) {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
     }
@@ -110,8 +97,13 @@ router.get('/', async (req, res) => {
         if (err) res.status(404).json(err);
         else {
             console.log(data);
+            const users = data['Items'].map(({
+                foreignUser
+            }) => {
+                return foreignUser
+            });
             res.status(200).json({
-                'users': data["Items"],
+                'users': users,
                 'lastevaluatedkey': data["LastEvaluatedKey"]
             });
         }
