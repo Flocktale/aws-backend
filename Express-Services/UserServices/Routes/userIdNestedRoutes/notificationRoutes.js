@@ -12,6 +12,9 @@ const {
     SNSEndpointSchemaWithDatabaseKeys
 } = require('../../Schemas/snsEndpointSchema');
 
+const {
+    postParticipantListToWebsocketUsers
+} = require('../../Functions/websocketFunctions');
 
 // required
 // body - {"deviceToken"}
@@ -287,6 +290,11 @@ router.post("/opened", async (req, res) => {
             });
 
             await dynamoClient.transactWrite(_transactQuery).promise();
+
+            // sending updated participant list to all subscribed users of this club.
+            if (action === 'accept') {
+                postParticipantListToWebsocketUsers(clubId);
+            }
 
         }
 
