@@ -1,32 +1,39 @@
 // const Joi = require('joi');
 
-// const app = require('./app');
+const app = require('./app');
 
-// app.listen(3000, () => {
-//     console.log("Listening on port 3000");
-// });
+app.listen(3000, () => {
+    console.log("Listening on port 3000");
+});
 
-const {
-    dynamoClient,
-    tableName
-} = require('./config');
-
-
-async function testing() {
-
-    const a = {
-        a: 'abc'
-    };
-    a.a += '   def';
-    console.error(a);
-    if (a.b) {
-        console.log(a.b);
-    }
-
-}
+// const {
+//     dynamoClient,
+//     tableName
+// } = require('./config');
 
 
+// async function testing() {
 
+//     try {
+//         const a = await init();
+//         console.log(a);
+//     } catch (error) {
+//         console.log(error);
+//     }
+//     // a.then((res) => {
+//     //     console.log(res);
+//     // }).catch(res => {
+//     //     console.log(res);
+//     // })
 
+// }
 
-testing();
+// async function init() {
+
+//     return new Promise(function (resolve, reject) {
+//         reject('denied');
+//         resolve('hello');
+//     });
+// }
+
+// testing();

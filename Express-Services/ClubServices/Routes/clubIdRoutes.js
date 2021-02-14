@@ -8,7 +8,6 @@ const {
 
 
 const avatarRouter = require('./clubIdNestedRoutes/avatarRoutes');
-const clubEntryRouter = require('./clubIdNestedRoutes/clubEntryRouter');
 const reactionRouter = require('./clubIdNestedRoutes/reactionRoutes');
 const reportRouter = require('./clubIdNestedRoutes/reportRoutes');
 const joinRequestRouter = require('./clubIdNestedRoutes/routesForJoinRequests');
@@ -23,7 +22,6 @@ const blockFeatureRouter = require('./clubIdNestedRoutes/blockFeatureRoutes');
 const muteFeatureRouter = require('./clubIdNestedRoutes/muteFeatureRoutes');
 
 router.use('/avatar', avatarRouter);
-router.use('/enter', clubEntryRouter);
 router.use('/reactions', reactionRouter);
 router.use('/reports', reportRouter);
 router.use('/join-request', joinRequestRouter);
@@ -41,12 +39,147 @@ router.use('/mute', muteFeatureRouter);
 // _________________________________________________________________________________________________________________________________________________________
 
 
+const {
+    AudienceSchemaWithDatabaseKeys,
+    AudienceSchema
+} = require('../Schemas/Audience');
 
 
+async function fetchAndRegisterAudience({
+    clubId,
+    audienceId,
+}) {
+    return new Promise(async function (resolve, reject) {
 
+        if (!clubId || !audienceId) {
+            console.log(clubId, audienceId);
+            reject('INSUFFICIENT_PARAMETERS');
+        }
+        var _responseAudienceData;
+
+
+        // checking if user already exists as an audience
+        const _oldAudienceDocQuery = {
+            TableName: tableName,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `AUDIENCE#${audienceId}`,
+            },
+            AttributesToGet: ['isBlocked', 'isParticipant', 'joinRequested', 'joinRequestAttempts', 'audience', 'invitationId', 'timestamp'],
+        };
+
+        var _audienceDoc = (await dynamoClient.get(_oldAudienceDocQuery).promise())['Item'];
+
+        if (_audienceDoc && _audienceDoc.isBlocked === true) {
+            reject('BLOCKED_USER');
+        }
+
+        if (_audienceDoc) {
+            // data we retrieved is same as what we want to send back.
+            _responseAudienceData = {
+                clubId: clubId,
+                ..._audienceDoc,
+            };
+
+        } else {
+
+            // new audience, it is :)
+
+            // retrieving summary data for user
+            const _audienceSummaryQuery = {
+                TableName: tableName,
+                Key: {
+                    P_K: `USER#${audienceId}`,
+                    S_K: `USERMETA#${audienceId}`,
+                },
+                AttributesToGet: ["userId", "username", "avatar"],
+            };
+            const audience = (await dynamoClient.get(_audienceSummaryQuery).promise())['Item'];
+
+            if (!audience) {
+                // it means audience has no registered data in database, 
+                // this condition should not arise lest we have some serious implementation problems 
+                console.log('could not fetch user summary data');
+                res.status(500).json('could not fetch user summary data');
+                return;
+
+            }
+
+            _responseAudienceData = await AudienceSchema.validateAsync({
+                clubId: clubId,
+                audience: audience,
+            });
+
+            const _newAudienceDoc = await AudienceSchemaWithDatabaseKeys.validateAsync(_responseAudienceData);
+
+            const _newAudienceDocQuery = {
+                TableName: tableName,
+                Item: _newAudienceDoc,
+            };
+
+
+            const _audienceCountUpdateQuery = {
+                TableName: tableName,
+                Key: {
+                    P_K: `CLUB#${clubId}`,
+                    S_K: 'CountAudience#'
+                },
+                UpdateExpression: 'set #cnt = #cnt + :counter',
+                ExpressionAttributeNames: {
+                    '#cnt': 'count'
+                },
+                ExpressionAttributeValues: {
+                    ':counter': 1,
+                }
+            };
+
+            const _transactQuery = {
+                TransactItems: [{
+                        Put: _newAudienceDocQuery
+                    },
+                    {
+                        Update: _audienceCountUpdateQuery
+                    }
+                ]
+            };
+
+            await dynamoClient.transactWrite(_transactQuery).promise();
+        }
+        resolve(_responseAudienceData);
+    })
+}
+
+// required
+// query parameters - "userId"
 router.get('/', async (req, res) => {
 
     const clubId = req.clubId;
+    const audienceId = req.query.userId;
+
+    if (!audienceId) {
+        res.status(400).json('user id is required in query parameters');
+        return;
+    }
+
+    // audience data to be sent in response
+    var _responseAudienceData = {};
+
+    try {
+        _responseAudienceData = await fetchAndRegisterAudience({
+            clubId: clubId,
+            audienceId: audienceId,
+        });
+    } catch (error) {
+        if (error === 'BLOCKED_USER') {
+            // user is blocked from this club, hence sending 403 (forbidden)
+            return res.status(403).json('BLOCKED_USER');
+        }
+        console.log(error);
+        return res.status(500).json(error);
+    }
+
+
+
 
     const _getQuery = {
         TableName: tableName,
@@ -54,6 +187,7 @@ router.get('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
         },
+        AttributesToGet: ['clubId', 'clubName', 'creator', 'agoraToken', 'category', 'scheduleTime', 'clubAvatar', 'description', 'isPrivate', 'tags'],
     };
 
     dynamoClient.get(_getQuery, (err, data) => {
@@ -61,8 +195,10 @@ router.get('/', async (req, res) => {
             console.log(err);
             res.status(404).json(err);
         } else {
-            console.log(data);
-            res.status(200).json(data['Item']);
+            res.status(200).json({
+                club: data['Item'],
+                audienceData: _responseAudienceData,
+            });
         }
     });
 

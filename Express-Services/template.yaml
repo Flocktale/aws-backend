@@ -183,12 +183,6 @@ Resources:
             Path: /clubs/{clubId}/avatar
             Method: post
 
-        EnterClub:
-          Type: Api
-          Properties:
-            Path: /clubs/{clubId}/enter
-            Method: post
-
         ReactOnClub:
           Type: Api
           Properties:
