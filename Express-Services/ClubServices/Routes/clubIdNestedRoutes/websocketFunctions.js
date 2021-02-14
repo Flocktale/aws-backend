@@ -8,6 +8,25 @@ const {
     wsUserIdIndex,
 } = require('../../config');
 
+async function _fetchAllConnectionIdsForClub(clubId) {
+    if (!clubId) return;
+
+    const _connectionQuery = {
+        TableName: WsTable,
+        IndexName: wsInvertIndex,
+        KeyConditionExpression: 'skey= :skey',
+        ExpressionAttributeValues: {
+            ":skey": `CLUB#${clubId}`,
+        },
+        ProjectionExpression: 'connectionId',
+    };
+
+    const connectionIds = ((await dynamoClient.query(_connectionQuery).promise())['Items'])?.map(({
+        connectionId
+    }) => connectionId);
+
+    return connectionIds;
+}
 
 async function postParticipantListToWebsocketUsers(clubId) {
     if (!clubId) return;
@@ -34,26 +53,17 @@ async function postParticipantListToWebsocketUsers(clubId) {
         return audience;
     });
 
-    const _connectionQuery = {
-        TableName: WsTable,
-        IndexName: wsInvertIndex,
-        KeyConditionExpression: 'skey= :skey',
-        ExpressionAttributeValues: {
-            ":skey": `CLUB#${clubId}`,
-        },
-        ProjectionExpression: 'connectionId',
-    };
 
-    const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
 
-    const postCalls = connectionData.map(async ({
-        connectionId
-    }) => {
+    const connectionIds = await _fetchAllConnectionIdsForClub(clubId);
+
+    const postCalls = connectionIds.map(async connectionId => {
         try {
             await apigwManagementApi.postToConnection({
                 ConnectionId: connectionId,
                 Data: JSON.stringify({
                     what: "participantList",
+                    clubId: clubId,
                     participantList: participantList,
                 })
             }).promise();
@@ -141,8 +151,48 @@ async function postMuteMessageToWebsocketUser({
 
 }
 
+async function postClubStartedMessageToWebsocketUsers({
+    clubId,
+    agoraToken
+}) {
+    if (!clubId || !agoraToken) return;
+
+    const connectionIds = await _fetchAllConnectionIdsForClub(clubId);
+
+
+    const postCalls = connectionIds.map(async connectionId => {
+        try {
+            await apigwManagementApi.postToConnection({
+                ConnectionId: connectionId,
+                Data: JSON.stringify({
+                    what: "clubStarted",
+                    clubId: clubId,
+                    agoraToken: agoraToken,
+                })
+            }).promise();
+        } catch (error) {
+            if (error.statusCode === 410) {
+                console.log(`Found stale connection, deleting ${connectionId} from club with clubId: ${clubId}`);
+                await dynamoClient.delete({
+                    TableName: WsTable,
+                    Key: {
+                        connectionId: connectionId
+                    }
+                }).promise();
+            } else {
+                console.log(error);
+                throw error;
+            }
+        }
+    });
+
+    await Promise.all(postCalls);
+
+}
+
 module.exports = {
     postParticipantListToWebsocketUsers,
     postBlockMessageToWebsocketUser,
     postMuteMessageToWebsocketUser,
+    postClubStartedMessageToWebsocketUsers,
 };

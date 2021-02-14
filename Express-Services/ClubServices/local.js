@@ -14,29 +14,9 @@ app.listen(3000, () => {
 
 async function testing() {
 
-    try {
-        const a = await init();
-        console.log(a?.hello);
-    } catch (error) {
-        console.log(error);
-    }
-    // a.then((res) => {
-    //     console.log(res);
-    // }).catch(res => {
-    //     console.log(res);
-    // })
+    let a;
+    a?.map(data => console.log(data));
 
-}
-
-async function init() {
-
-    return new Promise(function (resolve, reject) {
-        resolve({
-            hello: 'ag'
-        });
-        resolve(undefined);
-        // reject('denied');
-    });
 }
 
 testing();

@@ -13,6 +13,10 @@ const {
     agoraPrimaryCertificate,
 } = require('../../config');
 
+const {
+    postClubStartedMessageToWebsocketUsers
+} = require('./websocketFunctions');
+
 
 // required
 // query parameters - "userId" (this user must be owner of club)
@@ -81,6 +85,13 @@ router.post('/token/create', async (req, res) => {
                 res.status(201).json({
                     "agoraToken": agoraToken,
                 });
+
+                // sending agoraToken to all user subscribed to this club at this moment
+                postClubStartedMessageToWebsocketUsers({
+                    clubId: clubId,
+                    agoraToken: agoraToken
+                });
+
             }
         });
 
