@@ -12,28 +12,31 @@ app.listen(3000, () => {
 // } = require('./config');
 
 
-// async function testing() {
+async function testing() {
 
-//     try {
-//         const a = await init();
-//         console.log(a);
-//     } catch (error) {
-//         console.log(error);
-//     }
-//     // a.then((res) => {
-//     //     console.log(res);
-//     // }).catch(res => {
-//     //     console.log(res);
-//     // })
+    try {
+        const a = await init();
+        console.log(a?.hello);
+    } catch (error) {
+        console.log(error);
+    }
+    // a.then((res) => {
+    //     console.log(res);
+    // }).catch(res => {
+    //     console.log(res);
+    // })
 
-// }
+}
 
-// async function init() {
+async function init() {
 
-//     return new Promise(function (resolve, reject) {
-//         reject('denied');
-//         resolve('hello');
-//     });
-// }
+    return new Promise(function (resolve, reject) {
+        resolve({
+            hello: 'ag'
+        });
+        resolve(undefined);
+        // reject('denied');
+    });
+}
 
-// testing();
+testing();

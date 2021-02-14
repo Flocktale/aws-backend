@@ -149,6 +149,28 @@ async function fetchAndRegisterAudience({
     })
 }
 
+async function fetchAudienceReactionValue({
+    clubId,
+    audienceId,
+}) {
+
+    if (!clubId || !audienceId) {
+        console.log(clubId, audienceId);
+        reject('INSUFFICIENT_PARAMETERS');
+    }
+    const _reactionQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `REACT#${audienceId}`
+        },
+        AttributesToGet: ['indexValue'],
+    };
+    const data = (await dynamoClient.get(_reactionQuery).promise())['Item'];
+    return data?.indexValue;
+
+}
+
 // required
 // query parameters - "userId"
 router.get('/', async (req, res) => {
@@ -179,7 +201,10 @@ router.get('/', async (req, res) => {
     }
 
 
-
+    const _reactionIndexValue = await fetchAudienceReactionValue({
+        clubId: clubId,
+        audienceId: audienceId,
+    });
 
     const _getQuery = {
         TableName: tableName,
@@ -198,6 +223,7 @@ router.get('/', async (req, res) => {
             res.status(200).json({
                 club: data['Item'],
                 audienceData: _responseAudienceData,
+                reactionIndexValue: _reactionIndexValue,
             });
         }
     });
