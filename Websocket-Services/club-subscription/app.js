@@ -155,6 +155,7 @@ async function _getParticipantList(clubId, callback) {
 
         return callback({
             what: "participantList",
+            clubId: clubId,
             participantList: participantList,
         });
 
@@ -188,6 +189,7 @@ async function _getOldComments(clubId, callback) {
         console.log('old Comments: ', oldComments);
         return callback({
             what: "oldComments",
+            clubId: clubId,
             oldComments: oldComments
         });
 
@@ -216,6 +218,7 @@ async function _getReactionCount(clubId, index, callback) {
 
     return callback(null, {
         what: "reactionCount",
+        clubId: clubId,
         indexValue: index,
         count: doc.count,
     });
@@ -236,6 +239,7 @@ async function _getAudienceCount(clubId, callback) {
 
     return callback({
         what: "audienceCount",
+        clubId: clubId,
         count: doc.count,
     });
 }

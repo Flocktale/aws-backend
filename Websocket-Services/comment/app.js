@@ -124,6 +124,7 @@ exports.handler = async event => {
                 ConnectionId: connectionId,
                 Data: JSON.stringify({
                     what: "newComment",
+                    clubId: result.clubId,
                     user: postComment.user,
                     body: postComment.body,
                     timestamp: postComment.timestamp,
