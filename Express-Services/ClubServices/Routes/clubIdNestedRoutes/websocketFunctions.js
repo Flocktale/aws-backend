@@ -21,7 +21,7 @@ async function _fetchAllConnectionIdsForClub(clubId) {
         ProjectionExpression: 'connectionId',
     };
 
-    const connectionIds = ((await dynamoClient.query(_connectionQuery).promise())['Items'])?.map(({
+    const connectionIds = ((await dynamoClient.query(_connectionQuery).promise())['Items']).map(({
         connectionId
     }) => connectionId);
 

@@ -167,8 +167,9 @@ async function fetchAudienceReactionValue({
         AttributesToGet: ['indexValue'],
     };
     const data = (await dynamoClient.get(_reactionQuery).promise())['Item'];
-    return data?.indexValue;
-
+    if (data) {
+        return data.indexValue;
+    }
 }
 
 // required

@@ -12,11 +12,11 @@ app.listen(3000, () => {
 // } = require('./config');
 
 
-async function testing() {
+// async function testing() {
 
-    let a;
-    a?.map(data => console.log(data));
+//     let a;
+//     a?.map(data => console.log(data));
 
-}
+// }
 
-testing();
+// testing();
