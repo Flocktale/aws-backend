@@ -182,7 +182,7 @@ async function postNewJoinRequestToWebsocketUser({
     if (!creatorId || !username || !clubId) return;
 
     await _postToOneUserConnection(creatorId, {
-        what: `JR#New#${response}`,
+        what: `JR#New`,
         username: username,
         clubId: clubId,
     });
