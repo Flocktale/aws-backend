@@ -27,6 +27,7 @@ router.post('/', async (req, res) => {
 
     const participantId = req.query.participantId;
 
+
     if (who === 'participant') {
         if (!participantId) {
             return res.status(400).json('participantId is required');
@@ -41,7 +42,10 @@ router.post('/', async (req, res) => {
             AttributesToGet: ['isParticipant'],
         };
 
+
         const _participantData = (await dynamoClient.get(_participantQuery).promise())['Item'];
+
+
         if (!_participantData || _participantData.isParticipant !== true) {
             return res.status(404).json('this is no participant');
         }
@@ -52,7 +56,7 @@ router.post('/', async (req, res) => {
             clubId: clubId
         });
 
-        return res.status(200);
+        return res.status(200).json('muted successfully');
     }
 
     // mute message to all participants (except creator)
@@ -101,8 +105,7 @@ router.post('/', async (req, res) => {
         }
     }
 
-    return res.status(200);
-
+    return res.status(200).json('muted successfully');
 
 });
 

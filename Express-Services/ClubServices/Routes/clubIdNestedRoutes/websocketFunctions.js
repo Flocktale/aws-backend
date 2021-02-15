@@ -101,17 +101,19 @@ async function postBlockMessageToWebsocketUser({
     const _connectionQuery = {
         TableName: WsTable,
         IndexName: wsUserIdIndex,
-        Key: {
-            userId: userId
+        KeyConditionExpression: 'userId = :id',
+        ExpressionAttributeValues: {
+            ':id': userId
         },
-        AttributesToGet: ['connectionId']
-    };
-    const connectionData = (await dynamoClient.get(_connectionQuery).promise())['Item'];
+        ProjectionExpression: 'connectionId',
 
-    if (data) {
+    };
+    const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
+
+    for (var data of connectionData) {
         await apigwManagementApi.postToConnection({
-            ConnectionId: connectionData.connectionId,
-            Data: Json.stringify({
+            ConnectionId: data.connectionId,
+            Data: JSON.stringify({
                 what: blockAction,
                 clubId: clubId,
             })
@@ -129,24 +131,27 @@ async function postMuteMessageToWebsocketUser({
     const _connectionQuery = {
         TableName: WsTable,
         IndexName: wsUserIdIndex,
-        Key: {
-            userId: userId
+        KeyConditionExpression: 'userId = :id',
+        ExpressionAttributeValues: {
+            ':id': userId
         },
-        AttributesToGet: ['connectionId']
-    };
-    const connectionData = (await dynamoClient.get(_connectionQuery).promise())['Item'];
+        ProjectionExpression: 'connectionId',
 
-    if (data) {
-        // sending two times to lessen the chances of message drop
-        for (var i = 0; i < 2; i++) {
-            await apigwManagementApi.postToConnection({
-                ConnectionId: connectionData.connectionId,
-                Data: Json.stringify({
-                    what: 'muteParticipant',
-                    clubId: clubId,
-                })
-            }).promise();
-        }
+    };
+
+
+
+
+    const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
+
+    for (var data of connectionData) {
+        await apigwManagementApi.postToConnection({
+            ConnectionId: data.connectionId,
+            Data: JSON.stringify({
+                what: 'muteParticipant',
+                clubId: clubId,
+            })
+        }).promise();
     }
 
 }

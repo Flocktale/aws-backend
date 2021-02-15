@@ -19,10 +19,17 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: "MyTable"
+
+        - DynamoDBCrudPolicy:
+            TableName: "WsTable"
+
         - S3CrudPolicy:
             BucketName: "mootclub-public"
 
         - AmazonSNSFullAccess
+
+        # this access also include websocket-channel permissions
+        - AmazonAPIGatewayInvokeFullAccess
 
       Events:
         APIRoot:
@@ -137,8 +144,16 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: "MyTable"
 
+        - DynamoDBCrudPolicy:
+            TableName: "WsTable"
+
         - S3CrudPolicy:
             BucketName: "mootclub-public"
+
+        - AmazonSNSFullAccess
+
+        # this access also include websocket-channel permissions
+        - AmazonAPIGatewayInvokeFullAccess
 
       Events:
         AllClubList:
