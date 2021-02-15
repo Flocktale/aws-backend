@@ -18,7 +18,9 @@ const {
 } = require('../../config');
 
 const {
-    postParticipantListToWebsocketUsers
+    postParticipantListToWebsocketUsers,
+    postNewJoinRequestToWebsocketUser,
+    postJoinRequestResponseToWebsocketUser,
 } = require('./websocketFunctions');
 
 const {
@@ -241,7 +243,7 @@ router.post('/', async (req, res) => {
                 console.log(data);
                 res.status(201).json('posted join request');
 
-                // sending notification
+                // sending notification and websocket message to club owner
                 _getClubData({
                     clubId: clubId,
                     creatorAttr: true,
@@ -258,6 +260,13 @@ router.post('/', async (req, res) => {
                         userId: creator.userId,
                         notifData: notificationObj
                     });
+
+                    // sending websocket msg.
+                    postNewJoinRequestToWebsocketUser({
+                        creatorId: creator.userId,
+                        username: audienceDoc.audience.username,
+                        clubId: clubId,
+                    })
                 });
             }
         });
@@ -456,6 +465,13 @@ router.post('/response', async (req, res) => {
             // sending new participant list to all connected users.
             postParticipantListToWebsocketUsers(clubId);
 
+            // sending websocket msg to this user.
+            postJoinRequestResponseToWebsocketUser({
+                userId: audienceDoc.audience.userId,
+                clubId: clubId,
+                response: 'accept'
+            });
+
             // sending notification
             _getClubData({
                 clubId: clubId
@@ -507,6 +523,14 @@ router.post('/response', async (req, res) => {
             else {
                 console.log(data);
                 res.status(202).json('Cancelled join request');
+
+
+                // sending websocket msg to this user.
+                postJoinRequestResponseToWebsocketUser({
+                    userId: audienceDoc.audience.userId,
+                    clubId: clubId,
+                    response: 'cancel',
+                });
 
                 // sending notification
                 _getClubData({

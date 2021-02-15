@@ -28,6 +28,8 @@ async function _fetchAllConnectionIdsForClub(clubId) {
     return connectionIds;
 }
 
+
+
 async function postParticipantListToWebsocketUsers(clubId) {
     if (!clubId) return;
 
@@ -86,6 +88,28 @@ async function postParticipantListToWebsocketUsers(clubId) {
     await Promise.all(postCalls);
 }
 
+async function _postToOneUserConnection(userId, data) {
+    const _connectionQuery = {
+        TableName: WsTable,
+        IndexName: wsUserIdIndex,
+        KeyConditionExpression: 'userId = :id',
+        ExpressionAttributeValues: {
+            ':id': userId
+        },
+        ProjectionExpression: 'connectionId',
+
+    };
+    const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
+
+    for (var connection of connectionData) {
+        await apigwManagementApi.postToConnection({
+            ConnectionId: connection.connectionId,
+            Data: JSON.stringify(data)
+        }).promise();
+    }
+
+}
+
 
 // blockAction can be "blocked" or "unblocked"
 async function postBlockMessageToWebsocketUser({
@@ -98,27 +122,11 @@ async function postBlockMessageToWebsocketUser({
         console.log('wrong input for postBlockMessageToWebsocketUser, ', clubId, ' , ', blockAction, ' ,', userId);
     }
 
-    const _connectionQuery = {
-        TableName: WsTable,
-        IndexName: wsUserIdIndex,
-        KeyConditionExpression: 'userId = :id',
-        ExpressionAttributeValues: {
-            ':id': userId
-        },
-        ProjectionExpression: 'connectionId',
+    await _postToOneUserConnection(userId, {
+        what: blockAction,
+        clubId: clubId,
+    });
 
-    };
-    const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
-
-    for (var data of connectionData) {
-        await apigwManagementApi.postToConnection({
-            ConnectionId: data.connectionId,
-            Data: JSON.stringify({
-                what: blockAction,
-                clubId: clubId,
-            })
-        }).promise();
-    }
 }
 
 async function postMuteMessageToWebsocketUser({
@@ -128,31 +136,56 @@ async function postMuteMessageToWebsocketUser({
 
     if (!userId || !clubId) return;
 
-    const _connectionQuery = {
-        TableName: WsTable,
-        IndexName: wsUserIdIndex,
-        KeyConditionExpression: 'userId = :id',
-        ExpressionAttributeValues: {
-            ':id': userId
-        },
-        ProjectionExpression: 'connectionId',
+    await _postToOneUserConnection(userId, {
+        what: 'muteParticipant',
+        clubId: clubId,
+    });
 
-    };
+}
+
+async function postKickOutMessageToWebsocketUser({
+    userId,
+    clubId
+}) {
+
+    if (!userId || !clubId) return;
+
+    await _postToOneUserConnection(userId, {
+        what: 'kickedOut',
+        clubId: clubId,
+    });
+}
 
 
+async function postJoinRequestResponseToWebsocketUser({
+    userId,
+    clubId,
+    response,
+}) {
 
+    if (!userId || !clubId) return;
 
-    const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
+    if (response !== 'accept' && response !== 'cancel') return;
 
-    for (var data of connectionData) {
-        await apigwManagementApi.postToConnection({
-            ConnectionId: data.connectionId,
-            Data: JSON.stringify({
-                what: 'muteParticipant',
-                clubId: clubId,
-            })
-        }).promise();
-    }
+    await _postToOneUserConnection(userId, {
+        what: `JR#Resp#${response}`,
+        clubId: clubId,
+    });
+}
+
+async function postNewJoinRequestToWebsocketUser({
+    creatorId,
+    username,
+    clubId,
+}) {
+
+    if (!creatorId || !username || !clubId) return;
+
+    await _postToOneUserConnection(creatorId, {
+        what: `JR#New#${response}`,
+        username: username,
+        clubId: clubId,
+    });
 
 }
 
@@ -199,5 +232,10 @@ module.exports = {
     postParticipantListToWebsocketUsers,
     postBlockMessageToWebsocketUser,
     postMuteMessageToWebsocketUser,
+    postKickOutMessageToWebsocketUser,
+    postJoinRequestResponseToWebsocketUser,
+    postNewJoinRequestToWebsocketUser,
+
     postClubStartedMessageToWebsocketUsers,
+
 };

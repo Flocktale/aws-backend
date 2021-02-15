@@ -12,7 +12,8 @@ const {
 
 
 const {
-    postParticipantListToWebsocketUsers
+    postParticipantListToWebsocketUsers,
+    postKickOutMessageToWebsocketUser,
 } = require('./websocketFunctions');
 
 const {
@@ -100,6 +101,12 @@ router.post('/', async (req, res) => {
 
             // sending new participant list to all connected users.
             postParticipantListToWebsocketUsers(clubId);
+
+            // sending this event info to affected user.
+            postKickOutMessageToWebsocketUser({
+                userId: audienceId,
+                clubId: clubId
+            });
 
             _getClubData(clubId, ({
                 clubName
