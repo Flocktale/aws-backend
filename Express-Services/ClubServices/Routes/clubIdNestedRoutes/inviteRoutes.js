@@ -298,11 +298,6 @@ router.post('/all-followers', async (req, res) => {
 
     const _followersData = (await dynamoClient.query(_followersQuery).promise())['Items'];
 
-    if (!_followersData) {
-        console.log('this user has zero followers as it seems');
-        return res.status(200);
-    }
-
 
     const _followersIds = _followersData.map(({
         S_K
