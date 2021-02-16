@@ -130,7 +130,7 @@ router.post('/', async (req, res) => {
 
 
     if (!audienceId) {
-        res.status(400).json('audienceId is required');
+        res.status(400).json('userId  is required');
         return;
     }
 
@@ -161,6 +161,8 @@ router.post('/', async (req, res) => {
         return;
     }
 
+    // !----------------------------------------------------------
+    console.log(audienceDoc);
 
 
     try {
@@ -237,39 +239,36 @@ router.post('/', async (req, res) => {
             ]
         };
 
-        dynamoClient.transactWrite(_transactQuery, (err, data) => {
-            if (err) res.status(404).json(`Error in join request to club: ${err}`);
-            else {
-                console.log(data);
-                res.status(201).json('posted join request');
+        await dynamoClient.transactWrite(_transactQuery).promise();
 
-                // sending notification and websocket message to club owner
-                _getClubData({
-                    clubId: clubId,
-                    creatorAttr: true,
-                }, ({
-                    clubName,
-                    creator,
-                }) => {
-                    // we don't need to save these notifications in database as they are temporary.
-                    var notificationObj = {
-                        title: 'New join request from ' + audienceDoc.audience.username + ' on' + clubName,
-                    }
-
-                    publishNotification({
-                        userId: creator.userId,
-                        notifData: notificationObj
-                    });
-
-                    // sending websocket msg.
-                    postNewJoinRequestToWebsocketUser({
-                        creatorId: creator.userId,
-                        username: audienceDoc.audience.username,
-                        clubId: clubId,
-                    })
-                });
+        // sending notification and websocket message to club owner
+        await _getClubData({
+            clubId: clubId,
+            creatorAttr: true,
+        }, async ({
+            clubName,
+            creator,
+        }) => {
+            // we don't need to save these notifications in database as they are temporary.
+            var notificationObj = {
+                title: 'New join request from ' + audienceDoc.audience.username + ' on' + clubName,
             }
+
+            // sending websocket msg.
+            await postNewJoinRequestToWebsocketUser({
+                creatorId: creator.userId,
+                username: audienceDoc.audience.username,
+                clubId: clubId,
+            });
+
+            publishNotification({
+                userId: creator.userId,
+                notifData: notificationObj
+            });
+
         });
+
+        return res.status(201).json('posted join request');
 
 
     } catch (error) {
@@ -301,7 +300,7 @@ router.delete('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
         },
-        ConditionExpression: ' joinRequested = :tr ',
+        ConditionExpression: 'joinRequested = :tr',
         UpdateExpression: 'SET joinRequested = :fal REMOVE AudienceDynamicField, UsernameSortField',
         ExpressionAttributeValues: {
             ':tr': true,

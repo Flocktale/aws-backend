@@ -8,14 +8,19 @@ app.listen(3000, () => {
 
 // const {
 //     dynamoClient,
-//     tableName
+//     tableName,
+//     apigwManagementApi
 // } = require('./config');
 
 
 // async function testing() {
-
-//     let a;
-//     a?.map(data => console.log(data));
+//     const connectionId = 'a0R66cwXIAMCFQg=';
+//     await apigwManagementApi.postToConnection({
+//         ConnectionId: connectionId,
+//         Data: JSON.stringify({
+//             hello: 'hello'
+//         })
+//     }).promise();
 
 // }
 

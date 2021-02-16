@@ -102,10 +102,11 @@ async function _postToOneUserConnection(userId, data) {
     const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
 
     for (var connection of connectionData) {
-        await apigwManagementApi.postToConnection({
+        const posted = await apigwManagementApi.postToConnection({
             ConnectionId: connection.connectionId,
             Data: JSON.stringify(data)
         }).promise();
+        console.log('posted', posted);
     }
 
 }
