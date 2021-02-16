@@ -35,19 +35,6 @@ router.post('/', async (req, res) => {
 
     const newTimestamp = Date.now();
 
-    const _attributeUpdates = {
-        timestamp: {
-            "Action": "PUT",
-            "Value": newTimestamp
-        },
-        isParticipant: {
-            "Action": "PUT",
-            "Value": false
-        },
-        AudienceDynamicField: {
-            "Action": "DELETE"
-        },
-    };
 
     const _audienceKickedQuery = {
         TableName: tableName,
@@ -55,7 +42,14 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`
         },
-        AttributeUpdates: _attributeUpdates,
+        UpdateExpression: 'SET #tsp = :tsp, isParticipant = :fal REMOVE AudienceDynamicField',
+        ExpressionAttributeNames: {
+            '#tsp': 'timestamp',
+        },
+        ExpressionAttributeValues: {
+            ':tsp': newTimestamp,
+            ':fal': false,
+        }
     }
 
     var counterDoc;
