@@ -17,6 +17,10 @@ const {
     sns
 } = require('../../config');
 
+const {
+    sendAndSaveNotification
+} = require('../../Functions/notificationFunctions');
+
 
 // required
 // query parameters - 
@@ -191,7 +195,7 @@ router.post('/add', async (req, res) => {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`
         },
-        AttributesToGet: ['primaryUser', 'relationIndexObj'], // primary user to get username for notification, relationIndexObj for conditions
+        AttributesToGet: ['primaryUser', 'relationIndexObj', 'requestId'], // primary user to get username for notification, relationIndexObj for conditions
     };
     let oldRelationDoc;
     try {
@@ -324,13 +328,14 @@ router.post('/add', async (req, res) => {
             notificationObj.data.title = "You and " + oldRelationDoc.primaryUser.username + " are now bound in a great friendship pact.";
 
 
-            primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b2 = :fal, #rIO.#b1 = :tr, #tsp = :tsp  ';
+            primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b2 = :fal, #rIO.#b1 = :tr, #tsp = :tsp remove #rq';
             primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
                 '#rIO': 'relationIndexObj',
                 '#b5': 'B5',
                 '#b2': 'B2',
                 '#b1': 'B1',
                 '#tsp': 'timestamp',
+                '#rq': 'requestId',
             };
             primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
                 ':tr': true,
@@ -338,7 +343,7 @@ router.post('/add', async (req, res) => {
                 ':tsp': newTimestmap,
             };
 
-            foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b4 = :tr, #rIO.#b3 = :fal, #rIO.#b1 = :tr, #tsp = :tsp  ';
+            foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b4 = :tr, #rIO.#b3 = :fal, #rIO.#b1 = :tr, #tsp = :tsp ';
             foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
                 '#rIO': 'relationIndexObj',
                 '#b4': 'B4',
@@ -437,74 +442,57 @@ router.post('/add', async (req, res) => {
         } else {
 
             // handling notification part
-            await _sendAndSaveNotification(notificationObj);
+            await sendAndSaveNotification(notificationObj, async ({
+                notificationId,
+                type
+            }) => {
+
+                if (type !== 'FR#new' || !notificationId) return;
+
+                // this is the case of new friend request. (send_friend_request)
+
+                // saving notificationId in user relation doc of foreign user.
+                const _requestIdUpdateQuery = {
+                    TableName: tableName,
+                    Key: {
+                        P_K: `USER#${foreignUserId}`,
+                        S_K: `RELATION#${userId},`
+                    },
+                    UpdateExpression: 'SET #rq = :rq',
+                    ExpressionAttributeNames: {
+                        '#rq': requestId,
+                    },
+                    ExpressionAttributeValues: {
+                        ':rq': notificationId,
+                    },
+                };
+
+                await dynamoClient.update(_requestIdUpdateQuery).promise();
+
+            });
+
+            // deleting notification (reference from requestId)
+            if (addAction === "accept_friend_request") {
+
+                const _notificationDeleteQuery = {
+                    TableName: tableName,
+                    Key: {
+                        P_K: `USER#${userId}`,
+                        S_K: `NOTIFICATION#${oldRelationDoc.requestId}`,
+                    },
+                };
+                await dynamoClient.delete(_notificationDeleteQuery).promise();
+
+            }
+
+
 
             return res.status(202).json(`${addAction} successfull!`);
         }
     });
 
-
 });
 
-async function _sendAndSaveNotification(notificationObj) {
-    if (!notificationObj) {
-        console.log('no notificationObj was passed when _sendAndSaveNotification was called');
-        return;
-    }
-
-    // first saving the notification in database.
-
-    const notifData = await NotificationSchemaWithDatabaseKeys.validateAsync(notificationObj);
-
-    const _notificationPutQuery = {
-        TableName: tableName,
-        Item: notifData,
-    }
-
-    await dynamoClient.put(_notificationPutQuery).promise();
-
-
-    // fetching endpoint arn to publish notification.
-
-    const _endpointQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: 'SNS_DATA#',
-            S_K: `USER#${notifData.userId}`,
-        },
-        AttributesToGet: ['endpointArn'],
-    };
-
-    const endpointData = (await dynamoClient.get(_endpointQuery).promise())['Item'];
-
-    if (!endpointData) {
-        return console.log('no device token is registered for userId: ', notifData.userId);
-    }
-
-    // now publishing to push notification via sns.
-
-    const snsPushNotificationObj = {
-        GCM: JSON.stringify({
-            notification: {
-                title: notifData.data.title,
-                image: notifData.data.avatar,
-                sound: "default",
-                click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                priority: 'high',
-            },
-        }),
-    };
-
-
-    var notifParams = {
-        Message: JSON.stringify(snsPushNotificationObj),
-        MessageStructure: 'json',
-        TargetArn: endpointData.endpointArn,
-    };
-
-    await sns.publish(notifParams).promise();
-
-}
 
 async function _getUserSummaryData(userId) {
     const userDocQuery = {
@@ -580,7 +568,7 @@ router.post('/remove', async (req, res) => {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`
         },
-        AttributesToGet: ['relationIndexObj'],
+        AttributesToGet: ['relationIndexObj', 'requestId'],
     };
     let oldRelationDoc;
     try {
@@ -705,6 +693,22 @@ router.post('/remove', async (req, res) => {
         foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'];
         foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'];
 
+        if (oldRelationDoc.requestId && oldRelationDoc.relationIndexObj.B2 === true) {
+            // this is the case of deleting arrived friend request.
+            primaryUserRelationDocUpdateQuery['UpdateExpression'] += ' remove #rq';
+            primaryUserRelationDocUpdateQuery['ExpressionAttributeNames']['#rq'] = 'requestId';
+
+
+        } else if (oldRelationDoc.relationIndexObj.B3 === true) {
+            // this is the case of deleting sent friend request.
+
+            foreignUserRelationDocUpdateQuery['UpdateExpression'] += ' remove #rq';
+            foreignUserRelationDocUpdateQuery['ExpressionAttributeNames']['#rq'] = 'requestId';
+
+            // we don't have requestId in this case, for which we will query later. 
+            // delete that notification then.
+        }
+
     } else if (removeAction === "unfriend") {
         // unfriend and unfollow
 
@@ -816,6 +820,48 @@ router.post('/remove', async (req, res) => {
                     }
                 ]
             };
+
+            if (removeAction === "delete_friend_request") {
+                var _notificationDeleteQuery;
+                if (oldRelationDoc.requestId) {
+                    // this is the case of deleting arrived friend request.
+                    _notificationDeleteQuery = {
+                        TableName: tableName,
+                        Key: {
+                            P_K: `USER#${userId}`,
+                            S_K: `NOTIFICATION#${oldRelationDoc.requestId}`,
+                        },
+                    };
+
+                } else if (oldRelationDoc.relationIndexObj.B3 === true) {
+                    // this is the case of deleting sent friend request.
+
+                    const _requestIdQuery = {
+                        TableName: tableName,
+                        Key: {
+                            P_K: `USER#${foreignUserId}`,
+                            S_K: `RELATION#${userId}`
+                        },
+                        AttributesToGet: ['requestId'],
+                    };
+
+                    const _requestData = (await dynamoClient.get(_requestData).promise())['Item'];
+                    if (_requestData) {
+                        _notificationDeleteQuery = {
+                            TableName: tableName,
+                            Key: {
+                                P_K: `USER#${foreignUserId}`,
+                                S_K: `NOTIFICATION#${_requestData.requestId}`,
+                            },
+                        };
+                    }
+                }
+                if (_notificationDeleteQuery) {
+                    _deleteTransactQuery.TransactItems.push({
+                        Delete: _notificationDeleteQuery
+                    });
+                }
+            }
 
             await dynamoClient.transactWrite(_deleteTransactQuery, (err, data) => {
                 if (err) console.log(err);
