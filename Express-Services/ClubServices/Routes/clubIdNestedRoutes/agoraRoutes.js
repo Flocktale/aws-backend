@@ -15,7 +15,7 @@ const {
 
 const {
     postClubStartedMessageToWebsocketUsers
-} = require('./websocketFunctions');
+} = require('../../Functions/websocketFunctions');
 
 
 // required

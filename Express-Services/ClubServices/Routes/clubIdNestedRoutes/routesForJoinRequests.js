@@ -21,11 +21,11 @@ const {
     postParticipantListToWebsocketUsers,
     postNewJoinRequestToWebsocketUser,
     postJoinRequestResponseToWebsocketUser,
-} = require('./websocketFunctions');
+} = require('../../Functions/websocketFunctions');
 
 const {
     publishNotification
-} = require('./notificationFunctions');
+} = require('../../Functions/notificationFunctions');
 
 // required
 // headers - "lastevaluatedkey"  (optional)

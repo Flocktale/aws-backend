@@ -2,7 +2,7 @@ const {
     dynamoClient,
     tableName,
     sns
-} = require('../../config');
+} = require('../config');
 
 async function publishNotification({
     userId,

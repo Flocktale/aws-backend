@@ -14,11 +14,11 @@ const {
 const {
     postParticipantListToWebsocketUsers,
     postKickOutMessageToWebsocketUser,
-} = require('./websocketFunctions');
+} = require('../../Functions/websocketFunctions');
 
 const {
     publishNotification
-} = require('./notificationFunctions')
+} = require('../../Functions/notificationFunctions')
 
 
 // required

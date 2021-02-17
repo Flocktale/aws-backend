@@ -6,7 +6,7 @@ const {
     WsTable,
     wsInvertIndex,
     wsUserIdIndex,
-} = require('../../config');
+} = require('../config');
 
 async function _fetchAllConnectionIdsForClub(clubId) {
     if (!clubId) return;

@@ -16,13 +16,13 @@ const {
 
 const {
     publishNotification
-} = require('./notificationFunctions')
+} = require('../../Functions/notificationFunctions')
 
 
 const {
     postParticipantListToWebsocketUsers,
     postBlockMessageToWebsocketUser,
-} = require('./websocketFunctions');
+} = require('../../Functions/websocketFunctions');
 
 
 router.get('/', async (req, res) => {

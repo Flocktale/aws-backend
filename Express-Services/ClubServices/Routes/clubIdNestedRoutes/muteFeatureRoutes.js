@@ -9,7 +9,7 @@ const {
 
 const {
     postMuteMessageToWebsocketUser
-} = require('./websocketFunctions');
+} = require('../../Functions/websocketFunctions');
 
 //required
 // query parameters - 

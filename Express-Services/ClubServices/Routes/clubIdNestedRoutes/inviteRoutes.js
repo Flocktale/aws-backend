@@ -17,7 +17,7 @@ const {
 
 const {
     publishNotification
-} = require('./notificationFunctions');
+} = require('../../Functions/notificationFunctions');
 
 
 //required
