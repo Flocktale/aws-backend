@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`,
         },
-        AttributesToGet: ['creator', 'agoraToken'],
+        AttributesToGet: ['creator', 'agoraToken', 'isConcluded'],
     };
 
     try {
@@ -44,6 +44,8 @@ router.post('/', async (req, res) => {
         } else if (_clubData.creator.userId !== userId) {
             res.status(403).json('This user is not the owner of club, hence can not generate token');
             return;
+        } else if (_clubData.isConcluded === true) {
+            return res.status(400).json('This club is already concluded, can not start again!!!');
         } else if (_clubData.agoraToken) {
             res.status(200).json({
                 "token": _clubData.agoraToken
