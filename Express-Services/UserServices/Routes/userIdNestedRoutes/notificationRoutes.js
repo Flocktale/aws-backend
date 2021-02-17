@@ -143,7 +143,7 @@ router.get("/", async (req, res) => {
                 AttributeValueList: [`NOTIF-SORT-TIMESTAMP#`]
             }
         },
-        AttributesToGet: ['data'],
+        AttributesToGet: ['notificationId', 'data'],
         ScanIndexForward: false,
         Limit: 20,
 
@@ -157,9 +157,13 @@ router.get("/", async (req, res) => {
         const notifData = (await dynamoClient.query(query).promise())['Items'];
         if (notifData) {
             const notifList = notifData.map(({
+                notificationId,
                 data
             }) => {
-                return data;
+                return {
+                    notificationId: notificationId,
+                    ...data
+                };
             });
 
             return res.status(200).json({
