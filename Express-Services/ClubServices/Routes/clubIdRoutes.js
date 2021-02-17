@@ -13,7 +13,7 @@ const reportRouter = require('./clubIdNestedRoutes/reportRoutes');
 const joinRequestRouter = require('./clubIdNestedRoutes/routesForJoinRequests');
 const kickFeatureRouter = require('./clubIdNestedRoutes/kickFeatureRoutes');
 
-const agoraRouter = require('./clubIdNestedRoutes/agoraRoutes');
+const startClubRouter = require('./clubIdNestedRoutes/startClubRoutes');
 
 const inviteRouter = require('./clubIdNestedRoutes/inviteRoutes');
 
@@ -29,7 +29,7 @@ router.use('/reports', reportRouter);
 router.use('/join-request', joinRequestRouter);
 router.use('/kick', kickFeatureRouter);
 
-router.use('/agora', agoraRouter);
+router.use('/start', startClubRouter);
 
 router.use('/invite', inviteRouter);
 

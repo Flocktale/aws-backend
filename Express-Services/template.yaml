@@ -300,10 +300,10 @@ Resources:
             Path: /clubs/{clubId}/invite/all-followers
             Method: post
 
-        GenerateAgoraToken:
+        StartClub:
           Type: Api
           Properties:
-            Path: /clubs/{clubId}/agora/token/create
+            Path: /clubs/{clubId}/start
             Method: post
 
         ConcludeClub:
