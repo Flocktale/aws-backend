@@ -217,7 +217,10 @@ router.get('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
         },
-        AttributesToGet: ['clubId', 'clubName', 'creator', 'agoraToken', 'category', 'scheduleTime', 'clubAvatar', 'description', 'isPrivate', 'tags'],
+        AttributesToGet: ['clubId', 'clubName', 'creator', 'agoraToken', 'category',
+            'isLive', 'isConcluded',
+            'scheduleTime', 'clubAvatar', 'description', 'isPrivate', 'tags'
+        ],
     };
 
     dynamoClient.get(_getQuery, (err, data) => {
