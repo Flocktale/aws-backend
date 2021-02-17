@@ -129,7 +129,7 @@ router.post('/add', async (req, res) => {
         data: {
             type: "undefined",
             title: "undefined",
-            avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${foreignUserId}`,
+            avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${userId}`,
             targetResourceId: userId,
             timestamp: Date.now(),
         },
