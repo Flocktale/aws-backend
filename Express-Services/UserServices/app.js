@@ -40,7 +40,7 @@ app.get("/", (req, res) => {
 
 app.get("/users", (req, res) => {
     // TODO: send list of users
-    res.json('You have hit a TODO: Send list of users )');
+    res.json('You have hit a TODO: Send list of all new users )');
 });
 
 // required

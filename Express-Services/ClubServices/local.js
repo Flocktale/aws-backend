@@ -14,13 +14,46 @@ app.listen(3000, () => {
 
 
 // async function testing() {
-//     const connectionId = 'a0R66cwXIAMCFQg=';
-//     await apigwManagementApi.postToConnection({
-//         ConnectionId: connectionId,
-//         Data: JSON.stringify({
-//             hello: 'hello'
-//         })
+
+//     await func(async str => {
+
+//         console.log(str);
+
+//         const c = await dynamoClient.get({
+//             TableName: tableName,
+//             Key: {
+//                 P_K: 'USER',
+//                 S_K: 'USER'
+//             }
+//         }).promise();
+//         console.log('c: ', c);
+
+
+//     });
+//     console.log('hey there');
+
+// }
+
+// async function func(callback) {
+
+//     const a = await dynamoClient.get({
+//         TableName: tableName,
+//         Key: {
+//             P_K: 'USER',
+//             S_K: 'USER'
+//         }
 //     }).promise();
+//     console.log('a: ', a);
+
+//     callback('here lies a callback');
+//     const b = await dynamoClient.get({
+//         TableName: tableName,
+//         Key: {
+//             P_K: 'USER',
+//             S_K: 'USER'
+//         }
+//     }).promise();
+//     console.log('b: ', b);
 
 // }
 

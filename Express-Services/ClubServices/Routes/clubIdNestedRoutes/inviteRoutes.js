@@ -138,7 +138,7 @@ router.post('/', async (req, res) => {
                 _userData = (await dynamoClient.get(_userQuery).promise())['Item'];
             }
 
-            _sendAndSaveNotification(notificationObj, async (notificationId) => {
+            await _sendAndSaveNotification(notificationObj, async notificationId => {
 
                 if (oldAudienceDoc) {
                     // updating oldAudienceDoc
@@ -179,7 +179,7 @@ router.post('/', async (req, res) => {
 
             });
         } else {
-            _sendAndSaveNotification(notificationObj);
+            await _sendAndSaveNotification(notificationObj);
         }
     }
 
@@ -307,7 +307,7 @@ router.post('/all-followers', async (req, res) => {
 
     for (var userId of _followersIds) {
         notificationObj['userId'] = userId;
-        _sendAndSaveNotification(notificationObj); // asynchronously sending and saving notifications for all followers.
+        await _sendAndSaveNotification(notificationObj); // asynchronously sending and saving notifications for all followers.
     }
 
     return res.status(202).json('Notifications sent to all followers');

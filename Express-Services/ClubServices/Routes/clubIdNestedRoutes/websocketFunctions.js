@@ -89,6 +89,8 @@ async function postParticipantListToWebsocketUsers(clubId) {
 }
 
 async function _postToOneUserConnection(userId, data) {
+
+
     const _connectionQuery = {
         TableName: WsTable,
         IndexName: wsUserIdIndex,
@@ -101,12 +103,16 @@ async function _postToOneUserConnection(userId, data) {
     };
     const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
 
+
+
     for (var connection of connectionData) {
+
         const posted = await apigwManagementApi.postToConnection({
             ConnectionId: connection.connectionId,
             Data: JSON.stringify(data)
         }).promise();
         console.log('posted', posted);
+
     }
 
 }
@@ -163,10 +169,11 @@ async function postJoinRequestResponseToWebsocketUser({
     clubId,
     response,
 }) {
-
     if (!userId || !clubId) return;
 
+
     if (response !== 'accept' && response !== 'cancel') return;
+
 
     await _postToOneUserConnection(userId, {
         what: `JR#Resp#${response}`,

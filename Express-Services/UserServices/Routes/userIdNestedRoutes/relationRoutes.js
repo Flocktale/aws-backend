@@ -430,16 +430,16 @@ router.post('/add', async (req, res) => {
         Update: _foreignUserUpdateQuery,
     });
 
-    dynamoClient.transactWrite(_transactQuery, (err, data) => {
+    dynamoClient.transactWrite(_transactQuery, async (err, data) => {
         if (err) {
             console.log(err);
-            res.status(404).json(err);
+            return res.status(404).json(err);
         } else {
 
             // handling notification part
-            _sendAndSaveNotification(notificationObj);
+            await _sendAndSaveNotification(notificationObj);
 
-            res.status(202).json(`${addAction} successfull!`);
+            return res.status(202).json(`${addAction} successfull!`);
         }
     });
 
@@ -773,7 +773,7 @@ router.post('/remove', async (req, res) => {
         });
     }
 
-    dynamoClient.transactWrite(_transactQuery, (err, data) => {
+    dynamoClient.transactWrite(_transactQuery, async (err, data) => {
         if (err) {
             console.log(err);
             res.status(404).json(err);
@@ -817,12 +817,12 @@ router.post('/remove', async (req, res) => {
                 ]
             };
 
-            dynamoClient.transactWrite(_deleteTransactQuery, (err, data) => {
+            await dynamoClient.transactWrite(_deleteTransactQuery, (err, data) => {
                 if (err) console.log(err);
                 else console.log('deletion attempt of relation documents for users', data);
-            });
+            }).promise();
 
-            res.status(202).json(`${removeAction} successfull!`);
+            return res.status(202).json(`${removeAction} successfull!`);
         }
     });
 

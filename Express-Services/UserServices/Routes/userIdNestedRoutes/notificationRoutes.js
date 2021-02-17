@@ -211,7 +211,7 @@ router.post("/opened", async (req, res) => {
 
     // handling club participation type invitation
     if (_notification.data.type === 'CLUB#INV#prt') {
-        if (!(action !== 'accept' && action !== 'cancel')) {
+        if (action !== 'accept' && action !== 'cancel') {
             return res.status(400).json('action value is required in query parameters for this notification');
         }
 
@@ -293,7 +293,7 @@ router.post("/opened", async (req, res) => {
 
             // sending updated participant list to all subscribed users of this club.
             if (action === 'accept') {
-                postParticipantListToWebsocketUsers(clubId);
+                await postParticipantListToWebsocketUsers(clubId);
             }
 
         }

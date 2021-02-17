@@ -87,39 +87,39 @@ router.post('/', async (req, res) => {
         ]
     };
 
-    dynamoClient.transactWrite(_transactQuery, (err, data) => {
-        if (err) res.status(404).json(`Error kicking out participant: ${err}`);
-        else {
-            console.log(data);
-            res.status(201).json('kicked out participant');
+    await dynamoClient.transactWrite(_transactQuery).promise();
 
-            // sending new participant list to all connected users.
-            postParticipantListToWebsocketUsers(clubId);
 
-            // sending this event info to affected user.
-            postKickOutMessageToWebsocketUser({
-                userId: audienceId,
-                clubId: clubId
-            });
 
-            _getClubData(clubId, ({
-                clubName
-            }) => {
-                var notifData = {
-                    title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
-                    image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
-                }
-                publishNotification({
-                    userId: audienceId,
-                    notifData: notifData,
-                })
-            })
 
-        }
+    // sending this event info to affected user.
+    await postKickOutMessageToWebsocketUser({
+        userId: audienceId,
+        clubId: clubId
     });
+
+
+    const {
+        clubName
+    } = await _getClubData(clubId);
+
+    var notifData = {
+        title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
+        image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+    }
+    await publishNotification({
+        userId: audienceId,
+        notifData: notifData,
+    })
+
+    // sending new participant list to all connected users.
+    await postParticipantListToWebsocketUsers(clubId);
+
+    return res.status(201).json('kicked out participant');
+
 });
 
-async function _getClubData(clubId, callback) {
+async function _getClubData(clubId) {
     if (!clubId) {
         return;
     }
@@ -134,9 +134,7 @@ async function _getClubData(clubId, callback) {
 
 
     const data = (await dynamoClient.get(_clubQuery).promise())['Item'];
-    if (data) {
-        callback(data);
-    }
+    return data;
 }
 
 

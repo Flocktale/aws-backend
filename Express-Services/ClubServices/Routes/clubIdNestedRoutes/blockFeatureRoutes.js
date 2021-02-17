@@ -109,44 +109,7 @@ router.post('/', async (req, res) => {
 
 
 
-
-
     // updating all possible attriubtes
-    const _attributeUpdates = {
-        timestamp: {
-            "Action": "PUT",
-            "Value": audienceDoc.timestamp
-        },
-        isParticipant: {
-            "Action": "PUT",
-            "Value": false
-        },
-        joinRequested: {
-            "Action": "PUT",
-            "Value": false
-        },
-        isBlocked: {
-            "Action": "PUT",
-            "Value": true
-        },
-        AudienceDynamicField: {
-            "Action": "PUT",
-            "Value": audienceDoc.AudienceDynamicField,
-        },
-        TimestampSortField: {
-            "Action": "DELETE"
-        },
-        UsernameSortField: {
-            "Action": "DELETE"
-        },
-    };
-
-    if (audienceDoc.invitationId) {
-        // if any invitation exists for this user, delete that.
-        _attributeUpdates['invitationId'] = {
-            "Action": "DELETE"
-        };
-    }
 
     const _audienceBlockQuery = {
         TableName: tableName,
@@ -154,7 +117,21 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`
         },
-        AttributeUpdates: _attributeUpdates,
+        UpdateExpression: 'SET #tsp = :tsp, isParticipant = :fal, joinRequested = :fal, isBlocked = :tr, AudienceDynamicField = :adf REMOVE TimestampSortField, UsernameSortField',
+        ExpressionAttributeNames: {
+            '#tsp': 'timestamp',
+        },
+        ExpressionAttributeValues: {
+            ':tsp': audienceDoc.timestamp,
+            ':fal': false,
+            ':tr': true,
+            ':adf': audienceDoc.AudienceDynamicField,
+        }
+    }
+
+    if (audienceDoc.invitationId) {
+        // if any invitation exists for this user, delete that.
+        _audienceBlockQuery['UpdateExpression'] += ', invitationId';
     }
 
 
@@ -190,45 +167,49 @@ router.post('/', async (req, res) => {
     }
 
 
-    dynamoClient.transactWrite(_transactQuery, (err, data) => {
+    dynamoClient.transactWrite(_transactQuery, async (err, data) => {
         if (err) res.status(400).json(`Error in blocking from club : ${err}`);
         else {
             console.log(data);
-            res.status(202).json('blocked user');
 
-            // send notification to affected user
-            _getClubData(clubId, ({
-                clubName
-            }) => {
-                var notifData = {
-                    title: 'You are blocked from  ' + clubName,
-                    image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
-                }
-                publishNotification({
-                    userId: audienceId,
-                    notifData: notifData
-                });
-            });
 
             // send a message through websocket to user.
-            postBlockMessageToWebsocketUser({
+            await postBlockMessageToWebsocketUser({
                 clubId: clubId,
                 blockAction: "blocked",
                 userId: audienceId
             });
 
 
+            // send notification to affected user
+            const {
+                clubName
+            } = await _getClubData(clubId);
+
+            var notifData = {
+                title: 'You are blocked from  ' + clubName,
+                image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+            }
+            await publishNotification({
+                userId: audienceId,
+                notifData: notifData
+            });
+
+
             if (wasParticipant === true) {
                 // send updated participant list to club subscribers.
-                postParticipantListToWebsocketUsers(clubId);
+                await postParticipantListToWebsocketUsers(clubId);
             }
+
+            return res.status(202).json('blocked user');
+
 
         }
     });
 });
 
 
-async function _getClubData(clubId, callback) {
+async function _getClubData(clubId) {
     if (!clubId) {
         return;
     }
@@ -243,9 +224,8 @@ async function _getClubData(clubId, callback) {
 
 
     const data = (await dynamoClient.get(_clubQuery).promise())['Item'];
-    if (data) {
-        callback(data);
-    }
+    return data;
+
 }
 
 // required
@@ -329,31 +309,34 @@ router.delete('/', async (req, res) => {
     // to prevent blocked user data being shown up in list of all audience, we delete TimestampSortField,
     /// which is used by GSI TimestampSortIndex to display list of audience.
 
-    dynamoClient.update(_audienceUnblockQuery, (err, data) => {
+    dynamoClient.update(_audienceUnblockQuery, async (err, data) => {
         if (err) res.status(400).json(`Error in unblocking from club : ${err}`);
         else {
-            res.status(202).json('unblocked user');
 
             // send notification to affected user
-            _getClubData(clubId, ({
+            const {
                 clubName
-            }) => {
-                var notifData = {
-                    title: 'No more blocking from  ' + clubName + '. You can listen to it now.',
-                    image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
-                }
-                publishNotification({
-                    userId: audienceId,
-                    notifData: notifData
-                });
-            });
+            } = await _getClubData(clubId);
 
             // send a message through websocket to user.
-            postBlockMessageToWebsocketUser({
+            await postBlockMessageToWebsocketUser({
                 clubId: clubId,
                 blockAction: "unblocked",
                 userId: audienceId
             });
+
+
+            var notifData = {
+                title: 'No more blocking from  ' + clubName + '. You can listen to it now.',
+                image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+            }
+            await publishNotification({
+                userId: audienceId,
+                notifData: notifData
+            });
+
+            return res.status(202).json('unblocked user');
+
 
         }
 

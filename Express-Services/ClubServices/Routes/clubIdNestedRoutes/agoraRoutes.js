@@ -77,19 +77,21 @@ router.post('/token/create', async (req, res) => {
             }
         };
 
-        dynamoClient.update(_updateDocQuery, (err, data) => {
+        dynamoClient.update(_updateDocQuery, async (err, data) => {
             if (err) {
                 console.log(err);
                 res.status(400).json(`Error in updating token in club: ${err}`);
             } else {
-                res.status(201).json({
-                    "agoraToken": agoraToken,
-                });
+
 
                 // sending agoraToken to all user subscribed to this club at this moment
-                postClubStartedMessageToWebsocketUsers({
+                await postClubStartedMessageToWebsocketUsers({
                     clubId: clubId,
                     agoraToken: agoraToken
+                });
+
+                return res.status(201).json({
+                    "agoraToken": agoraToken,
                 });
 
             }
@@ -97,7 +99,7 @@ router.post('/token/create', async (req, res) => {
 
     } catch (error) {
         console.log(`Some error in /token/create ${error}`);
-        res.status(400).json(`Some error in /token/create ${error}`);
+        return res.status(400).json(`Some error in /token/create ${error}`);
     }
 });
 

@@ -60,7 +60,6 @@ router.get('/', async (req, res) => {
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
         else {
-            console.log(data);
             res.status(200).json({
                 "activeJoinRequestUsers": data["Items"],
                 'lastevaluatedkey': data["LastEvaluatedKey"]
@@ -110,7 +109,6 @@ router.get('/query', async (req, res) => {
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
         else {
-            console.log(data);
             return res.status(200).json({
                 "activeJoinRequestUsers": data["Items"],
                 'lastevaluatedkey': data["LastEvaluatedKey"]
@@ -161,8 +159,6 @@ router.post('/', async (req, res) => {
         return;
     }
 
-    // !----------------------------------------------------------
-    console.log(audienceDoc);
 
 
     try {
@@ -242,34 +238,34 @@ router.post('/', async (req, res) => {
         await dynamoClient.transactWrite(_transactQuery).promise();
 
         // sending notification and websocket message to club owner
-        await _getClubData({
-            clubId: clubId,
-            creatorAttr: true,
-        }, async ({
+        const {
             clubName,
             creator,
-        }) => {
-            // we don't need to save these notifications in database as they are temporary.
-            var notificationObj = {
-                title: 'New join request from ' + audienceDoc.audience.username + ' on' + clubName,
-            }
-
-            // sending websocket msg.
-            await postNewJoinRequestToWebsocketUser({
-                creatorId: creator.userId,
-                username: audienceDoc.audience.username,
-                clubId: clubId,
-            });
-
-            publishNotification({
-                userId: creator.userId,
-                notifData: notificationObj
-            });
-
+        } = await _getClubData({
+            clubId: clubId,
+            creatorAttr: true,
         });
 
-        return res.status(201).json('posted join request');
+        // we don't need to save these notifications in database as they are temporary.
+        var notificationObj = {
+            title: 'New join request from ' + audienceDoc.audience.username + ' on' + clubName,
+        }
 
+
+        // sending websocket msg.
+        await postNewJoinRequestToWebsocketUser({
+            creatorId: creator.userId,
+            username: audienceDoc.audience.username,
+            clubId: clubId,
+        });
+
+        await publishNotification({
+            userId: creator.userId,
+            notifData: notificationObj
+        });
+
+
+        return res.status(201).json('posted join request');
 
     } catch (error) {
         console.log(error);
@@ -311,8 +307,7 @@ router.delete('/', async (req, res) => {
     dynamoClient.update(_audienceUpdateQuery, (err, data) => {
         if (err) res.status(404).json(`Error in deleting join request: ${err}`);
         else {
-            console.log(data);
-            res.status(202).json('Deleted join request');
+            return res.status(202).json('Deleted join request');
         }
     });
 
@@ -459,32 +454,34 @@ router.post('/response', async (req, res) => {
 
         try {
             await dynamoClient.transactWrite(_transactQuery).promise();
-            res.status(201).json('Accepted join request');
 
-            // sending new participant list to all connected users.
-            postParticipantListToWebsocketUsers(clubId);
+
 
             // sending websocket msg to this user.
-            postJoinRequestResponseToWebsocketUser({
+            await postJoinRequestResponseToWebsocketUser({
                 userId: audienceDoc.audience.userId,
                 clubId: clubId,
                 response: 'accept'
             });
 
-            // sending notification
-            _getClubData({
-                clubId: clubId
-            }, ({
+            const {
                 clubName
-            }) => {
-                notificationObj['title'] = 'Congratulations, you are now a panelist on ' + clubName;
-                publishNotification({
-                    userId: audienceId,
-                    notifData: notificationObj
-                });
-
+            } = await _getClubData({
+                clubId: clubId
             });
 
+            // sending notification
+            notificationObj['title'] = 'Congratulations, you are now a panelist on ' + clubName;
+            await publishNotification({
+                userId: audienceId,
+                notifData: notificationObj
+            });
+
+            // sending new participant list to all connected users.
+            await postParticipantListToWebsocketUsers(clubId);
+
+
+            return res.status(201).json('Accepted join request');
         } catch (error) {
             res.status(404).json(`Error accepting join request: ${error}`);
         }
@@ -517,33 +514,31 @@ router.post('/response', async (req, res) => {
 
         }
 
-        dynamoClient.update(_audienceUpdateQuery, (err, data) => {
+        dynamoClient.update(_audienceUpdateQuery, async (err, data) => {
             if (err) res.status(404).json(`Error in cancelling join request: ${err}`);
             else {
-                console.log(data);
-                res.status(202).json('Cancelled join request');
-
 
                 // sending websocket msg to this user.
-                postJoinRequestResponseToWebsocketUser({
+                await postJoinRequestResponseToWebsocketUser({
                     userId: audienceDoc.audience.userId,
                     clubId: clubId,
                     response: 'cancel',
                 });
 
                 // sending notification
-                _getClubData({
-                    clubId: clubId
-                }, ({
+                const {
                     clubName
-                }) => {
-                    notificationObj['title'] = 'Your request to speak could not be fulfilled on  ' + clubName;
-                    publishNotification({
-                        userId: audienceId,
-                        notifData: notificationObj
-                    });
-
+                } = await _getClubData({
+                    clubId: clubId
                 });
+                notificationObj['title'] = 'Your request to speak could not be fulfilled on  ' + clubName;
+                await publishNotification({
+                    userId: audienceId,
+                    notifData: notificationObj
+                });
+
+                return res.status(202).json('Cancelled join request');
+
             }
         });
 
@@ -558,7 +553,7 @@ async function _getClubData({
     clubId,
     nameAttr = true,
     creatorAttr = false,
-}, callback) {
+}) {
     if (!clubId) {
         return;
     }
@@ -575,9 +570,7 @@ async function _getClubData({
     }
 
     const data = (await dynamoClient.get(_clubQuery).promise())['Item'];
-    if (data) {
-        callback(data);
-    }
+    return data;
 }
 
 

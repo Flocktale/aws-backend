@@ -92,17 +92,16 @@ router.post('/', async (req, res) => {
     };
 
     const participantsData = (await dynamoClient.query(_participantsQuery).promise())['Items'];
-    if (participantsData) {
-        const participantIds = participantsData.map(({
-            audience
-        }) => audience.userId);
 
-        for (var id of participantIds) {
-            await postMuteMessageToWebsocketUser({
-                userId: id,
-                clubId: clubId
-            });
-        }
+    const participantIds = participantsData.map(({
+        audience
+    }) => audience.userId);
+
+    for (var id of participantIds) {
+        await postMuteMessageToWebsocketUser({
+            userId: id,
+            clubId: clubId
+        });
     }
 
     return res.status(200).json('muted successfully');
