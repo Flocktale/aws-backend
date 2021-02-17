@@ -306,6 +306,12 @@ Resources:
             Path: /clubs/{clubId}/agora/token/create
             Method: post
 
+        ConcludeClub:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/conclude
+            Method: post
+
 Outputs:
   UserServiceAPIs:
     Description: "API Gateway endpoint URL for Prod stage"

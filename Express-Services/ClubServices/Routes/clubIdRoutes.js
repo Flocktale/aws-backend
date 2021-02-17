@@ -21,6 +21,8 @@ const blockFeatureRouter = require('./clubIdNestedRoutes/blockFeatureRoutes');
 
 const muteFeatureRouter = require('./clubIdNestedRoutes/muteFeatureRoutes');
 
+const concludeRouter = require('./clubIdNestedRoutes/concludeRoute');
+
 router.use('/avatar', avatarRouter);
 router.use('/reactions', reactionRouter);
 router.use('/reports', reportRouter);
@@ -34,6 +36,8 @@ router.use('/invite', inviteRouter);
 router.use('/block', blockFeatureRouter);
 
 router.use('/mute', muteFeatureRouter);
+
+router.use('/conclude', concludeRouter);
 
 // _________________________________________________________________________________________________________________________________________________________
 // _________________________________________________________________________________________________________________________________________________________

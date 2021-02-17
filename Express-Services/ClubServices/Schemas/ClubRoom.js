@@ -13,6 +13,12 @@ const ClubInputSchema = Joi.object({
 
     agoraToken: Joi.string(),
 
+    // when owner starts the club.
+    isLive: Joi.bool().default(false),
+
+    // when owner concludes/finsh the club.
+    isConcluded: Joi.bool().default(false),
+
     timeWindow: Joi.number().integer().default(1800).min(300), // expected duration of club entered at time of creation (default 1800 seconds i.e. 30 minutes)
 
 
