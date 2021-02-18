@@ -13,6 +13,7 @@ Resources:
   UserServiceFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: UserServiceFunction
       CodeUri: UserServices/
       Handler: handler.handler
       Runtime: nodejs12.x
@@ -137,6 +138,7 @@ Resources:
   ClubServiceFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: ClubServiceFunction
       CodeUri: ClubServices/
       Handler: handler.handler
       Runtime: nodejs12.x

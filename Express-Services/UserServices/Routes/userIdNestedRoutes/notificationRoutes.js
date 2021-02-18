@@ -106,7 +106,7 @@ router.delete("/device-token", async (req, res) => {
         ReturnValues: 'ALL_OLD',
     }
     try {
-        const oldData = (await dynamoClient.delete(_tokenQuery).promise())['Attributes'];
+        const oldData = (await dynamoClient.delete(_tokenDeleteQuery).promise())['Attributes'];
         if (oldData) {
             const oldEndpoint = oldData['endpointArn'];
             await sns.deleteEndpoint({
