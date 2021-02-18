@@ -61,7 +61,7 @@ app.get("/clubs", async (req, res) => {
                     AttributeValueList: [category]
                 }
             },
-            AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime', 'clubAvatar', 'tags'],
+            AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime', 'clubAvatar', 'estimatedAudience', 'tags'],
             ScanIndexForward: false,
             Limit: 5,
         };

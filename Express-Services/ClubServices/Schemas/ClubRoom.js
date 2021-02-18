@@ -59,6 +59,9 @@ const ClubInputSchemaWithDatabaseKeys = ClubInputSchema.append({
 
 const ClubRoomCompleteSchema = ClubInputSchemaWithDatabaseKeys.append({
     duration: Joi.number().integer().min(300), // real duration (real playtime of club)   
+
+    estimatedAudience: Joi.number().integer().default(0), // used for rough estimation of total audience
+
 });
 
 

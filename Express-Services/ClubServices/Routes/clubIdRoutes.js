@@ -61,7 +61,6 @@ async function fetchAndRegisterAudience({
         }
         var _responseAudienceData;
 
-
         // checking if user already exists as an audience
         const _oldAudienceDocQuery = {
             TableName: tableName,
@@ -104,8 +103,7 @@ async function fetchAndRegisterAudience({
                 // it means audience has no registered data in database, 
                 // this condition should not arise lest we have some serious implementation problems 
                 console.log('could not fetch user summary data');
-                res.status(500).json('could not fetch user summary data');
-                return;
+                reject('could not fetch user summary data');
 
             }
 
@@ -134,20 +132,44 @@ async function fetchAndRegisterAudience({
                 },
                 ExpressionAttributeValues: {
                     ':counter': 1,
-                }
+                },
+                ReturnValues: 'UPDATED_NEW',
             };
 
-            const _transactQuery = {
-                TransactItems: [{
-                        Put: _newAudienceDocQuery
+            // we are not using transaction because that won't return the data of audienceCount.
+
+            await dynamoClient.put(_newAudienceDocQuery).promise();
+            const countReturnedData = (await dynamoClient.update(_audienceCountUpdateQuery).promise())['Attributes'];
+
+            if (countReturnedData) {
+                const estimatedAudience = countReturnedData['count'];
+
+                const _updateClubEstimatedCountQuery = {
+                    TableName: tableName,
+                    Key: {
+                        P_K: `CLUB#${clubId}`,
+                        S_K: `CLUBMETA#${clubId}`
                     },
-                    {
-                        Update: _audienceCountUpdateQuery
-                    }
-                ]
-            };
+                    UpdateExpression: 'SET estimatedAudience = :est',
+                    ExpressionAttributeValues: {
+                        ':est': estimatedAudience,
+                    },
+                }
+                const condition_1 = (estimatedAudience <= 100);
+                const condition_2 = (estimatedAudience > 100 && estimatedAudience <= 1000) ? (estimatedAudience % 13 === 0) : false;
+                const condition_3 = (estimatedAudience > 1000 && estimatedAudience <= 10000) ? (estimatedAudience % 127 === 0) : false;
+                const condition_4 = (estimatedAudience > 10000 && estimatedAudience <= 100000) ? (estimatedAudience % 1700 === 0) : false;
+                const condition_5 = (estimatedAudience % 10000 === 0);
 
-            await dynamoClient.transactWrite(_transactQuery).promise();
+                if (condition_1 || condition_2 || condition_3 || condition_4 || condition_5) {
+                    await dynamoClient.update(_updateClubEstimatedCountQuery).promise();
+                    console.log('ho gya');
+                }
+
+            }
+
+
+
         }
         resolve(_responseAudienceData);
     })
@@ -219,22 +241,22 @@ router.get('/', async (req, res) => {
         },
         AttributesToGet: ['clubId', 'clubName', 'creator', 'agoraToken', 'category',
             'isLive', 'isConcluded',
-            'scheduleTime', 'clubAvatar', 'description', 'isPrivate', 'tags'
+            'scheduleTime', 'clubAvatar', 'description', 'isPrivate', 'tags',
         ],
     };
 
-    dynamoClient.get(_getQuery, (err, data) => {
-        if (err) {
-            console.log(err);
-            res.status(404).json(err);
-        } else {
-            res.status(200).json({
-                club: data['Item'],
-                audienceData: _responseAudienceData,
-                reactionIndexValue: _reactionIndexValue,
-            });
-        }
-    });
+    try {
+        const data = (await dynamoClient.get(_getQuery).promise())['Item'];
+
+        return res.status(200).json({
+            club: data,
+            audienceData: _responseAudienceData,
+            reactionIndexValue: _reactionIndexValue,
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json(error);
+    }
 
 });
 

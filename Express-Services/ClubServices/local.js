@@ -13,26 +13,12 @@ app.listen(3000, () => {
 // } = require('./config');
 
 
-// async function testing() {
+async function testing() {
 
-//     await func(async str => {
+    const a = ((1000 % 101) === 0);
+    console.log('a', a ? 'hello' : 'no no no no');
 
-//         console.log(str);
-
-//         const c = await dynamoClient.get({
-//             TableName: tableName,
-//             Key: {
-//                 P_K: 'USER',
-//                 S_K: 'USER'
-//             }
-//         }).promise();
-//         console.log('c: ', c);
-
-
-//     });
-//     console.log('hey there');
-
-// }
+}
 
 // async function func(callback) {
 
@@ -57,4 +43,4 @@ app.listen(3000, () => {
 
 // }
 
-// testing();
+testing();
