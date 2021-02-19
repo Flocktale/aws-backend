@@ -204,7 +204,11 @@ router.post("/opened", async (req, res) => {
             P_K: `USER#${userId}`,
             S_K: `NOTIFICATION#${notificationId}`,
         },
-        ProjectionExpression: 'data.type, data.opened, data.targetResourceId',
+        ProjectionExpression: '#data.#type, #data.opened, #data.targetResourceId',
+        ExpressionAttributeNames: {
+            '#data': 'data',
+            '#type': 'type'
+        },
     }
 
     const _notification = (await dynamoClient.get(_notificationQuery).promise())['Item'];
@@ -246,33 +250,26 @@ router.post("/opened", async (req, res) => {
                     P_K: `CLUB#${clubId}`,
                     S_K: `AUDIENCE#${userId}`,
                 },
-                AttributeUpdates: {
-                    invitationId: {
-                        "Action": "DELETE"
-                    }
-                },
+                UpdateExpression: 'REMOVE invitationId',
+                ExpressionAttributeValues: {},
             };
             const _transactQuery = {
                 TransactItems: []
             };
 
             if (action === 'accept') {
+                _audienceUpdateQuery['UpdateExpression'] += ' SET isParticipant = :tr';
+                _audienceUpdateQuery['ExpressionAttributeValues'][':tr'] = true;
+
+                _audienceUpdateQuery['UpdateExpression'] += ', AudienceDynamicField = :adf';
+                _audienceUpdateQuery['ExpressionAttributeValues'][':adf'] = 'Participant#' + Date.now() + '#' + userId;
+
                 if (_audienceData.joinRequested === true) {
-                    _audienceUpdateQuery['AttributeUpdates']['joinRequested'] = {
-                        "Action": "PUT",
-                        "Value": false
-                    };
+                    _audienceUpdateQuery['UpdateExpression'] += ', joinRequested = :fal';
+                    _audienceUpdateQuery['ExpressionAttributeValues'][':fal'] = false;
                 }
 
-                _audienceUpdateQuery['AttributeUpdates']['isParticipant'] = {
-                    "Action": "PUT",
-                    "Value": true
-                };
 
-                _audienceUpdateQuery['AttributeUpdates']['AudienceDynamicField'] = {
-                    "Action": "PUT",
-                    "Value": 'Participant#' + Date.now() + '#' + userId,
-                };
 
                 const _updateParticipantCounterQuery = {
                     TableName: tableName,
@@ -296,6 +293,7 @@ router.post("/opened", async (req, res) => {
             _transactQuery.TransactItems.push({
                 Update: _audienceUpdateQuery,
             });
+
 
             await dynamoClient.transactWrite(_transactQuery).promise();
 
@@ -484,8 +482,11 @@ router.post("/opened", async (req, res) => {
                 P_K: `USER#${userId}`,
                 S_K: `NOTIFICATION#${notificationId}`,
             },
-            ConditionExpression: 'data.opened = :fal ',
-            UpdateExpression: 'SET data.opened = :tr',
+            ConditionExpression: '#data.opened = :fal ',
+            UpdateExpression: 'SET #data.opened = :tr',
+            ExpressionAttributeNames: {
+                '#data': 'data'
+            },
             ExpressionAttributeValues: {
                 ":fal": false,
                 ":tr": true,
