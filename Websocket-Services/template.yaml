@@ -33,7 +33,7 @@ Resources:
       ApiId: !Ref GeneralWebsocket #required
       IntegrationType: AWS_PROXY #required
       IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectWSFunction.Arn}/invocations
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectFunction.Arn}/invocations
 
   DisconnectRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -54,7 +54,7 @@ Resources:
       Description: Disconnect Integration
       IntegrationType: AWS_PROXY
       IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectWSFunction.Arn}/invocations
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
 
   ClubSubscriptionRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -75,7 +75,7 @@ Resources:
       Description: Club Subscription Integration
       IntegrationType: AWS_PROXY
       IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClubSubscriptionWSFunction.Arn}/invocations
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ClubSubscriptionFunction.Arn}/invocations
 
   CommentRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -96,7 +96,7 @@ Resources:
       Description: Comment Integration
       IntegrationType: AWS_PROXY
       IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CommentWSFunction.Arn}/invocations
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CommentFunction.Arn}/invocations
 
   WsDeployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -116,10 +116,9 @@ Resources:
       DeploymentId: !Ref WsDeployment
       ApiId: !Ref GeneralWebsocket
 
-  OnConnectWSFunction:
+  OnConnectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: OnConnectWSFunction
       CodeUri: onconnect/
       Handler: app.handler
       MemorySize: 256
@@ -142,13 +141,12 @@ Resources:
       - GeneralWebsocket
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref OnConnectWSFunction
+      FunctionName: !Ref OnConnectFunction
       Principal: apigateway.amazonaws.com
 
-  OnDisconnectWSFunction:
+  OnDisconnectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: OnDisconnectWSFunction
       CodeUri: ondisconnect/
       Handler: app.handler
       MemorySize: 256
@@ -166,13 +164,12 @@ Resources:
       - GeneralWebsocket
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref OnDisconnectWSFunction
+      FunctionName: !Ref OnDisconnectFunction
       Principal: apigateway.amazonaws.com
 
-  ClubSubscriptionWSFunction:
+  ClubSubscriptionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: ClubSubscriptionWSFunction
       CodeUri: club-subscription/
       Handler: app.handler
       MemorySize: 256
@@ -195,13 +192,12 @@ Resources:
       - GeneralWebsocket
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref ClubSubscriptionWSFunction
+      FunctionName: !Ref ClubSubscriptionFunction
       Principal: apigateway.amazonaws.com
 
-  CommentWSFunction:
+  CommentFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: CommentWSFunction
       CodeUri: comment/
       Handler: app.handler
       MemorySize: 256
@@ -224,5 +220,5 @@ Resources:
       - GeneralWebsocket
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref CommentWSFunction
+      FunctionName: !Ref CommentFunction
       Principal: apigateway.amazonaws.com

@@ -46,7 +46,10 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
         },
-        UpdateExpression: 'SET isLive = :fal, isConcluded = :tr, duration = :duration REMOVE agoraToken',
+        UpdateExpression: 'SET isLive = :fal, isConcluded = :tr, #duration = :duration REMOVE agoraToken',
+        ExpressionAttributeNames: {
+            '#duration': 'duration',
+        },
         ExpressionAttributeValues: {
             ':fal': false,
             ':tr': true,

@@ -12,7 +12,7 @@ const sns = new AWS.SNS();
 
 const apigwManagementApi = new AWS.ApiGatewayManagementApi({
     apiVersion: '2018-11-29',
-    endpoint: 'https://jpkq996li6.execute-api.us-east-1.amazonaws.com' + '/' + 'Dev'
+    endpoint: 'https://08oc4tw1hb.execute-api.us-east-1.amazonaws.com' + '/' + 'Dev'
 });
 
 const imageUploadConstParams = {
