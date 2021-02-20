@@ -19,6 +19,13 @@ const {
 const {
     sendAndSaveNotification
 } = require('../../Functions/notificationFunctions');
+const {
+    acceptFriendRequest
+} = require('../../Functions/addRelationFunctions');
+
+const {
+    deleteFriendRequest
+} = require('../../Functions/removeRelationFunctions');
 
 // required
 // body - {"deviceToken"}
@@ -306,6 +313,8 @@ router.post("/opened", async (req, res) => {
 
     }
 
+
+    // notification will be deleted by either response from user (automatically handled inside corresponding action handlers).
     if (_notification.data.type === 'FR#new') {
         if (action !== 'accept' && action !== 'cancel') {
             return res.status(400).json('action value is required in query parameters for this notification');
@@ -313,164 +322,25 @@ router.post("/opened", async (req, res) => {
 
         const foreignUserId = _notification.data.targetResourceId;
 
-        const _oldRelationQuery = {
-            TableName: tableName,
-            Key: {
-                P_K: `USER#${userId}`,
-                S_K: `RELATION#${foreignUserId}`
-            },
-            AttributesToGet: ['primaryUser', 'relationIndexObj'],
+
+        const _functionParams = {
+            userId: userId,
+            foreignUserId: foreignUserId
         };
-
-        const oldRelationDoc = (await dynamoClient.get(_oldRelationQuery).promise())['Item'];
-
-        if (!oldRelationDoc) {
-            return res.status(404).json('there is no existing social connection between users');
-        }
-
-        const _transactQuery = {
-            TransactItems: []
-        };
-        const newTimestmap = Date.now();
-
-        // preparing notification object to be sent to foreign user in context. (when request is accepted)
-        var notificationObj = {
-            userId: foreignUserId,
-            data: {
-                type: "FR#accepted",
-                title: "You and " + oldRelationDoc.primaryUser.username + " are now bound in a great friendship pact.",
-                avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${userId}`,
-                targetResourceId: userId,
-                timestamp: Date.now(),
-            },
-        };
-
-
-        const primaryUserRelationDocUpdateQuery = {
-            TableName: tableName,
-            Key: {
-                P_K: `USER#${userId}`,
-                S_K: `RELATION#${foreignUserId}`,
-            },
-        };
-
-        const foreignUserRelationDocUpdateQuery = {
-            TableName: tableName,
-            Key: {
-                P_K: `USER#${foreignUserId}`,
-                S_K: `RELATION#${userId}`,
-            },
-        };
-
-        // update relation docs of users.
-        if (action === 'accept') {
-
-            if (oldRelationDoc.relationIndexObj.B2 === false) {
-                return res.status(404).json('there is no friend request to be accepted');
-            } else if (oldRelationDoc.relationIndexObj.B1 === true) {
-                return res.status(404).json('users are already friends, what in the air are you trying to accept ?');
-            }
-
-
-
-
-            primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b2 = :fal, #rIO.#b1 = :tr, #tsp = :tsp remove #rq';
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-                '#rIO': 'relationIndexObj',
-                '#b5': 'B5',
-                '#b2': 'B2',
-                '#b1': 'B1',
-                '#tsp': 'timestamp',
-                '#rq': 'requestId',
-            };
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-                ':tr': true,
-                ':fal': false,
-                ':tsp': newTimestmap,
-            };
-
-            foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b4 = :tr, #rIO.#b3 = :fal, #rIO.#b1 = :tr, #tsp = :tsp ';
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-                '#rIO': 'relationIndexObj',
-                '#b4': 'B4',
-                '#b3': 'B3',
-                '#b1': 'B1',
-                '#tsp': 'timestamp',
-            };
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-                ':tr': true,
-                ':fal': false,
-                ':tsp': newTimestmap,
-            };
-
-        } else {
-            // in this case, we are not checking if user deleted an already sent request or cancelled an incoming request.
-            // because anyways it will not affect the following/follower relation between users.
-
-            if (!(oldRelationDoc.relationIndexObj.B3 === true || oldRelationDoc.relationIndexObj.B2 === true)) {
-                return res.status(404).json('there is no pending friend request from either users');
-            } else if (oldRelationDoc.relationIndexObj.B1 === true) {
-                return res.status(404).json('users are already friends, what in the air are you deleting ?');
-            }
-
-            // no effect on counts of following and follower
-
-            primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b2 = :fal, #rIO.#b3 = :fal, #tsp = :tsp';
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-                '#rIO': 'relationIndexObj',
-                '#b3': 'B3',
-                '#b2': 'B2',
-                '#tsp': 'timestamp',
-            };
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-                ':fal': false,
-                ':tsp': newTimestmap,
-            };
-
-            foreignUserRelationDocUpdateQuery['UpdateExpression'] = primaryUserRelationDocUpdateQuery['UpdateExpression'];
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'];
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'];
-
-            if (oldRelationDoc.relationIndexObj.B2 === true) {
-                // this is the case of deleting arrived friend request.
-                primaryUserRelationDocUpdateQuery['UpdateExpression'] += ' remove #rq';
-                primaryUserRelationDocUpdateQuery['ExpressionAttributeNames']['#rq'] = 'requestId';
-            }
-        }
-
-        _transactQuery.TransactItems.push({
-            Update: primaryUserRelationDocUpdateQuery
-        });
-        _transactQuery.TransactItems.push({
-            Update: foreignUserRelationDocUpdateQuery
-        });
-
-        // deleting notification also
-        const _notificationDeleteQuery = {
-            TableName: tableName,
-            Key: {
-                P_K: `USER#${userId}`,
-                S_K: `NOTIFICATION#${notificationId}`,
-            },
-        };
-
-        _transactQuery.TransactItems.push({
-            Delete: _notificationDeleteQuery,
-        });
-
-
         try {
-            await dynamoClient.transactWrite(_transactQuery).promise();
-
             if (action === 'accept') {
-                await sendAndSaveNotification(notificationObj);
+                await acceptFriendRequest(_functionParams);
+            } else {
+                await deleteFriendRequest(_functionParams);
             }
-
             return res.status(202).json('response to friend request is successful');
+
         } catch (error) {
-            console.log('error in modifying notification of friend request type: ', error);
+
             return res.status(400).json('error in modifying notification of friend request type');
         }
+
+
 
     } else {
 
