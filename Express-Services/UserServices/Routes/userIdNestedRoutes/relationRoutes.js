@@ -1,25 +1,20 @@
 const router = require('express').Router();
 const Joi = require('joi');
 
-const {
-    UserRelationSchemaWithDatabaseKeys
-} = require('../../Schemas/UserRelation');
 
-const {
-    NotificationSchemaWithDatabaseKeys
-} = require('../../Schemas/notificationSchema')
 
 const {
     usernameSortIndex,
     timestampSortIndex,
     dynamoClient,
     tableName,
-    sns
 } = require('../../config');
 
 const {
-    sendAndSaveNotification
-} = require('../../Functions/notificationFunctions');
+    followUser,
+    sendFriendRequest,
+    acceptFriendRequest,
+} = require('../../Functions/addRelationFunctions');
 
 
 // required
@@ -116,6 +111,8 @@ router.get('/', async (req, res) => {
 
 
 
+
+
 //required
 // query parameters - 
 //      "foreignUserId" - user id of other user
@@ -126,18 +123,6 @@ router.post('/add', async (req, res) => {
 
     const userId = req.userId;
     const foreignUserId = req.query.foreignUserId;
-
-    // preparing notification object to be sent to foreign user in context.
-    var notificationObj = {
-        userId: foreignUserId,
-        data: {
-            type: "undefined",
-            title: "undefined",
-            avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${userId}`,
-            targetResourceId: userId,
-            timestamp: Date.now(),
-        },
-    };
 
     if (userId === foreignUserId) {
         res.status(400).json('both user id should be unique');
@@ -154,384 +139,37 @@ router.post('/add', async (req, res) => {
         return;
     }
 
-    const _primaryUserUpdateQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `USER#${userId}`,
-            S_K: `USERMETA#${userId}`
-        },
-        UpdateExpression: "SET friendsCount = friendsCount + :friendCounter, followingCount = followingCount + :followingCounter",
-        ExpressionAttributeValues: {
-            ':friendCounter': 0,
-            ':followingCounter': 1, // default, in case of already following, it has to be changed to 0.
-        },
+    const _functionParams = {
+        userId: userId,
+        foreignUserId: foreignUserId
     };
 
-    const _foreignUserUpdateQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `USER#${foreignUserId}`,
-            S_K: `USERMETA#${foreignUserId}`
-        },
-
-        UpdateExpression: "SET friendsCount = friendsCount + :friendCounter, followerCount = followerCount + :followerCounter",
-        ExpressionAttributeValues: {
-            ':friendCounter': 0,
-            ':followerCounter': 1, // default, in case of already being followed, it has to be changed to 0.
-        },
-    };
-
-    if (addAction === "accept_friend_request") {
-
-        _primaryUserUpdateQuery['ExpressionAttributeValues'][':friendCounter'] = 1;
-        _foreignUserUpdateQuery['ExpressionAttributeValues'][':friendCounter'] = 1;
-
-    }
-
-
-    const oldRelationDocQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `USER#${userId}`,
-            S_K: `RELATION#${foreignUserId}`
-        },
-        AttributesToGet: ['primaryUser', 'relationIndexObj', 'requestId'], // primary user to get username for notification, relationIndexObj for conditions
-    };
-    let oldRelationDoc;
     try {
-        oldRelationDoc = (await dynamoClient.get(oldRelationDocQuery).promise())['Item'];
-    } catch (error) {
-        console.log('no old doc exists for this request hence this is a new relation');
-    }
-
-    let _transactQuery;
-
-    if (oldRelationDoc) {
-
-        // user might already be following foreign user so we have to check for it (in case different than "follow" for which B5 is always false)
-        if (oldRelationDoc.relationIndexObj.B5 === true) {
-            //  user already follow, so no need to increment counts
-            _primaryUserUpdateQuery['ExpressionAttributeValues'][':followingCounter'] = 0;
-
-            _foreignUserUpdateQuery['ExpressionAttributeValues'][':followerCounter'] = 0;
-
-        }
-
-
-        const newTimestmap = Date.now();
-
-        const primaryUserRelationDocUpdateQuery = {
-            TableName: tableName,
-            Key: {
-                P_K: `USER#${userId}`,
-                S_K: `RELATION#${foreignUserId}`,
-            },
-        }
-
-        const foreignUserRelationDocUpdateQuery = {
-            TableName: tableName,
-            Key: {
-                P_K: `USER#${foreignUserId}`,
-                S_K: `RELATION#${userId}`,
-            },
-        }
-
 
         if (addAction === "follow") {
 
-            if (oldRelationDoc.relationIndexObj.B5 === true) {
-                return res.status(404).json('user is already following user');
-            }
-
-            notificationObj.data.type = "FLW#new";
-            notificationObj.data.title = oldRelationDoc.primaryUser.username + " has started following you.";
-
-
-
-            primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #tsp = :tsp';
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-                '#rIO': 'relationIndexObj',
-                '#b5': 'B5',
-                '#tsp': 'timestamp',
-            };
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-                ':tr': true,
-                ':tsp': newTimestmap,
-            };
-
-
-
-            foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b4 = :tr, #tsp = :tsp ';
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-                '#rIO': 'relationIndexObj',
-                '#b4': 'B4',
-                '#tsp': 'timestamp',
-            };
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-                ':tr': true,
-                ':tsp': newTimestmap,
-            };
-
+            await followUser(_functionParams);
 
         } else if (addAction === "send_friend_request") {
 
-            if (oldRelationDoc.relationIndexObj.B3 === true) {
-                return res.status(404).json('there is already a pending friend request');
-            } else if (oldRelationDoc.relationIndexObj.B2 === true) {
-                return res.status(404).json('can not send friend request when you already have one incoming');
-            } else if (oldRelationDoc.relationIndexObj.B1 === true) {
-                return res.status(404).json('users are already friends, why sending friend request ?');
-            }
-
-
-            notificationObj.data.type = "FR#new";
-            notificationObj.data.title = oldRelationDoc.primaryUser.username + " would like to be your friend.";
-
-
-
-            primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b3 = :tr, #tsp = :tsp  ';
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-                '#rIO': 'relationIndexObj',
-                '#b5': 'B5',
-                '#b3': 'B3',
-                '#tsp': 'timestamp',
-            };
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-                ':tr': true,
-                ':tsp': newTimestmap,
-            };
-
-
-
-            foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b4 = :tr, #rIO.#b2 = :tr, #tsp = :tsp  ';
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-                '#rIO': 'relationIndexObj',
-                '#b4': 'B4',
-                '#b2': 'B2',
-                '#tsp': 'timestamp',
-            };
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-                ':tr': true,
-                ':tsp': newTimestmap,
-            };
+            await sendFriendRequest(_functionParams);
 
         } else if (addAction === "accept_friend_request") {
 
-            if (oldRelationDoc.relationIndexObj.B2 === false) {
-                return res.status(404).json('there is no friend request to be accepted');
-            } else if (oldRelationDoc.relationIndexObj.B1 === true) {
-                return res.status(404).json('users are already friends, what in the air are you trying to accept ?');
-            }
+            await acceptFriendRequest(_functionParams);
 
-
-            notificationObj.data.type = "FR#accepted";
-            notificationObj.data.title = "You and " + oldRelationDoc.primaryUser.username + " are now bound in a great friendship pact.";
-
-
-            primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :tr, #rIO.#b2 = :fal, #rIO.#b1 = :tr, #tsp = :tsp remove #rq';
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-                '#rIO': 'relationIndexObj',
-                '#b5': 'B5',
-                '#b2': 'B2',
-                '#b1': 'B1',
-                '#tsp': 'timestamp',
-                '#rq': 'requestId',
-            };
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-                ':tr': true,
-                ':fal': false,
-                ':tsp': newTimestmap,
-            };
-
-            foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b4 = :tr, #rIO.#b3 = :fal, #rIO.#b1 = :tr, #tsp = :tsp ';
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-                '#rIO': 'relationIndexObj',
-                '#b4': 'B4',
-                '#b3': 'B3',
-                '#b1': 'B1',
-                '#tsp': 'timestamp',
-            };
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-                ':tr': true,
-                ':fal': false,
-                ':tsp': newTimestmap,
-            };
-        }
-
-        _transactQuery = {
-            TransactItems: [{
-                    Update: primaryUserRelationDocUpdateQuery
-                },
-                {
-                    Update: foreignUserRelationDocUpdateQuery
-                },
-            ]
-        };
-
-    } else {
-
-        // since it is a brand new relation, so using default update queries for incrementing follow/following/friend counters. 
-
-
-        const primaryUser = await _getUserSummaryData(userId);
-        const foreignUser = await _getUserSummaryData(foreignUserId);
-        const newTimestmap = Date.now();
-
-        const newPrimaryUserRelationDoc = await _prepareNewRelationDoc(primaryUser, foreignUser, newTimestmap);
-        const newForeignUserRelationDoc = await _prepareNewRelationDoc(foreignUser, primaryUser, newTimestmap);
-
-        if (!newPrimaryUserRelationDoc || !newForeignUserRelationDoc) {
-            res.status(500).json('internal server issue, please check the logs');
-            return;
-        }
-        if (addAction === "follow") {
-            notificationObj.data.type = "FLW#new";
-            notificationObj.data.title = primaryUser.username + " has started following you.";
-
-            newPrimaryUserRelationDoc["relationIndexObj"]["B5"] = true;
-
-            newForeignUserRelationDoc["relationIndexObj"]["B4"] = true;
-
-        } else if (addAction === "send_friend_request") {
-
-            notificationObj.data.type = "FR#new";
-            notificationObj.data.title = primaryUser.username + " would like to be your friend.";
-
-            newPrimaryUserRelationDoc["relationIndexObj"]["B5"] = true;
-            newPrimaryUserRelationDoc["relationIndexObj"]["B3"] = true;
-
-            newForeignUserRelationDoc["relationIndexObj"]["B4"] = true;
-            newForeignUserRelationDoc["relationIndexObj"]["B2"] = true;
-        }
-        // in case of accepting friend request, oldRelationDoc != null 
-
-        const newPrimaryUserRelationDocQuery = {
-            TableName: tableName,
-            Item: newPrimaryUserRelationDoc
-        }
-
-        const newForeignUserRelationDocQuery = {
-            TableName: tableName,
-            Item: newForeignUserRelationDoc
-        }
-
-        _transactQuery = {
-            TransactItems: [{
-                    Put: newPrimaryUserRelationDocQuery
-                },
-                {
-                    Put: newForeignUserRelationDocQuery
-                },
-            ]
-        };
-
-    }
-
-    _transactQuery.TransactItems.push({
-        Update: _primaryUserUpdateQuery,
-    });
-
-    _transactQuery.TransactItems.push({
-        Update: _foreignUserUpdateQuery,
-    });
-
-    dynamoClient.transactWrite(_transactQuery, async (err, data) => {
-        if (err) {
-            console.log(err);
-            return res.status(404).json(err);
         } else {
 
-            // handling notification part
-            await sendAndSaveNotification(notificationObj, async ({
-                notificationId,
-                type
-            }) => {
-
-                if (type !== 'FR#new' || !notificationId) return;
-
-                // this is the case of new friend request. (send_friend_request)
-
-                // saving notificationId in user relation doc of foreign user.
-                const _requestIdUpdateQuery = {
-                    TableName: tableName,
-                    Key: {
-                        P_K: `USER#${foreignUserId}`,
-                        S_K: `RELATION#${userId},`
-                    },
-                    UpdateExpression: 'SET #rq = :rq',
-                    ExpressionAttributeNames: {
-                        '#rq': requestId,
-                    },
-                    ExpressionAttributeValues: {
-                        ':rq': notificationId,
-                    },
-                };
-
-                await dynamoClient.update(_requestIdUpdateQuery).promise();
-
-            });
-
-            // deleting notification (reference from requestId)
-            if (addAction === "accept_friend_request") {
-
-                const _notificationDeleteQuery = {
-                    TableName: tableName,
-                    Key: {
-                        P_K: `USER#${userId}`,
-                        S_K: `NOTIFICATION#${oldRelationDoc.requestId}`,
-                    },
-                };
-                await dynamoClient.delete(_notificationDeleteQuery).promise();
-
-            }
-
-
-
-            return res.status(202).json(`${addAction} successfull!`);
+            return res.status(500).json('Dead end');
         }
-    });
+
+        return res.status(202).json(`${addAction} successful`);
+    } catch (error) {
+
+        return res.status(400).json(error);
+    }
 
 });
-
-
-async function _getUserSummaryData(userId) {
-    const userDocQuery = {
-        TableName: tableName,
-        AttributesToGet: ['userId', 'username', 'avatar', 'name'],
-        Key: {
-            P_K: `USER#${userId}`,
-            S_K: `USERMETA#${userId}`
-        },
-    };
-    try {
-        const userDoc = (await dynamoClient.get(userDocQuery).promise())['Item'];
-
-        return userDoc;
-    } catch (error) {
-        console.log('error in fetch user summary: ', error);
-        return null;
-    }
-}
-
-async function _prepareNewRelationDoc(primaryUser, foreignUser, timestamp) {
-    if (!primaryUser || !foreignUser) {
-        console.log("can't fetch either primary user: ", primaryUser, " or foreign user: ", foreignUser);
-        return null;
-    }
-
-    try {
-        const result = await UserRelationSchemaWithDatabaseKeys.validateAsync({
-            primaryUser: primaryUser,
-            foreignUser: foreignUser,
-            timestamp: timestamp,
-            relationIndexObj: {},
-        });
-        return result;
-    } catch (error) {
-        console.log(error);
-        return null;
-    }
-}
 
 
 
