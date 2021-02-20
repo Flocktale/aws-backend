@@ -15,6 +15,11 @@ const {
     sendFriendRequest,
     acceptFriendRequest,
 } = require('../../Functions/addRelationFunctions');
+const {
+    unfollowUser,
+    deleteFriendRequest,
+    unfriendUser
+} = require('../../Functions/removeRelationFunctions');
 
 
 // required
@@ -178,7 +183,8 @@ router.post('/add', async (req, res) => {
 //      "foreignUserId" - user id of other user
 //       "action" (possible values - "unfollow" , "delete_friend_request" , "unfriend" )
 
-//! unfollow a user or delete friend request.
+//! unfollow a user or delete friend request or unfriend user.
+
 router.post('/remove', async (req, res) => {
     const userId = req.userId;
     const foreignUserId = req.query.foreignUserId;
@@ -200,315 +206,37 @@ router.post('/remove', async (req, res) => {
     }
 
 
-    const oldRelationDocQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `USER#${userId}`,
-            S_K: `RELATION#${foreignUserId}`
-        },
-        AttributesToGet: ['relationIndexObj', 'requestId'],
+    const _functionParams = {
+        userId: userId,
+        foreignUserId: foreignUserId
     };
-    let oldRelationDoc;
+
     try {
-        oldRelationDoc = (await dynamoClient.get(oldRelationDocQuery).promise())['Item'];
-    } catch (error) {
-        console.log('error in fetching oldRelationDoc: ', error);
-        return res.status(400).json('error in checking existing social connection between users');
-    }
 
-    if (!oldRelationDoc) {
-        return res.status(404).json('there is no existing social connection between users');
-    }
+        if (removeAction === 'unfollow') {
 
+            await unfollowUser(_functionParams);
 
-    const newTimestmap = Date.now();
+        } else if (removeAction === 'delete_friend_request') {
 
-    const _primaryUserUpdateQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `USER#${userId}`,
-            S_K: `USERMETA#${userId}`
-        },
-        UpdateExpression: "SET friendsCount = friendsCount - :friendCounter, followingCount = followingCount - :followingCounter",
-        ExpressionAttributeValues: {
-            ':friendCounter': 0,
-            ':followingCounter': 0,
-        },
-    };
+            await deleteFriendRequest(_functionParams);
 
-    const _foreignUserUpdateQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `USER#${foreignUserId}`,
-            S_K: `USERMETA#${foreignUserId}`
-        },
+        } else if (removeAction === 'unfriend') {
 
-        UpdateExpression: "SET friendsCount = friendsCount - :friendCounter, followerCount = followerCount - :followerCounter",
-        ExpressionAttributeValues: {
-            ':friendCounter': 0,
-            ':followerCounter': 0,
-        },
-    };
+            await unfriendUser(_functionParams);
 
-
-
-    const primaryUserRelationDocUpdateQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `USER#${userId}`,
-            S_K: `RELATION#${foreignUserId}`,
-        },
-    };
-
-    const foreignUserRelationDocUpdateQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `USER#${foreignUserId}`,
-            S_K: `RELATION#${userId}`,
-        },
-    };
-
-    if (removeAction === "unfollow") {
-
-        if (oldRelationDoc.relationIndexObj.B5 === false) {
-            return res.status(404).json('no follow exists to unfollow');
-        }
-
-        _primaryUserUpdateQuery["ExpressionAttributeValues"][":followingCounter"] = 1;
-        _foreignUserUpdateQuery["ExpressionAttributeValues"][":followerCounter"] = 1;
-
-
-
-        primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b5 = :fal, #tsp = :tsp';
-        primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-            '#rIO': 'relationIndexObj',
-            '#b5': 'B5',
-            '#tsp': 'timestamp',
-        };
-        primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-            ':fal': false,
-            ':tsp': newTimestmap,
-        };
-
-
-        foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b4 = :fal, #tsp = :tsp';
-        foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-            '#rIO': 'relationIndexObj',
-            '#b4': 'B4',
-            '#tsp': 'timestamp',
-        };
-        foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-            ':fal': false,
-            ':tsp': newTimestmap,
-        };
-
-    } else if (removeAction === "delete_friend_request") {
-        // in this case, we are not checking if user deleted an already sent request or cancelled an incoming request.
-        // because anyways it will not affect the following/follower relation between users.
-
-
-        if (!(oldRelationDoc.relationIndexObj.B3 === true || oldRelationDoc.relationIndexObj.B2 === true)) {
-            return res.status(404).json('there is no pending friend request from either users');
-        } else if (oldRelationDoc.relationIndexObj.B1 === true) {
-            return res.status(404).json('users are already friends, what in the air are you deleting ?');
-        }
-
-        // no effect on counts of following and follower
-
-        primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b2 = :fal, #rIO.#b3 = :fal, #tsp = :tsp';
-        primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-            '#rIO': 'relationIndexObj',
-            '#b3': 'B3',
-            '#b2': 'B2',
-            '#tsp': 'timestamp',
-        };
-        primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-            ':fal': false,
-            ':tsp': newTimestmap,
-        };
-
-        foreignUserRelationDocUpdateQuery['UpdateExpression'] = primaryUserRelationDocUpdateQuery['UpdateExpression'];
-        foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'];
-        foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'];
-
-        if (oldRelationDoc.requestId && oldRelationDoc.relationIndexObj.B2 === true) {
-            // this is the case of deleting arrived friend request.
-            primaryUserRelationDocUpdateQuery['UpdateExpression'] += ' remove #rq';
-            primaryUserRelationDocUpdateQuery['ExpressionAttributeNames']['#rq'] = 'requestId';
-
-
-        } else if (oldRelationDoc.relationIndexObj.B3 === true) {
-            // this is the case of deleting sent friend request.
-
-            foreignUserRelationDocUpdateQuery['UpdateExpression'] += ' remove #rq';
-            foreignUserRelationDocUpdateQuery['ExpressionAttributeNames']['#rq'] = 'requestId';
-
-            // we don't have requestId in this case, for which we will query later. 
-            // delete that notification then.
-        }
-
-    } else if (removeAction === "unfriend") {
-        // unfriend and unfollow
-
-        if (oldRelationDoc.relationIndexObj.B1 === false) {
-            return res.status(404).json('there was no friendship between them');
-        }
-
-        // checking if user follows foreign user
-        if (oldRelationDoc.relationIndexObj.B5 === true) {
-            // decrementing follow/following count from corresponding user data.
-            _primaryUserUpdateQuery["ExpressionAttributeValues"][":followingCounter"] = 1;
-
-            _foreignUserUpdateQuery["ExpressionAttributeValues"][":followerCounter"] = 1;
-        }
-
-
-        _primaryUserUpdateQuery["ExpressionAttributeValues"][":friendCounter"] = 1;
-
-        _foreignUserUpdateQuery["ExpressionAttributeValues"][":friendCounter"] = 1;
-
-
-
-        primaryUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b1 = :fal, #rIO.#b5 = :fal, #tsp = :tsp';
-        primaryUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-            '#rIO': 'relationIndexObj',
-            '#b1': 'B1',
-            '#b5': 'B5',
-            '#tsp': 'timestamp',
-        };
-        primaryUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-            ':fal': false,
-            ':tsp': newTimestmap,
-        };
-
-
-        foreignUserRelationDocUpdateQuery['UpdateExpression'] = 'set #rIO.#b1 = :fal, #rIO.#b4 = :fal, #tsp = :tsp';
-        foreignUserRelationDocUpdateQuery['ExpressionAttributeNames'] = {
-            '#rIO': 'relationIndexObj',
-            '#b1': 'B1',
-            '#b4': 'B4',
-            '#tsp': 'timestamp',
-        };
-        foreignUserRelationDocUpdateQuery['ExpressionAttributeValues'] = {
-            ':fal': false,
-            ':tsp': newTimestmap,
-        };
-    }
-
-    const _transactQuery = {
-        TransactItems: [{
-                Update: primaryUserRelationDocUpdateQuery
-            },
-            {
-                Update: foreignUserRelationDocUpdateQuery
-            },
-        ]
-    };
-
-    // except for deleting friend request, count values can change for users.
-    if (removeAction !== "delete_friend_request") {
-        _transactQuery.TransactItems.push({
-            Update: _primaryUserUpdateQuery
-        });
-        _transactQuery.TransactItems.push({
-            Update: _foreignUserUpdateQuery
-        });
-    }
-
-    dynamoClient.transactWrite(_transactQuery, async (err, data) => {
-        if (err) {
-            console.log(err);
-            res.status(404).json(err);
         } else {
 
-            const _conditionalDeleteQuery = {
-                TableName: tableName,
-                ConditionExpression: '#rIO.#b1 = :fal and #rIO.#b2 = :fal and #rIO.#b3 = :fal and #rIO.#b4 = :fal and #rIO.#b5 = :fal',
-                ExpressionAttributeNames: {
-                    '#rIO': 'relationIndexObj',
-                    '#b1': 'B1',
-                    '#b2': 'B2',
-                    '#b3': 'B3',
-                    '#b4': 'B4',
-                    '#b5': 'B5',
-                },
-                ExpressionAttributeValues: {
-                    ':fal': false,
-                }
-            };
-
-            const _deleteTransactQuery = {
-                TransactItems: [{
-                        Delete: {
-                            ..._conditionalDeleteQuery,
-                            Key: {
-                                P_K: `USER#${userId}`,
-                                S_K: `RELATION#${foreignUserId}`,
-                            }
-                        }
-                    },
-                    {
-                        Delete: {
-                            ..._conditionalDeleteQuery,
-                            Key: {
-                                P_K: `USER#${foreignUserId}`,
-                                S_K: `RELATION#${userId}`,
-                            }
-                        }
-                    }
-                ]
-            };
-
-            if (removeAction === "delete_friend_request") {
-                var _notificationDeleteQuery;
-                if (oldRelationDoc.requestId) {
-                    // this is the case of deleting arrived friend request.
-                    _notificationDeleteQuery = {
-                        TableName: tableName,
-                        Key: {
-                            P_K: `USER#${userId}`,
-                            S_K: `NOTIFICATION#${oldRelationDoc.requestId}`,
-                        },
-                    };
-
-                } else if (oldRelationDoc.relationIndexObj.B3 === true) {
-                    // this is the case of deleting sent friend request.
-
-                    const _requestIdQuery = {
-                        TableName: tableName,
-                        Key: {
-                            P_K: `USER#${foreignUserId}`,
-                            S_K: `RELATION#${userId}`
-                        },
-                        AttributesToGet: ['requestId'],
-                    };
-
-                    const _requestData = (await dynamoClient.get(_requestData).promise())['Item'];
-                    if (_requestData) {
-                        _notificationDeleteQuery = {
-                            TableName: tableName,
-                            Key: {
-                                P_K: `USER#${foreignUserId}`,
-                                S_K: `NOTIFICATION#${_requestData.requestId}`,
-                            },
-                        };
-                    }
-                }
-                if (_notificationDeleteQuery) {
-                    _deleteTransactQuery.TransactItems.push({
-                        Delete: _notificationDeleteQuery
-                    });
-                }
-            }
-
-            await dynamoClient.transactWrite(_deleteTransactQuery, (err, data) => {
-                if (err) console.log(err);
-                else console.log('deletion attempt of relation documents for users', data);
-            }).promise();
-
-            return res.status(202).json(`${removeAction} successfull!`);
+            return res.status(500).json('Dead end');
         }
-    });
+
+        return res.status(202).json(`${removeAction} successful`);
+
+    } catch (error) {
+
+        return res.status(400).json(error);
+
+    }
 
 
 });

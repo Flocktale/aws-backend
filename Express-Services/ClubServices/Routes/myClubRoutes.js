@@ -24,8 +24,8 @@ router.get('/:userId/organized', async (req, res) => {
                 "AttributeValueList": [`USER#${userId}`]
             },
         },
-        AttributesToGet: [
-            'clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration'
+        AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
+            'clubAvatar', 'estimatedAudience', 'tags', 'isLive', 'isConcluded'
         ],
         Limit: 10,
         ScanIndexForward: false,
@@ -90,8 +90,8 @@ router.get('/:userId/history', async (req, res) => {
                             P_K: `CLUB#${element.clubId}`,
                             S_K: `CLUBMETA#${element.clubId}`
                         },
-                        AttributesToGet: [
-                            'clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration'
+                        AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
+                            'clubAvatar', 'estimatedAudience', 'tags', 'isLive', 'isConcluded'
                         ]
                     }
                 });
