@@ -222,6 +222,8 @@ async function acceptFriendRequest({
             reject('there is no friend request to be accepted');
         } else if (oldRelationDoc.relationIndexObj.B1 === true) {
             reject('users are already friends, what in the air are you trying to accept ?');
+        } else if (oldRelationDoc.relationIndexObj.B3 === true) {
+            reject('you can not accept friend request you sent itself.');
         }
 
         try {
