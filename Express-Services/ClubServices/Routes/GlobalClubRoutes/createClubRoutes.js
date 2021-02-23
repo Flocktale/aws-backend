@@ -6,10 +6,10 @@ const {
 
 const {
     ClubRoomCompleteSchema
-} = require('../Schemas/ClubRoom');
+} = require('../../Schemas/ClubRoom');
 const {
     AudienceSchemaWithDatabaseKeys
-} = require('../Schemas/Audience');
+} = require('../../Schemas/Audience');
 const {
     CountCommentSchema,
     CountReactionSchema,
@@ -17,14 +17,14 @@ const {
     CountParticipantSchema,
     CountAudienceSchema,
     CountJoinRequestSchema
-} = require('../Schemas/AtomicCountSchemas');
+} = require('../../Schemas/AtomicCountSchemas');
 
 const {
     imageUploadConstParams,
     dynamoClient,
     s3,
     tableName
-} = require('../config');
+} = require('../../config');
 
 //required
 // query parameters - "creatorId"

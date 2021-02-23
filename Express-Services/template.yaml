@@ -161,7 +161,7 @@ Resources:
         AllClubList:
           Type: Api
           Properties:
-            Path: /clubs
+            Path: /clubs/global
             Method: get
 
         UnifiedSearch:
@@ -173,8 +173,14 @@ Resources:
         CreateClub:
           Type: Api
           Properties:
-            Path: /clubs/create
+            Path: /clubs/global/create
             Method: post
+
+        GetCategoryData:
+          Type: Api
+          Properties:
+            Path: /clubs/global/category-data
+            Method: get
 
         MyOrganisedClubs:
           Type: Api

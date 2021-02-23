@@ -36,69 +36,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const {
-    clubCategoryIndex,
-    dynamoClient,
-    tableName
-} = require('./config');
-
-app.get("/clubs", async (req, res) => {
-    var categoryList = ['Entrepreneurship', 'Education', 'Comedy', 'Travel', 'Society',
-        'Health', 'Finance', 'Sports', 'Other'
-    ];
-
-    var latestClubs = {
-        categoryClubs: []
-    };
-
-    const fetchCategoryClubs = categoryList.map(async (category) => {
-        const _query = {
-            TableName: tableName,
-            IndexName: clubCategoryIndex,
-            KeyConditions: {
-                'category': {
-                    ComparisonOperator: 'EQ',
-                    AttributeValueList: [category]
-                }
-            },
-            AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
-                'clubAvatar', 'estimatedAudience', 'tags', 'isLive', 'isConcluded'
-            ],
-            ScanIndexForward: false,
-            Limit: 5,
-        };
-        try {
-            const clubs = (await dynamoClient.query(_query).promise())['Items'];
-            latestClubs.categoryClubs.push({
-                category: category,
-                clubs: clubs
-            });
-        } catch (error) {
-            console.log('error in fetching latest 5 clubs from : ' + category + ' : category, or it can be error of apigwManagement :', error);
-        }
-    });
-
-    await Promise.all(fetchCategoryClubs);
-
-    res.status(200).json(latestClubs);
-
-});
 
 
 
-const createClubRouter = require('./Routes/createClubRoutes');
+
+const globalClubRouter = require('./Routes/GlobalClubRoutes/globalClubRoutes');
+
+
 const myClubRouter = require('./Routes/myClubRoutes');
 
 const clubIdRouter = require('./Routes/clubIdRoutes');
 
 const unifiedQueryRouter = require('./Routes/QueryRoutes/unifiedQueryRoutes');
 
-app.use('/clubs/create', createClubRouter);
+
+app.use('/clubs/global', globalClubRouter);
+
 
 app.use('/myclubs', myClubRouter);
 
 
 app.use('/query', unifiedQueryRouter);
+
 
 app.use('/clubs/:clubId',
     (req, res, next) => {

@@ -1,10 +1,10 @@
 // const Joi = require('joi');
 
-const app = require('./app');
+// const app = require('./app');
 
-app.listen(3000, () => {
-    console.log("Listening on port 3000");
-});
+// app.listen(3000, () => {
+//     console.log("Listening on port 3000");
+// });
 
 // const {
 //     dynamoClient,
@@ -12,11 +12,10 @@ app.listen(3000, () => {
 //     apigwManagementApi
 // } = require('./config');
 
+const data = require('./static/categoryData.json');
 
 async function testing() {
-
-    const a = ((1000 % 101) === 0);
-    console.log('a', a ? 'hello' : 'no no no no');
+    console.log(data);
 
 }
 

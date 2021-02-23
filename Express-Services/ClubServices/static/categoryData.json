@@ -1,0 +1,40 @@
+{
+    "categories": [
+        "Entrepreneurship",
+        "Education",
+        "Comedy",
+        "Travel",
+        "Society",
+        "Health",
+        "Finance",
+        "Sports",
+        "Other"
+    ],
+    "Entrepreneurship": [
+        "Other"
+    ],
+    "Education": [
+        "Other"
+    ],
+    "Comedy": [
+        "Other"
+    ],
+    "Travel": [
+        "Other"
+    ],
+    "Society": [
+        "Other"
+    ],
+    "Health": [
+        "Other"
+    ],
+    "Finance": [
+        "Other"
+    ],
+    "Sports": [
+        "Other"
+    ],
+    "Other": [
+        "Other"
+    ]
+}

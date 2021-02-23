@@ -22,9 +22,9 @@ const ClubInputSchema = Joi.object({
     timeWindow: Joi.number().integer().default(1800).min(300), // expected duration of club entered at time of creation (default 1800 seconds i.e. 30 minutes)
 
 
-    category: Joi.string().valid(
-        'Entrepreneurship', 'Education', 'Comedy', 'Travel', 'Society',
-        'Health', 'Finance', 'Sports', 'Other').required(), // GSI: ClubCategoryIndex 
+    category: Joi.string().required(), // GSI: ClubCategoryIndex 
+    subCategory: Joi.string().required(),
+
 
     createdOn: Joi.number().default(() => Date.now()),
     modifiedOn: Joi.number().default(Joi.ref('createdOn')),
