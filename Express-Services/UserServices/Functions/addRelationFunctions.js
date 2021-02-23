@@ -12,6 +12,9 @@ const {
 const {
     sendAndSaveNotification
 } = require('./notificationFunctions');
+const {
+    postSocialCountToBothUser
+} = require('./websocketFunctions');
 
 
 
@@ -231,6 +234,12 @@ async function acceptFriendRequest({
 
             // handling notification part
             await sendAndSaveNotification(notificationObj);
+
+            // send updated social counters.
+            await postSocialCountToBothUser({
+                userId1: userId,
+                userId2: foreignUserId
+            });
 
 
             resolve('accept_friend_request successful');
@@ -455,6 +464,13 @@ async function sendFriendRequest({
             });
 
 
+            // send updated social counters.
+            await postSocialCountToBothUser({
+                userId1: userId,
+                userId2: foreignUserId
+            });
+
+
             resolve('send_friend_request successful');
 
         } catch (error) {
@@ -633,6 +649,13 @@ async function followUser({
 
             // handling notification part
             await sendAndSaveNotification(notificationObj);
+
+
+            // send updated social counters.
+            await postSocialCountToBothUser({
+                userId1: userId,
+                userId2: foreignUserId
+            });
 
             resolve('follow successful');
 

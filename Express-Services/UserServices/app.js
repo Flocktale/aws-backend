@@ -22,7 +22,7 @@ const app = express();
 
 const {
     isUsernameAvailable
-} = require('./Functions/username_availability');
+} = require('./Functions/userFunctions');
 
 
 

@@ -5,7 +5,11 @@ const {
     tableName,
     WsTable,
     wsInvertIndex,
+    wsUserIdIndex,
 } = require('../config');
+const {
+    fetchSocialCountData
+} = require('./userFunctions');
 
 async function _fetchAllConnectionIdsForClub(clubId) {
     if (!clubId) return;
@@ -85,8 +89,58 @@ async function postParticipantListToWebsocketUsers(clubId) {
     await Promise.all(postCalls);
 }
 
+async function _postToOneUserConnection(userId, data) {
+
+    const _connectionQuery = {
+        TableName: WsTable,
+        IndexName: wsUserIdIndex,
+        KeyConditionExpression: 'userId = :id',
+        ExpressionAttributeValues: {
+            ':id': userId
+        },
+        ProjectionExpression: 'connectionId',
+
+    };
+    const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
+
+
+    for (var connection of connectionData) {
+
+        const posted = await apigwManagementApi.postToConnection({
+            ConnectionId: connection.connectionId,
+            Data: JSON.stringify(data)
+        }).promise();
+        console.log('posted', posted);
+
+    }
+
+}
+
+async function postSocialCountToBothUser({
+    userId1,
+    userId2
+}) {
+    if (!userId1 && !userId2) return;
+
+    const user1Data = await fetchSocialCountData(userId1);
+
+    await _postToOneUserConnection(userId1, {
+        what: 'socialCounts',
+        ...user1Data
+    });
+
+    const user2Data = await fetchSocialCountData(userId2);
+
+    await _postToOneUserConnection(userId2, {
+        what: 'socialCounts',
+        ...user2Data
+    });
+
+}
+
 
 
 module.exports = {
     postParticipantListToWebsocketUsers,
+    postSocialCountToBothUser,
 };

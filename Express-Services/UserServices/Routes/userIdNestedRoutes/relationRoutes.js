@@ -20,6 +20,10 @@ const {
     deleteFriendRequest,
     unfriendUser
 } = require('../../Functions/removeRelationFunctions');
+const {
+    fetchSocialRelationIndexObj,
+    fetchSocialCountData
+} = require('../../Functions/userFunctions');
 
 
 // required
@@ -115,9 +119,6 @@ router.get('/', async (req, res) => {
 });
 
 
-
-
-
 //required
 // query parameters - 
 //      "foreignUserId" - user id of other user
@@ -168,7 +169,17 @@ router.post('/add', async (req, res) => {
             return res.status(500).json('Dead end');
         }
 
-        return res.status(202).json(`${addAction} successful`);
+        const newSocialRelationIndex = await fetchSocialRelationIndexObj({
+            userId: userId,
+            foreignUserId: foreignUserId
+        });
+
+        const newSocialCountOfForeignUser = await fetchSocialCountData(foreignUserId);
+
+        return res.status(202).json({
+            ...newSocialRelationIndex,
+            ...newSocialCountOfForeignUser,
+        });
     } catch (error) {
 
         return res.status(400).json(error);
@@ -213,24 +224,43 @@ router.post('/remove', async (req, res) => {
 
     try {
 
+
+
+        var newSocialCountOfForeignUser = {};
+
+
         if (removeAction === 'unfollow') {
 
             await unfollowUser(_functionParams);
+            newSocialCountOfForeignUser = await fetchSocialCountData(foreignUserId);
 
         } else if (removeAction === 'delete_friend_request') {
 
+            // social counters don't change in this case.
             await deleteFriendRequest(_functionParams);
 
         } else if (removeAction === 'unfriend') {
 
             await unfriendUser(_functionParams);
+            newSocialCountOfForeignUser = await fetchSocialCountData(foreignUserId);
 
         } else {
 
             return res.status(500).json('Dead end');
         }
 
-        return res.status(202).json(`${removeAction} successful`);
+
+
+        const newSocialRelationIndex = await fetchSocialRelationIndexObj({
+            userId: userId,
+            foreignUserId: foreignUserId
+        });
+
+
+        return res.status(202).json({
+            ...newSocialCountOfForeignUser,
+            ...newSocialRelationIndex
+        });
 
     } catch (error) {
 

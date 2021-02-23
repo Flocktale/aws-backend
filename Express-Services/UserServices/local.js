@@ -5,9 +5,7 @@ app.listen(3000, () => {
 
 
 // const Joi = require('joi');
-// const {
-//     isUsernameAvailable
-// } = require('./Functions/username_availability');
+
 
 // const {
 //     tableName,

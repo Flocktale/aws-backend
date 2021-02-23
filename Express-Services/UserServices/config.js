@@ -34,6 +34,7 @@ const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
 
 const WsTable = 'WsTable';
 const wsInvertIndex = 'wsInvertIndex';
+const wsUserIdIndex = 'wsUserIdIndex';
 
 
 module.exports = {
@@ -51,4 +52,5 @@ module.exports = {
 
     WsTable,
     wsInvertIndex,
+    wsUserIdIndex,
 };

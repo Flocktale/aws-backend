@@ -2,6 +2,9 @@ const {
     dynamoClient,
     tableName,
 } = require('../config');
+const {
+    postSocialCountToBothUser
+} = require('./websocketFunctions');
 
 
 
@@ -366,6 +369,14 @@ async function unfriendUser({
                 foreignUserId: foreignUserId
             });
 
+            // send updated social counters.
+            await postSocialCountToBothUser({
+                userId1: userId,
+                userId2: foreignUserId
+            });
+
+
+
             resolve('unfriend successful');
         } catch (error) {
             reject(error);
@@ -491,6 +502,12 @@ async function unfollowUser({
             await _relationDocConditionalDeleteTransaction({
                 userId: userId,
                 foreignUserId: foreignUserId
+            });
+
+            // send updated social counters.
+            await postSocialCountToBothUser({
+                userId1: userId,
+                userId2: foreignUserId
             });
 
             resolve('unfollow successful');
