@@ -3,7 +3,8 @@ const router = require('express').Router();
 const {
     audienceDynamicDataIndex,
     dynamoClient,
-    tableName
+    tableName,
+    timestampSortIndex,
 } = require('../config');
 
 
@@ -293,7 +294,58 @@ router.get('/participants', async (req, res) => {
             });
         }
     });
+});
 
+
+// headers - "lastevaluatedkey"  (optional)
+//! get list of audience
+
+router.get('/audience', async (req, res) => {
+    const clubId = req.clubId;
+
+    const query = {
+        TableName: tableName,
+        IndexName: timestampSortIndex,
+        KeyConditions: {
+            "P_K": {
+                "ComparisonOperator": "EQ",
+                "AttributeValueList": [`CLUB#${clubId}`]
+            },
+            "TimestampSortField": {
+                "ComparisonOperator": "BEGINS_WITH",
+                "AttributeValueList": [`AUDIENCE-SORT-TIMESTAMP#`]
+            },
+        },
+        QueryFilter: {
+            isBlocked: {
+                ComparisonOperator: 'EQ',
+                AttributeValueList: [false]
+
+            },
+            isParticipant: {
+                ComparisonOperator: 'EQ',
+                AttributeValueList: [false]
+
+            },
+        },
+        AttributesToGet: ['audience'],
+        Limit: 30,
+    };
+
+    if (req.headers.lastevaluatedkey) {
+        query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
+    }
+
+    dynamoClient.query(query, (err, data) => {
+        if (err) res.status(404).json(err);
+        else {
+            console.log(data);
+            res.status(200).json({
+                "audience": data["Items"],
+                'lastevaluatedkey': data["LastEvaluatedKey"]
+            });
+        }
+    });
 });
 
 

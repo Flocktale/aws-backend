@@ -266,6 +266,12 @@ Resources:
             Path: /clubs/{clubId}/participants
             Method: get
 
+        GetAudienceOfClub:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/audience
+            Method: get
+
         KickOutParticipant:
           Type: Api
           Properties:
