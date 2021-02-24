@@ -279,7 +279,7 @@ router.get('/participants', async (req, res) => {
                 "AttributeValueList": [`Participant#`]
             },
         },
-        AttributesToGet: ['audience'],
+        AttributesToGet: ['audience', 'isMuted'],
         ScanIndexForward: false,
         ReturnConsumedCapacity: "INDEXES"
     };

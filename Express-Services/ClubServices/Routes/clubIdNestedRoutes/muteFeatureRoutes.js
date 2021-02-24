@@ -8,27 +8,48 @@ const {
 } = require('../../config');
 
 const {
-    postMuteMessageToWebsocketUser
+    postMuteActionMessageToClubSubscribers,
 } = require('../../Functions/websocketFunctions');
+
+
 
 //required
 // query parameters - 
 ///     "who" (valid values are 'all' , 'participant')
 ///     "participantId" (if who==='participant')
+///     "muteAction" (valid values are "mute",'unmute')
 
 
 router.post('/', async (req, res) => {
     const clubId = req.clubId;
 
     const who = req.query.who;
+    const muteAction = req.query.muteAction;
+
     if (!who || (who !== 'all' && who !== 'participant')) {
         return res.status(400).json('invalid value of "who" query parameter');
     }
 
-    const participantId = req.query.participantId;
+
+    if (!muteAction || (muteAction !== 'mute' && muteAction !== 'unmute')) {
+        return res.status(400).json('invalid value of "muteAction" query parameter');
+    }
+
+    var isMuted;
+    if (muteAction === 'mute') {
+        isMuted = true;
+    } else if (muteAction === 'unmute') {
+        isMuted = false;
+    } else {
+        return res.status(500).json('unknown value of muteAction');
+    }
+
+
 
 
     if (who === 'participant') {
+        const participantId = req.query.participantId;
+
         if (!participantId) {
             return res.status(400).json('participantId is required');
         }
@@ -42,7 +63,6 @@ router.post('/', async (req, res) => {
             AttributesToGet: ['isParticipant'],
         };
 
-
         const _participantData = (await dynamoClient.get(_participantQuery).promise())['Item'];
 
 
@@ -50,16 +70,33 @@ router.post('/', async (req, res) => {
             return res.status(404).json('this is no participant');
         }
 
+
+        const _muteUpdateQuery = {
+            TableName: tableName,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `AUDIENCE#${participantId}`
+            },
+            UpdateExpression: 'set isMuted = :isMuted',
+            ExpressionAttributeValues: {
+                ':isMuted': isMuted,
+            },
+        }
+
+        await dynamoClient.update(_muteUpdateQuery).promise();
+
         // sending message to participant through websocket.
-        await postMuteMessageToWebsocketUser({
-            userId: participantId,
-            clubId: clubId
+        await postMuteActionMessageToClubSubscribers({
+            userIdList: [participantId],
+            clubId: clubId,
+            isMuted: isMuted,
         });
+
 
         return res.status(200).json('muted successfully');
     }
 
-    // mute message to all participants (except creator)
+    // mute action message to all participants (except creator) and all club subscribed audience.
 
     const _creatorQuery = {
         TableName: tableName,
@@ -97,12 +134,52 @@ router.post('/', async (req, res) => {
         audience
     }) => audience.userId);
 
+
+    const _transactQuery = {
+        TransactItems: []
+    };
+
+
+    //  a transaction can perform atmost 25 operations at once. 
+    //  (although no of partcipants would be less than 25 anyways, but still becoming robust and future proof)
+    var index = 0;
+
     for (var id of participantIds) {
-        await postMuteMessageToWebsocketUser({
-            userId: id,
-            clubId: clubId
-        });
+
+        if (index % 25 !== 0) {
+            _transactQuery.TransactItems.push({
+                Update: {
+                    TableName: tableName,
+                    Key: {
+                        P_K: `CLUB#${clubId}`,
+                        S_K: `AUDIENCE#${id}`
+                    },
+                    UpdateExpression: 'set isMuted = :isMuted',
+                    ExpressionAttributeValues: {
+                        ':isMuted': isMuted,
+                    },
+                }
+            });
+        } else {
+            await dynamoClient.transactWrite(_transactQuery).promise();
+            _transactQuery.TransactItems = []; // emptying the array
+        }
+
+        index++;
     }
+
+    // in case, index didn't reach 25x at last iteration.
+    try {
+        await dynamoClient.transactWrite(_transactQuery).promise();
+    } catch (error) {}
+
+
+    // sending message to participant through websocket.
+    await postMuteActionMessageToClubSubscribers({
+        userIdList: participantIds,
+        clubId: clubId,
+        isMuted: isMuted,
+    });
 
     return res.status(200).json('muted successfully');
 

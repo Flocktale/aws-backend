@@ -29,11 +29,16 @@ async function _fetchAllConnectionIdsForClub(clubId) {
 }
 
 
-async function _postMessageToAllClubSubscribers(clubId, data) {
+async function _postMessageToAllClubSubscribers(clubId, data, {
+    connectionIds
+}) {
 
     if (!clubId || !data) return;
 
-    const connectionIds = await _fetchAllConnectionIdsForClub(clubId);
+    if (!connectionIds) {
+        connectionIds = await _fetchAllConnectionIdsForClub(clubId);
+    }
+
 
     const postCalls = connectionIds.map(async connectionId => {
         try {
@@ -104,7 +109,7 @@ async function postParticipantListToWebsocketUsers(clubId) {
                 "AttributeValueList": [`Participant#`]
             },
         },
-        AttributesToGet: ['audience'],
+        AttributesToGet: ['audience', 'isMuted'],
     }
 
     const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'].map(({
@@ -143,18 +148,26 @@ async function postBlockMessageToWebsocketUser({
 
 }
 
-async function postMuteMessageToWebsocketUser({
-    userId,
-    clubId
+
+
+async function postMuteActionMessageToClubSubscribers({
+    userIdList,
+    clubId,
+    isMuted
 }) {
 
-    if (!userId || !clubId) return;
+    if (!userIdList || !clubId || !isMuted) return;
 
-    await _postToOneUserConnection(userId, {
-        what: 'muteParticipant',
+    const _connectionIds = await _fetchAllConnectionIdsForClub(clubId);
+
+    await _postMessageToAllClubSubscribers(clubId, {
+        what: 'muteAction#',
         clubId: clubId,
+        isMuted: isMuted,
+        participantIdList: userIdList,
+    }, {
+        connectionIds: _connectionIds
     });
-
 }
 
 async function postKickOutMessageToWebsocketUser({
@@ -242,12 +255,15 @@ async function postClubConcludedMessageToWebsocketUsers({
 module.exports = {
     postParticipantListToWebsocketUsers,
     postBlockMessageToWebsocketUser,
-    postMuteMessageToWebsocketUser,
+
+
     postKickOutMessageToWebsocketUser,
     postJoinRequestResponseToWebsocketUser,
     postNewJoinRequestToWebsocketUser,
 
     postClubStartedMessageToWebsocketUsers,
     postClubConcludedMessageToWebsocketUsers,
+
+    postMuteActionMessageToClubSubscribers,
 
 };
