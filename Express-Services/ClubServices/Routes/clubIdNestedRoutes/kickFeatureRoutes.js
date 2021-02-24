@@ -22,11 +22,16 @@ const {
 
 
 // required
-// query parameters - "audienceId"
+// query parameters - 
+//              "audienceId" , 
+//              "isSelf" (true if a participant kicks themsemves with their own wish)
+
 router.post('/', async (req, res) => {
     const clubId = req.clubId;
 
     const audienceId = req.query.audienceId;
+
+    const isSelf = req.query.isSelf;
 
     if (!audienceId) {
         res.status(400).json('audienceId is required');
@@ -34,7 +39,6 @@ router.post('/', async (req, res) => {
     }
 
     const newTimestamp = Date.now();
-
 
     const _audienceKickedQuery = {
         TableName: tableName,
@@ -91,26 +95,28 @@ router.post('/', async (req, res) => {
 
 
 
+    if (isSelf !== true) {
+        // sending this event info to affected user.
+        await postKickOutMessageToWebsocketUser({
+            userId: audienceId,
+            clubId: clubId
+        });
 
-    // sending this event info to affected user.
-    await postKickOutMessageToWebsocketUser({
-        userId: audienceId,
-        clubId: clubId
-    });
+        const {
+            clubName
+        } = await _getClubData(clubId);
 
+        var notifData = {
+            title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
+            image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+        }
+        await publishNotification({
+            userId: audienceId,
+            notifData: notifData,
+        })
 
-    const {
-        clubName
-    } = await _getClubData(clubId);
-
-    var notifData = {
-        title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
-        image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
     }
-    await publishNotification({
-        userId: audienceId,
-        notifData: notifData,
-    })
+
 
     // sending new participant list to all connected users.
     await postParticipantListToWebsocketUsers(clubId);
