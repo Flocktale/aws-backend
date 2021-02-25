@@ -11,6 +11,10 @@ const {
 } = require('../../config');
 
 const {
+    RelationIndexObjectSchema
+} = require('../../Schemas/UserRelation');
+
+const {
     followUser,
     sendFriendRequest,
     acceptFriendRequest,
@@ -24,6 +28,37 @@ const {
     fetchSocialRelationIndexObj,
     fetchSocialCountData
 } = require('../../Functions/userFunctions');
+
+
+
+// query parameters - "foreignUserId"
+router.get('/object', async (req, res) => {
+    const userId = req.userId;
+    const foreignUserId = req.query.foreignUserId;
+
+
+    const oldRelationDocQuery = {
+        TableName: tableName,
+        Key: {
+            P_K: `USER#${userId}`,
+            S_K: `RELATION#${foreignUserId}`
+        },
+        AttributesToGet: ['relationIndexObj'],
+    };
+    const oldRelationDoc = (await dynamoClient.get(oldRelationDocQuery).promise())['Item'];
+    if (oldRelationDoc) {
+        return res.status(200).json(oldRelationDoc.relationIndexObj);
+    } else {
+
+        const newRelationObject = await RelationIndexObjectSchema.validateAsync({
+            relationIndexObj: {}
+        });
+        return res.status(200).json(newRelationObject.relationIndexObj);
+    }
+
+
+
+});
 
 
 // required

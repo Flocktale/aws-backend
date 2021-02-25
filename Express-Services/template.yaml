@@ -105,6 +105,12 @@ Resources:
             Path: /users/{userId}/relations
             Method: get
 
+        GetSocialRelationIndex:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/relations/object
+            Method: get
+
         AddSocialRelatives:
           Type: Api
           Properties:
