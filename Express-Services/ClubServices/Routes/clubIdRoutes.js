@@ -281,17 +281,13 @@ router.get('/participants', async (req, res) => {
         },
         AttributesToGet: ['audience', 'isMuted'],
         ScanIndexForward: false,
-        ReturnConsumedCapacity: "INDEXES"
     };
 
     dynamoClient.query(query, (err, data) => {
         if (err) res.status(404).json(err);
         else {
             console.log(data);
-            res.status(200).json({
-                "participants": data["Items"],
-                'lastevaluatedkey': data["LastEvaluatedKey"]
-            });
+            res.status(200).json(data['Items']);
         }
     });
 });

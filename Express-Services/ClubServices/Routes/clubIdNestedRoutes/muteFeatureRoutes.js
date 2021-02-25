@@ -93,7 +93,7 @@ router.post('/', async (req, res) => {
         });
 
 
-        return res.status(200).json('muted successfully');
+        return res.status(200).json(`${muteAction} successfully`);
     }
 
     // mute action message to all participants (except creator) and all club subscribed audience.
@@ -181,8 +181,7 @@ router.post('/', async (req, res) => {
         isMuted: isMuted,
     });
 
-    return res.status(200).json('muted successfully');
-
+    return res.status(200).json(`${muteAction} successfully`);
 });
 
 module.exports = router;
