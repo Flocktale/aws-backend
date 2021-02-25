@@ -69,7 +69,7 @@ async function fetchAndRegisterAudience({
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
             },
-            AttributesToGet: ['isBlocked', 'isParticipant', 'joinRequested', 'joinRequestAttempts', 'audience', 'invitationId', 'timestamp'],
+            AttributesToGet: ['isBlocked', 'isParticipant', 'joinRequested', 'joinRequestAttempts', 'audience', 'invitationId', 'timestamp', 'isMuted'],
         };
 
         var _audienceDoc = (await dynamoClient.get(_oldAudienceDocQuery).promise())['Item'];

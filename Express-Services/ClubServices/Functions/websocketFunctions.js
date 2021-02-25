@@ -112,11 +112,7 @@ async function postParticipantListToWebsocketUsers(clubId) {
         AttributesToGet: ['audience', 'isMuted'],
     }
 
-    const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'].map(({
-        audience
-    }) => {
-        return audience;
-    });
+    const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'];
 
     const data = {
         what: "participantList",
@@ -149,6 +145,21 @@ async function postBlockMessageToWebsocketUser({
 }
 
 
+async function postMuteMessageToParticipantOnly({
+    userId,
+    clubId,
+    isMuted,
+}) {
+
+    if (!userId || !clubId || !isMuted) return;
+
+    await _postToOneUserConnection(userId, {
+        what: 'muteParticipant',
+        isMuted: isMuted,
+        clubId: clubId,
+    });
+
+}
 
 async function postMuteActionMessageToClubSubscribers({
     userIdList,
@@ -264,6 +275,7 @@ module.exports = {
     postClubStartedMessageToWebsocketUsers,
     postClubConcludedMessageToWebsocketUsers,
 
+    postMuteMessageToParticipantOnly,
     postMuteActionMessageToClubSubscribers,
 
 };

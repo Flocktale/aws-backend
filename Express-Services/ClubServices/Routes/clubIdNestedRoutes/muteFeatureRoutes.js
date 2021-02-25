@@ -85,13 +85,19 @@ router.post('/', async (req, res) => {
 
         await dynamoClient.update(_muteUpdateQuery).promise();
 
-        // sending message to participant through websocket.
+        //sending message to affected user.
+        await postMuteMessageToParticipantOnly({
+            clubId: clubId,
+            userId: participantId,
+            isMuted: isMuted,
+        });
+
+        // sending message to all users through websocket.
         await postMuteActionMessageToClubSubscribers({
             userIdList: [participantId],
             clubId: clubId,
             isMuted: isMuted,
         });
-
 
         return res.status(200).json(`${muteAction} successfully`);
     }
@@ -173,8 +179,18 @@ router.post('/', async (req, res) => {
         await dynamoClient.transactWrite(_transactQuery).promise();
     } catch (error) {}
 
+    for (var participantId in participantIds) {
+        //sending message to affected user.
+        await postMuteMessageToParticipantOnly({
+            clubId: clubId,
+            userId: participantId,
+            isMuted: isMuted,
+        });
 
-    // sending message to participant through websocket.
+    }
+
+
+    // sending message to all through websocket.
     await postMuteActionMessageToClubSubscribers({
         userIdList: participantIds,
         clubId: clubId,

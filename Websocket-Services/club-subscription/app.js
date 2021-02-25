@@ -141,16 +141,12 @@ async function _getParticipantList(clubId, callback) {
                 "AttributeValueList": [`Participant#`]
             },
         },
-        AttributesToGet: ['audience'],
+        AttributesToGet: ['audience', 'isMuted'],
     }
 
 
     try {
-        const participantList = (await ddb.query(_participantQuery).promise())['Items'].map(({
-            audience
-        }) => {
-            return audience;
-        });
+        const participantList = (await ddb.query(_participantQuery).promise())['Items'];
         console.log('participantList: ', participantList);
 
         return callback({
