@@ -28,8 +28,23 @@ router.get('/category-data', async (req, res) => {
 
 
 
+// headers - "lastevaluatedkey"  (optional) 
+// query parameters => "category" (if not defined, then clubs from all categories are sent back)
 
 router.get("/", async (req, res) => {
+
+
+    var queriedCategory = req.query.category;
+
+    if (queriedCategory) {
+
+        const data = await _fetchClubsByCategory(queriedCategory, req.headers.lastevaluatedkey);
+        return res.status(200).json(data);
+    }
+
+
+
+
     var categoryList = categoryData['categories'];
 
     var latestClubs = {
@@ -37,29 +52,11 @@ router.get("/", async (req, res) => {
     };
 
     const fetchCategoryClubs = categoryList.map(async (category) => {
-        const _query = {
-            TableName: tableName,
-            IndexName: clubCategoryIndex,
-            KeyConditions: {
-                'category': {
-                    ComparisonOperator: 'EQ',
-                    AttributeValueList: [category]
-                }
-            },
-            QueryFilter: {
-                'isConcluded': {
-                    ComparisonOperator: 'NE',
-                    AttributeValueList: [true]
-                }
-            },
-            AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
-                'clubAvatar', 'estimatedAudience', 'tags', 'isLive', 'subCategory'
-            ],
-            ScanIndexForward: false,
-            Limit: 10,
-        };
+
         try {
-            const clubs = (await dynamoClient.query(_query).promise())['Items'];
+            const {
+                clubs
+            } = await _fetchClubsByCategory(category);
             latestClubs.categoryClubs.push({
                 category: category,
                 clubs: clubs
@@ -71,9 +68,44 @@ router.get("/", async (req, res) => {
 
     await Promise.all(fetchCategoryClubs);
 
-    res.status(200).json(latestClubs);
+    return res.status(200).json(latestClubs);
 
 });
+
+
+async function _fetchClubsByCategory(category, lastevaluatedkey) {
+    const _query = {
+        TableName: tableName,
+        IndexName: clubCategoryIndex,
+        KeyConditions: {
+            'category': {
+                ComparisonOperator: 'EQ',
+                AttributeValueList: [category]
+            }
+        },
+        QueryFilter: {
+            'isConcluded': {
+                ComparisonOperator: 'NE',
+                AttributeValueList: [true]
+            }
+        },
+        AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
+            'clubAvatar', 'estimatedAudience', 'tags', 'isLive', 'subCategory'
+        ],
+        ScanIndexForward: false,
+        Limit: 10,
+    };
+
+    if (lastevaluatedkey) {
+        _query['ExclusiveStartKey'] = JSON.parse(lastevaluatedkey);
+    }
+
+    const data = await dynamoClient.query(_query).promise();
+    return {
+        clubs: data['Items'],
+        lastevaluatedkey: data['LastEvaluatedKey']
+    };
+}
 
 
 module.exports = router;
