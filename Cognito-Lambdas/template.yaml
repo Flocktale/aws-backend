@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Cognito-Lambdas
+
+Globals:
+  Function:
+    Timeout: 30
+
+Resources:
+  PreSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: PreSignUpFunction
+      CodeUri: pre-sign-up/
+      Handler: app.handler
+      Runtime: nodejs12.x
+
+  DefineAuthChallengeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: DefineAuthChallengeFunction
+      CodeUri: define-auth-challenge/
+      Handler: app.handler
+      Runtime: nodejs12.x
+
+  CreateAuthChallengeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CreateAuthChallengeFunction
+      CodeUri: create-auth-challenge/
+      Handler: app.handler
+      Runtime: nodejs12.x
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - "sns:*"
+              Resource: "*"
+
+  VerifyAuthChallengeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: VerifyAuthChallengeFunction
+      CodeUri: verify-auth-challenge/
+      Handler: app.handler
+      Runtime: nodejs12.x

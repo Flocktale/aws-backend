@@ -1,0 +1,12 @@
+{
+  "name": "verify-auth-challenge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "author": "MOHIT MANGAL <mohitmangal.ece18@itbhu.ac.in>",
+  "dependencies": {},
+  "scripts": {},
+  "devDependencies": {
+    "aws-sdk": "^2.815.0"
+  }
+}
