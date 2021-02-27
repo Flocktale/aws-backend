@@ -17,7 +17,7 @@ exports.handler = async (event, context) => {
     if (!event.request.session || !event.request.session.length) {
 
         // Generate a new secret login code and send it to the user
-        secretLoginCode = Date.now().toString().slice(-4);
+        secretLoginCode = Math.floor(Math.random() * (999999 - 100001) + 100001);
 
         console.log('secretLoginCode: ', secretLoginCode);
 

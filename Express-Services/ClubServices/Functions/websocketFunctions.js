@@ -151,7 +151,7 @@ async function postMuteMessageToParticipantOnly({
     isMuted,
 }) {
 
-    if (!userId || !clubId || !isMuted) return;
+    if (!userId || !clubId || (isMuted === undefined)) return;
 
     await _postToOneUserConnection(userId, {
         what: 'muteParticipant',
@@ -167,7 +167,7 @@ async function postMuteActionMessageToClubSubscribers({
     isMuted
 }) {
 
-    if (!userIdList || !clubId || !isMuted) return;
+    if (!userIdList || !clubId || (isMuted === undefined)) return;
 
     const _connectionIds = await _fetchAllConnectionIdsForClub(clubId);
 

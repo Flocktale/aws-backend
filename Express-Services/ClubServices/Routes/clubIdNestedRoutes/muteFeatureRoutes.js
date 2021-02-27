@@ -86,6 +86,8 @@ router.post('/', async (req, res) => {
 
         await dynamoClient.update(_muteUpdateQuery).promise();
 
+        console.log('isMuted: ', isMuted);
+
         //sending message to affected user.
         await postMuteMessageToParticipantOnly({
             clubId: clubId,
