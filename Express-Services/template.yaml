@@ -45,6 +45,12 @@ Resources:
             Path: /users
             Method: get
 
+        ContactsSync:
+          Type: Api
+          Properties:
+            Path: /users/contacts-sync
+            Method: post
+
         CheckUsernameAvailability:
           Type: Api
           Properties:

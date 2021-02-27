@@ -29,6 +29,8 @@ const {
 const createRouter = require('./Routes/createUserRoutes');
 const userIdRouter = require('./Routes/userIdRoutes');
 
+const contactSyncRouter = require('./Routes/contactSyncRoutes');
+
 
 app.use(cors());
 app.use(express.json());
@@ -59,6 +61,7 @@ app.get('/users/username-availability', async (req, res) => {
 
 });
 
+app.use('/users/contacts-sync', contactSyncRouter);
 
 app.use('/users/create', createRouter);
 

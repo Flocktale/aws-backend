@@ -12,7 +12,7 @@ const UserInputSchema = Joi.object({
     // normal fields
 
     name: Joi.string().min(3).max(100),
-    phone: Joi.string(),
+    phone: Joi.string().required(),
     email: Joi.string().email(),
 
     tagline: Joi.string().max(100),

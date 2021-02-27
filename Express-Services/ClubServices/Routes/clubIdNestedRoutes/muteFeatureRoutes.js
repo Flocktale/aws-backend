@@ -151,36 +151,38 @@ router.post('/', async (req, res) => {
 
     //  a transaction can perform atmost 25 operations at once. 
     //  (although no of partcipants would be less than 25 anyways, but still becoming robust and future proof)
-    var index = 0;
 
-    for (var id of participantIds) {
+    for (var index in participantIds) {
 
-        if (index % 25 !== 0) {
-            _transactQuery.TransactItems.push({
-                Update: {
-                    TableName: tableName,
-                    Key: {
-                        P_K: `CLUB#${clubId}`,
-                        S_K: `AUDIENCE#${id}`
-                    },
-                    UpdateExpression: 'set isMuted = :isMuted',
-                    ExpressionAttributeValues: {
-                        ':isMuted': isMuted,
-                    },
-                }
-            });
-        } else {
+        if (index !== 0 && index % 25 === 0) {
             await dynamoClient.transactWrite(_transactQuery).promise();
             _transactQuery.TransactItems = []; // emptying the array
         }
 
-        index++;
+        const id = participantIds[index];
+        const _updateQuery = {
+            Update: {
+                TableName: tableName,
+                Key: {
+                    P_K: `CLUB#${clubId}`,
+                    S_K: `AUDIENCE#${id}`
+                },
+                UpdateExpression: 'set isMuted = :isMuted',
+                ExpressionAttributeValues: {
+                    ':isMuted': isMuted,
+                },
+            }
+        };
+
+        _transactQuery.TransactItems.push(_updateQuery);
     }
 
     // in case, index didn't reach 25x at last iteration.
-    try {
-        await dynamoClient.transactWrite(_transactQuery).promise();
-    } catch (error) {}
+    if (_transactQuery.TransactItems[0]) {
+        try {
+            await dynamoClient.transactWrite(_transactQuery).promise();
+        } catch (error) {}
+    }
 
     for (var participantId in participantIds) {
         //sending message to affected user.

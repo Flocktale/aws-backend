@@ -21,6 +21,7 @@ const {
 // username must be unique.
 
 router.post("/", async (req, res) => {
+
     try {
         req.body['avatar'] = `https://mootclub-public.s3.amazonaws.com/userAvatar/${req.body.userId}`;
         const result = await UserBaseCompleteSchema.validateAsync(req.body);
@@ -40,7 +41,31 @@ router.post("/", async (req, res) => {
             }
         };
 
-        dynamoClient.put(query, (err, data) => {
+        const phoneRecordQuery = {
+            TableName: tableName,
+            Item: {
+                P_K: `PHONE#${result.phone}`,
+                S_K: `PHONEMETA#${result.phone}`,
+                userId: result.userId,
+                username: result.username,
+                avatar: result.avatar,
+            },
+            ConditionExpression: "P_K <> :hkey and S_K <> :skey",
+            ExpressionAttributeValues: {
+                ":hkey": `PHONE#${result.phone}`,
+                ":skey": `PHONEMETA#${result.phone}`,
+            }
+        };
+
+        const _transactQuery = {
+            TransactItems: [{
+                Put: query
+            }, {
+                Put: phoneRecordQuery
+            }]
+        };
+
+        dynamoClient.transactWrite(_transactQuery, async (err, data) => {
             if (err) {
                 console.log(err);
                 res.status(404).json(`Error creating profile: ${err}`);
@@ -52,18 +77,13 @@ router.post("/", async (req, res) => {
                     Key: `userAvatar/${fileName}`
                 };
 
-                s3.upload(params, (err, data) => {
-                    if (err) {
-                        console.log(`Error occured while trying to upload: ${err}`);
-                        console.log(data);
-                        return;
-                    } else if (data) {
-                        console.log('Default profile pic uploaded successfully!');
-                        console.log(data);
-                    }
-                });
-                console.log(data);
-                res.status(201).json('User Profile created successfully.');
+                try {
+                    await s3.upload(params).promise();
+                } catch (error) {
+                    console.log(`Error occured while trying to upload: ${error}`);
+                }
+
+                return res.status(201).json('User Profile created successfully.');
             }
         });
 
