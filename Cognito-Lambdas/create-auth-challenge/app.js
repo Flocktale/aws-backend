@@ -1,13 +1,20 @@
 const AWS = require('aws-sdk');
 
-function sendSMS(phone, code) {
+async function sendSMS(phone, code) {
     const params = {
         Message: `OTP for MOOTCLUB - ${code}`,
         /* required */
         PhoneNumber: phone,
     };
 
-    return new AWS.SNS().publish(params).promise();
+    const sns = new AWS.SNS();
+    await sns.setSMSAttributes({
+        attributes: {
+            'DefaultSMSType': 'Transactional'
+        }
+    }).promise()
+
+    return sns.publish(params).promise();
 }
 
 exports.handler = async (event, context) => {
