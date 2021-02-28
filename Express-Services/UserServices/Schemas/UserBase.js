@@ -3,7 +3,7 @@ const Joi = require('joi');
 const UserInputSchema = Joi.object({
     //! required fields
     userId: Joi.string().required(),
-    username: Joi.string().min(3).max(25).token().required(),
+    username: Joi.string().min(3).max(25).token().lowercase().required(),
     avatar: Joi.string().required(),
 
     createdOn: Joi.number().default(() => Date.now()),

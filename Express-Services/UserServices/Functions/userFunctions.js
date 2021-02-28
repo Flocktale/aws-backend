@@ -7,6 +7,8 @@ const {
 async function isUsernameAvailable(username) {
     if (!username) return null;
 
+    username = username.toLowerCase();
+
     const query = {
         TableName: tableName,
         IndexName: searchByUsernameIndex,
@@ -28,7 +30,6 @@ async function isUsernameAvailable(username) {
 
     // username is available
     return true;
-
 }
 
 async function fetchSocialCountData(userId) {

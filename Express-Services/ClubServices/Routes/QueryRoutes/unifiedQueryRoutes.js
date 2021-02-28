@@ -10,6 +10,9 @@ const {
 
 
 async function getSearchResult(searchString, _query, type, attributes, req) {
+
+    searchString = searchString.toLowerCase();
+
     const _specificQuery = {
         ..._query
     };
@@ -35,7 +38,7 @@ async function getSearchResult(searchString, _query, type, attributes, req) {
 // headers - "lastevaluatedkey"  (optional)
 router.get('/', async (req, res) => {
 
-    const searchString = req.query.searchString;
+    var searchString = req.query.searchString;
     const type = req.query.type;
     try {
         await Joi.string().max(25).required().validateAsync(searchString);
@@ -44,6 +47,9 @@ router.get('/', async (req, res) => {
         res.status(400).json(error);
         return;
     }
+
+    searchString = searchString.toLowerCase();
+
 
     const _query = {
         TableName: tableName,

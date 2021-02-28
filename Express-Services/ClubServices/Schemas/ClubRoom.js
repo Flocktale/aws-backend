@@ -53,7 +53,12 @@ const ClubInputSchemaWithDatabaseKeys = ClubInputSchema.append({
     ClubCreatorIdField: Joi.string().default(Joi.expression('USER#{{creator.userId}}')), // GSI: ClubCreatorIdIndex
 
     PublicSearch: Joi.number().integer().valid(0, 1).default(1), // GSI : SearchByUsernameIndex
-    FilterDataName: Joi.string().default(Joi.expression('CLUB#{{clubName}}')), // GSI : SearchByUsernameIndex
+    FilterDataName: Joi.string().default(
+        (parent, helpers) => {
+            return 'CLUB#' + parent.clubName.toLowerCase();
+        }
+
+    ), // GSI : SearchByUsernameIndex
 
 });
 
