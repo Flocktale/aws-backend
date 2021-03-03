@@ -3,7 +3,7 @@ const {
 } = require('../../Functions/clubFunctions');
 
 const router = require('express').Router();
-
+const sharp = require('sharp');
 
 
 //required
