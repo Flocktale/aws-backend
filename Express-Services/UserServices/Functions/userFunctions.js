@@ -2,6 +2,8 @@ const {
     dynamoClient,
     tableName,
     searchByUsernameIndex,
+    imageUploadConstParams,
+    s3
 } = require('../config');
 
 async function isUsernameAvailable(username) {
@@ -68,8 +70,29 @@ async function fetchSocialRelationIndexObj({
 
 
 
+async function uploadFile(key, buffer) {
+    return new Promise(async function (resolve, reject) {
+
+        var params = {
+            ...imageUploadConstParams,
+            Body: buffer,
+            Key: key,
+        };
+
+        await s3.upload(params, function (s3Err, data) {
+            if (s3Err) {
+                reject('error in uploading image: ', s3Err);
+            }
+            resolve(data);
+        });
+    });
+}
+
+
+
 module.exports = {
     isUsernameAvailable,
     fetchSocialCountData,
-    fetchSocialRelationIndexObj
+    fetchSocialRelationIndexObj,
+    uploadFile
 };

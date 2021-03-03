@@ -1,6 +1,9 @@
+const {
+    uploadFile
+} = require('../../Functions/clubFunctions');
+
 const router = require('express').Router();
 
-const { s3, imageUploadConstParams } = require('../../config');
 
 
 //required
@@ -9,7 +12,7 @@ const { s3, imageUploadConstParams } = require('../../config');
 
 // TODO: Analyze this file and check if it is an image and then apply some image processing to validate image content.
 
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     const clubId = req.clubId;
 
     if (!req.body || !req.body.image) {
@@ -21,20 +24,34 @@ router.post("/", (req, res) => {
 
     const buffer = Buffer.from(req.body.image, 'base64');
 
-    var params = {
-        ...imageUploadConstParams,
-        Body: buffer,
-        Key: `clubAvatar/${fileName}`
-    };
+    const _thumbnail = await sharp(buffer).resize(96, 96).jpeg({
+        quality: 90,
+        force: true,
+    }).toBuffer();
 
-    s3.upload(params, (err, data) => {
-        if (err) {
-            res.json(`Error occured while trying to upload: ${err}`);
-            return;
-        }
-        else if (data) {
-            res.status(201).json('Image uploaded successfully');
-        }
+
+    const _default = await sharp(buffer).resize(144, 144).jpeg({
+        quality: 90,
+        force: true,
+    }).toBuffer();
+
+    const _large = await sharp(buffer).resize(216, 216).jpeg({
+        quality: 90,
+        force: true,
+    }).toBuffer();
+
+
+    const uploadPromises = [
+        uploadFile(`clubAvatar/${fileName}_thumb`, _thumbnail),
+        uploadFile(`clubAvatar/${fileName}`, _default),
+        uploadFile(`clubAvatar/${fileName}_large`, _large),
+    ];
+
+    Promise.all(uploadPromises).then(data => {
+        res.status(201).json('Image uploaded successfully');
+    }, reason => {
+        console.log(reason);
+        res.status(400).json(`Error occured while trying to upload:`);
     });
 });
 

@@ -20,11 +20,14 @@ const {
 } = require('../../Schemas/AtomicCountSchemas');
 
 const {
-    imageUploadConstParams,
     dynamoClient,
-    s3,
     tableName
 } = require('../../config');
+
+const {
+    uploadFile
+} = require('../../Functions/clubFunctions');
+
 
 //required
 // query parameters - "creatorId"
@@ -157,31 +160,32 @@ router.post('/', async (req, res) => {
             ]
         };
 
-        dynamoClient.transactWrite(_transactQuery, (err, data) => {
+        dynamoClient.transactWrite(_transactQuery, async (err, data) => {
             if (err) res.status(404).json('Error creating club');
             else {
 
                 const fileName = clubId;
-                var params = {
-                    ...imageUploadConstParams,
-                    Body: fs.createReadStream('./static/microphone.jpg'),
-                    Key: `clubAvatar/${fileName}`
-                };
 
-                s3.upload(params, (err, data) => {
-                    if (err) {
-                        console.log(`Error occured while trying to upload: ${err}`);
-                        return;
-                    } else if (data) {
-                        console.log('Default Club Image uploaded successfully!');
-                    }
-                });
-                console.log(data);
+
+                const _thumbnail = fs.createReadStream('./static/microphone_thumb.jpg');
+                const _default = fs.createReadStream('./static/microphone.jpg');
+                const _large = fs.createReadStream('./static/microphone_large.jpg');
+
+                const uploadPromises = [
+                    uploadFile(`clubAvatar/${fileName}_thumb`, _thumbnail),
+                    uploadFile(`clubAvatar/${fileName}`, _default),
+                    uploadFile(`clubAvatar/${fileName}_large`, _large),
+                ];
+
+                try {
+                    await Promise.all(uploadPromises);
+                } catch (error) {
+                    console.log(`Error occured while trying to upload:`, error);
+                }
 
                 res.status(201).json({
                     clubId: clubId
                 });
-
             }
         });
 

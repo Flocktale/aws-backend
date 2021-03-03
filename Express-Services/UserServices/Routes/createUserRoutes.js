@@ -4,14 +4,13 @@ const {
     UserBaseCompleteSchema
 } = require('../Schemas/UserBase');
 const {
-    imageUploadConstParams,
     dynamoClient,
-    s3,
     tableName
 } = require('../config');
 
 const {
-    isUsernameAvailable
+    isUsernameAvailable,
+    uploadFile
 } = require('../Functions/userFunctions');
 
 
@@ -71,16 +70,21 @@ router.post("/", async (req, res) => {
                 res.status(404).json(`Error creating profile: ${err}`);
             } else {
                 const fileName = result.userId;
-                var params = {
-                    ...imageUploadConstParams,
-                    Body: fs.createReadStream('./static/dp.jpg'),
-                    Key: `userAvatar/${fileName}`
-                };
+
+                const _thumbnail = fs.createReadStream('./static/dp_thumb.jpg');
+                const _default = fs.createReadStream('./static/dp.jpg');
+                const _large = fs.createReadStream('./static/dp_large.jpg');
+
+                const uploadPromises = [
+                    uploadFile(`userAvatar/${fileName}_thumb`, _thumbnail),
+                    uploadFile(`userAvatar/${fileName}`, _default),
+                    uploadFile(`userAvatar/${fileName}_large`, _large),
+                ];
 
                 try {
-                    await s3.upload(params).promise();
+                    await Promise.all(uploadPromises);
                 } catch (error) {
-                    console.log(`Error occured while trying to upload: ${error}`);
+                    console.log(`Error occured while trying to upload:`, error);
                 }
 
                 return res.status(201).json('User Profile created successfully.');
