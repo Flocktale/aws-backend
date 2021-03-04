@@ -6,6 +6,7 @@ const {
     dynamoClient,
     tableName
 } = require('../../config');
+const Constants = require('../../constants');
 
 const {
     postMuteActionMessageToClubSubscribers,
@@ -61,13 +62,13 @@ router.post('/', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${participantId}`
             },
-            AttributesToGet: ['isParticipant'],
+            AttributesToGet: ['status'],
         };
 
         const _participantData = (await dynamoClient.get(_participantQuery).promise())['Item'];
 
 
-        if (!_participantData || _participantData.isParticipant !== true) {
+        if (!_participantData || _participantData.status !== Constants.AudienceStatus.Participant) {
             return res.status(404).json('this is no participant');
         }
 

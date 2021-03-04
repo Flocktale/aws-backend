@@ -47,7 +47,7 @@ async function postParticipantListToWebsocketUsers(clubId) {
                 "AttributeValueList": [`Participant#`]
             },
         },
-        AttributesToGet: ['audience'],
+        AttributesToGet: ['audience', 'isMuted'],
     }
 
     const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'].map(({

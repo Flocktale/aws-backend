@@ -23,6 +23,7 @@ const {
     postParticipantListToWebsocketUsers,
     postBlockMessageToWebsocketUser,
 } = require('../../Functions/websocketFunctions');
+const Constants = require('../../constants');
 
 
 router.get('/', async (req, res) => {
@@ -77,7 +78,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
         },
-        AttributesToGet: ['audience', 'isParticipant', 'isBlocked', 'invitationId'],
+        AttributesToGet: ['audience', 'status', 'invitationId'],
     };
 
     var audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -88,16 +89,15 @@ router.post('/', async (req, res) => {
         return;
     }
 
-    if (audienceDoc.isBlocked === true) {
+    if (audienceDoc.status === Constants.AudienceStatus.Blocked) {
         res.status(404).json('This user is already blocked');
         return;
     }
 
-    const wasParticipant = audienceDoc.isParticipant;
+    const wasParticipant = (audienceDoc.status === Constants.AudienceStatus.Participant);
 
     audienceDoc['clubId'] = clubId;
-    audienceDoc['isBlocked'] = true;
-    audienceDoc['isParticipant'] = false;
+    audienceDoc['status'] = Constants.AudienceStatus.Blocked;
     audienceDoc['timestamp'] = Date.now();
 
     try {
@@ -117,14 +117,14 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`
         },
-        UpdateExpression: 'SET #tsp = :tsp, isParticipant = :fal, joinRequested = :fal, isBlocked = :tr, AudienceDynamicField = :adf REMOVE TimestampSortField, UsernameSortField',
+        UpdateExpression: 'SET #tsp = :tsp, #status = :status, AudienceDynamicField = :adf REMOVE TimestampSortField, UsernameSortField',
         ExpressionAttributeNames: {
             '#tsp': 'timestamp',
+            '#status': 'status',
         },
         ExpressionAttributeValues: {
             ':tsp': audienceDoc.timestamp,
-            ':fal': false,
-            ':tr': true,
+            ':status': audienceDoc.status,
             ':adf': audienceDoc.AudienceDynamicField,
         }
     }
@@ -248,7 +248,7 @@ router.delete('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
         },
-        AttributesToGet: ['audience', 'isBlocked'],
+        AttributesToGet: ['audience', 'status'],
     };
 
     var audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -258,40 +258,23 @@ router.delete('/', async (req, res) => {
         return;
     }
 
-    if (audienceDoc.isBlocked !== true) {
+    if (audienceDoc.status !== Constants.AudienceStatus.Blocked) {
         res.status(404).json('This user is unblocked already. ')
         return;
     }
 
 
-    audienceDoc['clubId'] = clubId;
-    audienceDoc['isBlocked'] = false;
-    audienceDoc['timestamp'] = Date.now();
-
-    try {
-        audienceDoc = await AudienceSchemaWithDatabaseKeys.validateAsync(audienceDoc);
-    } catch (error) {
-        console.log('error in validating audience schema while blocking user: ', error);
-        return res.status(500).json('error in validating audience schema');
-    }
-
     // updating all possible attriubtes
     const _attributeUpdates = {
         timestamp: {
             "Action": "PUT",
-            "Value": audienceDoc.timestamp
+            "Value": Date.now()
         },
-
-        isBlocked: {
-            "Action": "PUT",
-            "Value": false
+        status: {
+            "Action": "DELETE",
         },
         AudienceDynamicField: {
             "Action": "DELETE"
-        },
-        TimestampSortField: {
-            "Action": "PUT",
-            "Value": audienceDoc.TimestampSortField,
         },
     };
 
@@ -303,11 +286,6 @@ router.delete('/', async (req, res) => {
         },
         AttributeUpdates: _attributeUpdates,
     }
-
-
-    // audience counter is not incremented here, as it was not decremented when blocking user
-    // to prevent blocked user data being shown up in list of all audience, we delete TimestampSortField,
-    /// which is used by GSI TimestampSortIndex to display list of audience.
 
     dynamoClient.update(_audienceUnblockQuery, async (err, data) => {
         if (err) res.status(400).json(`Error in unblocking from club : ${err}`);
@@ -336,7 +314,6 @@ router.delete('/', async (req, res) => {
             });
 
             return res.status(202).json('unblocked user');
-
 
         }
 

@@ -18,6 +18,7 @@ const {
 const {
     publishNotification
 } = require('../../Functions/notificationFunctions');
+const Constants = require('../../constants');
 
 
 //required
@@ -113,7 +114,7 @@ router.post('/', async (req, res) => {
                     P_K: `CLUB#${clubId}`,
                     S_K: `AUDIENCE#${userId}`,
                 },
-                AttributesToGet: ['isBlocked', 'isParticipant']
+                AttributesToGet: ['status']
             };
 
             const oldAudienceDoc = (await dynamoClient.get(_oldAudienceDocQuery).promise())['Item'];
@@ -121,8 +122,8 @@ router.post('/', async (req, res) => {
             var _userData;
 
             if (oldAudienceDoc) {
-                if (oldAudienceDoc.isBlocked === true || oldAudienceDoc.isParticipant === true) {
-                    console.error('invitation was being intended to be sent to wrong user, audience data for that user, isBlocked: ', oldAudienceDoc.isBlocked, ', isParticipant: ', oldAudienceDoc.isParticipant, '............. this is an example of bad implementation, fix this.');
+                if (oldAudienceDoc.status === Constants.AudienceStatus.Blocked || oldAudienceDoc.status === Constants.AudienceStatus.Participant) {
+                    console.error('invitation was being intended to be sent to wrong user, audience status for that user: ', oldAudienceDoc.status, '............. this is an example of bad implementation, fix this.');
                     // skip the loop
                     continue;
                 }

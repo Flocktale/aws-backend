@@ -46,13 +46,13 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`
         },
-        UpdateExpression: 'SET #tsp = :tsp, isParticipant = :fal REMOVE AudienceDynamicField',
+        UpdateExpression: 'SET #tsp = :tsp REMOVE AudienceDynamicField, #status',
         ExpressionAttributeNames: {
+            '#status': 'status',
             '#tsp': 'timestamp',
         },
         ExpressionAttributeValues: {
             ':tsp': newTimestamp,
-            ':fal': false,
         }
     }
 

@@ -7,6 +7,7 @@ const {
     sns,
     timestampSortIndex,
 } = require('../../config');
+const Constants = require('../../constants');
 
 const {
     SNSEndpointSchemaWithDatabaseKeys
@@ -242,7 +243,7 @@ router.post("/opened", async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${userId}`,
             },
-            AttributesToGet: ['invitationId', 'joinRequested'],
+            AttributesToGet: ['invitationId', 'status'],
         }
 
         const _audienceData = (await dynamoClient.get(_audienceQuery).promise())['Item'];
@@ -258,6 +259,7 @@ router.post("/opened", async (req, res) => {
                     S_K: `AUDIENCE#${userId}`,
                 },
                 UpdateExpression: 'REMOVE invitationId',
+                ExpressionAttributeNames: {},
                 ExpressionAttributeValues: {},
             };
             const _transactQuery = {
@@ -265,17 +267,9 @@ router.post("/opened", async (req, res) => {
             };
 
             if (action === 'accept') {
-                _audienceUpdateQuery['UpdateExpression'] += ' SET isParticipant = :tr';
-                _audienceUpdateQuery['ExpressionAttributeValues'][':tr'] = true;
-
-                _audienceUpdateQuery['UpdateExpression'] += ', AudienceDynamicField = :adf';
-                _audienceUpdateQuery['ExpressionAttributeValues'][':adf'] = 'Participant#' + Date.now() + '#' + userId;
-
-                if (_audienceData.joinRequested === true) {
-                    _audienceUpdateQuery['UpdateExpression'] += ', joinRequested = :fal';
-                    _audienceUpdateQuery['ExpressionAttributeValues'][':fal'] = false;
-                }
-
+                _audienceUpdateQuery['UpdateExpression'] += ' SET #status = :status, AudienceDynamicField = :adf';
+                _audienceUpdateQuery['ExpressionAttributeValues'][':status'] = Constants.AudienceStatus.Participant;
+                _audienceUpdateQuery['ExpressionAttributeValues'][':adf'] = Constants.AudienceStatus.Participant + '#' + Date.now() + '#' + userId;
 
 
                 const _updateParticipantCounterQuery = {

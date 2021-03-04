@@ -26,6 +26,7 @@ const {
 const {
     publishNotification
 } = require('../../Functions/notificationFunctions');
+const Constants = require('../../constants');
 
 // required
 // headers - "lastevaluatedkey"  (optional)
@@ -142,7 +143,7 @@ router.post('/', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
             },
-            AttributesToGet: ['clubId', 'isParticipant', 'joinRequested', 'isBlocked',
+            AttributesToGet: ['clubId', 'status',
                 'joinRequestAttempts', 'audience', 'timestamp', 'invitationId'
             ],
         };
@@ -162,15 +163,15 @@ router.post('/', async (req, res) => {
 
 
     try {
-        if (audienceDoc.isParticipant === true) {
+        if (audienceDoc.status === Constants.AudienceStatus.Participant) {
             //  conflict (409) since user is already a partcipant.
             res.status(409).json('User is already a participant');
             return;
-        } else if (audienceDoc.joinRequested === true) {
+        } else if (audienceDoc.status === Constants.AudienceStatus.ActiveJoinRequest) {
             //  conflict (409) since user already have an active join request.
             res.status(409).json('Join request is already pending!');
             return;
-        } else if (audienceDoc.isBlocked === true) {
+        } else if (audienceDoc.status === Constants.AudienceStatus.Blocked) {
             //  conflict (409) since user is blocked.
             res.status(409).json('User is blocked from club!!!, better watch for it.');
             return;
@@ -179,7 +180,7 @@ router.post('/', async (req, res) => {
         // Now, this is the fresh request!!!
         const newTimestamp = Date.now();
 
-        audienceDoc['joinRequested'] = true;
+        audienceDoc['status'] = Constants.AudienceStatus.ActiveJoinRequest;
         audienceDoc['timestamp'] = newTimestamp;
 
         const result = await AudienceSchemaWithDatabaseKeys.validateAsync(audienceDoc);
@@ -190,9 +191,12 @@ router.post('/', async (req, res) => {
                 P_K: result.P_K,
                 S_K: result.S_K
             },
-            UpdateExpression: 'set joinRequested = :request, AudienceDynamicField = :dynamicField, joinRequestAttempts = joinRequestAttempts + :counter, UsernameSortField = :usf',
+            UpdateExpression: 'set #status = :status, AudienceDynamicField = :dynamicField, joinRequestAttempts = joinRequestAttempts + :counter, UsernameSortField = :usf',
+            ExpressionAttributeNames: {
+                '#status': 'status',
+            },
             ExpressionAttributeValues: {
-                ':request': true,
+                ':status': audienceDoc.status,
                 ':dynamicField': result.AudienceDynamicField,
                 ':counter': 1,
                 ':usf': result.UsernameSortField,
@@ -296,11 +300,13 @@ router.delete('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
         },
-        ConditionExpression: 'joinRequested = :tr',
-        UpdateExpression: 'SET joinRequested = :fal REMOVE AudienceDynamicField, UsernameSortField',
+        ConditionExpression: '#status = :status',
+        UpdateExpression: 'REMOVE #status, AudienceDynamicField, UsernameSortField',
+        ExpressionAttributeNames: {
+            '#status': 'status',
+        },
         ExpressionAttributeValues: {
-            ':tr': true,
-            ':fal': false,
+            ':status': Constants.AudienceStatus.ActiveJoinRequest,
         }
     };
 
@@ -349,7 +355,7 @@ router.post('/response', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
             },
-            AttributesToGet: ['joinRequested', 'audience', 'timestamp', 'invitationId'],
+            AttributesToGet: ['status', 'audience', 'timestamp', 'invitationId'],
         };
 
         audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -366,7 +372,7 @@ router.post('/response', async (req, res) => {
 
 
 
-    if (audienceDoc.joinRequested !== true) {
+    if (audienceDoc.status !== Constants.AudienceStatus.ActiveJoinRequest) {
         res.status(404).json("This user has no active join request.");
         return;
     }
@@ -384,8 +390,7 @@ router.post('/response', async (req, res) => {
 
         const newTimestamp = Date.now();
 
-        audienceDoc['joinRequested'] = false;
-        audienceDoc['isParticipant'] = true;
+        audienceDoc['status'] = Constants.AudienceStatus.Participant;
         audienceDoc['timestamp'] = newTimestamp;
         audienceDoc['clubId'] = clubId;
 
@@ -405,11 +410,13 @@ router.post('/response', async (req, res) => {
                 P_K: result.P_K,
                 S_K: result.S_K
             },
-            UpdateExpression: 'SET joinRequested = :fal, AudienceDynamicField = :adf, isParticipant = :tr REMOVE UsernameSortField',
+            UpdateExpression: 'SET #status = :status, AudienceDynamicField = :adf REMOVE UsernameSortField',
+            ExpressionAttributeNames: {
+                '#status': 'status',
+            },
             ExpressionAttributeValues: {
-                ':fal': false,
-                ':tr': true,
                 ':adf': result.AudienceDynamicField,
+                ':status': result.status,
             },
         };
 
@@ -498,9 +505,10 @@ router.post('/response', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`
             },
-            UpdateExpression: 'SET joinRequested = :fal REMOVE AudienceDynamicField, UsernameSortField',
-            ExpressionAttributeValues: {
-                ':fal': false,
+            UpdateExpression: 'REMOVE #status, AudienceDynamicField, UsernameSortField',
+
+            ExpressionAttributeNames: {
+                '#status': 'status',
             },
 
         };

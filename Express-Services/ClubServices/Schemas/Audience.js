@@ -1,12 +1,10 @@
 const Joi = require('joi');
+const Constants = require('../constants');
 
 const AudienceSchema = Joi.object({
     clubId: Joi.string().required(),
 
-    isParticipant: Joi.boolean().default(false),
-    joinRequested: Joi.boolean().default(false),
-
-    isBlocked: Joi.boolean().default(false),
+    status: Joi.string(),
 
     joinRequestAttempts: Joi.number().default(0),
 
@@ -36,30 +34,25 @@ const AudienceSchemaWithDatabaseKeys = AudienceSchema.append({
     // this field is not for just audience
     AudienceDynamicField: Joi.string()
         .default((parent, helpers) => {
-            let counter = 0;
-            let prefix;
-            if (parent.isBlocked === true) {
-                counter++;
-                prefix = "Blocked#";
-            } else if (parent.isParticipant === true) {
-                counter++;
-                prefix = "Participant#";
-            } else if (parent.joinRequested === true) {
-                counter++;
-                prefix = "ActiveJoinRequest#";
+
+            if (parent.status) {
+                const prefix = parent.status;
+
+                if (Constants.isAudienceStatusValid(prefix)) {
+                    return prefix + '#' + parent.timestamp + "#" + parent.audience.userId;
+                } else {
+                    throw new Error('invalid value of audience status');
+                }
             }
 
-            if (counter === 1)
-                return prefix + parent.timestamp + "#" + parent.audience.userId;
-
-            if (counter > 1) throw new Error('more than one boolean attribute is true');
+            return;
         }), // GSI: AudienceDynamicDataIndex
 
 
     TimestampSortField: Joi.string().default(Joi.expression('AUDIENCE-SORT-TIMESTAMP#{{timestamp}}#{{audience.userId}}')), // GSI: TimestampSortIndex
 
     UsernameSortField: Joi.string().default((parent, helpers) => {
-        if (parent.joinRequested === true) {
+        if (parent.status === Constants.AudienceStatus.ActiveJoinRequest) {
             return 'JOIN-REQUESTER-USERNAME-SORT#' + parent.audience.username;
         }
         return;

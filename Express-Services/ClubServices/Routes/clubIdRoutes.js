@@ -48,6 +48,7 @@ const {
     AudienceSchemaWithDatabaseKeys,
     AudienceSchema
 } = require('../Schemas/Audience');
+const Constants = require('../constants');
 
 
 async function fetchAndRegisterAudience({
@@ -69,12 +70,12 @@ async function fetchAndRegisterAudience({
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
             },
-            AttributesToGet: ['isBlocked', 'isParticipant', 'joinRequested', 'joinRequestAttempts', 'audience', 'invitationId', 'timestamp', 'isMuted'],
+            AttributesToGet: ['status', 'joinRequestAttempts', 'audience', 'invitationId', 'timestamp', 'isMuted'],
         };
 
         var _audienceDoc = (await dynamoClient.get(_oldAudienceDocQuery).promise())['Item'];
 
-        if (_audienceDoc && _audienceDoc.isBlocked === true) {
+        if (_audienceDoc && _audienceDoc.status === Constants.AudienceStatus.Blocked) {
             reject('BLOCKED_USER');
         }
 
@@ -313,19 +314,13 @@ router.get('/audience', async (req, res) => {
             },
         },
         QueryFilter: {
-            isBlocked: {
-                ComparisonOperator: 'EQ',
-                AttributeValueList: [false]
-
-            },
-            isParticipant: {
-                ComparisonOperator: 'EQ',
-                AttributeValueList: [false]
-
+            status: {
+                ComparisonOperator: 'NULL',
             },
         },
+        ScanIndexForward: true, // retrieving oldest audience first
         AttributesToGet: ['audience'],
-        Limit: 30,
+        Limit: 50,
     };
 
     if (req.headers.lastevaluatedkey) {

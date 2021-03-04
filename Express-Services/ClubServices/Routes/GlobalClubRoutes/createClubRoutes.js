@@ -27,6 +27,7 @@ const {
 const {
     uploadFile
 } = require('../../Functions/clubFunctions');
+const Constants = require('../../constants');
 
 
 //required
@@ -75,9 +76,8 @@ router.post('/', async (req, res) => {
                 avatar: newClub.creator.avatar,
             },
 
-            isParticipant: true,
+            status: Constants.AudienceStatus.Participant,
             timestamp: newClub.scheduleTime,
-            AudienceDynamicField: `Participant#${newClub.scheduleTime}#${newClub.creator.userId}`
         });
 
         const _audienceQuery = {
