@@ -29,9 +29,7 @@ async function _fetchAllConnectionIdsForClub(clubId) {
 }
 
 
-async function _postMessageToAllClubSubscribers(clubId, data, {
-    connectionIds
-}) {
+async function _postMessageToAllClubSubscribers(clubId, data, connectionIds) {
 
     if (!clubId || !data) return;
 
@@ -172,13 +170,13 @@ async function postMuteActionMessageToClubSubscribers({
     const _connectionIds = await _fetchAllConnectionIdsForClub(clubId);
 
     await _postMessageToAllClubSubscribers(clubId, {
-        what: 'muteAction#',
-        clubId: clubId,
-        isMuted: isMuted,
-        participantIdList: userIdList,
-    }, {
-        connectionIds: _connectionIds
-    });
+            what: 'muteAction#',
+            clubId: clubId,
+            isMuted: isMuted,
+            participantIdList: userIdList,
+        },
+        _connectionIds
+    );
 }
 
 async function postKickOutMessageToWebsocketUser({

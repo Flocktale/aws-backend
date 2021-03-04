@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 
 async function sendSMS(phone, code) {
     const params = {
-        Message: `OTP for MOOTCLUB - ${code}`,
+        Message: `OTP for FlockTale - ${code}`,
         /* required */
         PhoneNumber: phone,
     };
