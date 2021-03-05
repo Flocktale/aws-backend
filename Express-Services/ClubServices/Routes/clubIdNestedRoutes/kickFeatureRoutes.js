@@ -7,7 +7,7 @@ const {
 const {
     audienceDynamicDataIndex,
     dynamoClient,
-    tableName
+    myTable
 } = require('../../config');
 
 
@@ -18,7 +18,10 @@ const {
 
 const {
     publishNotification
-} = require('../../Functions/notificationFunctions')
+} = require('../../Functions/notificationFunctions');
+const {
+    incrementAudienceCount
+} = require('../../Functions/clubFunctions');
 
 
 // required
@@ -41,18 +44,19 @@ router.post('/', async (req, res) => {
     const newTimestamp = Date.now();
 
     const _audienceKickedQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`
         },
-        UpdateExpression: 'SET #tsp = :tsp REMOVE AudienceDynamicField, #status',
+        UpdateExpression: 'SET #tsp = :tsp, TimestampSortField = :tsf REMOVE AudienceDynamicField, #status',
         ExpressionAttributeNames: {
             '#status': 'status',
             '#tsp': 'timestamp',
         },
         ExpressionAttributeValues: {
             ':tsp': newTimestamp,
+            ':tsf': `AUDIENCE-SORT-TIMESTAMP#${newTimestamp}#${audienceId}`
         }
     }
 
@@ -66,7 +70,7 @@ router.post('/', async (req, res) => {
     }
 
     const _counterUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: counterDoc.P_K,
             S_K: counterDoc.S_K
@@ -121,6 +125,10 @@ router.post('/', async (req, res) => {
     // sending new participant list to all connected users.
     await postParticipantListToWebsocketUsers(clubId);
 
+
+    // incrmenting audience count as this participant has a become audience now (and club is already in playing state).
+    await incrementAudienceCount(clubId);
+
     return res.status(201).json('kicked out participant');
 
 });
@@ -130,7 +138,7 @@ async function _getClubData(clubId) {
         return;
     }
     const _clubQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`

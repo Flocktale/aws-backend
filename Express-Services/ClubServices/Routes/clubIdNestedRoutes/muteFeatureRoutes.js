@@ -4,7 +4,7 @@ const router = require('express').Router();
 const {
     audienceDynamicDataIndex,
     dynamoClient,
-    tableName
+    myTable
 } = require('../../config');
 const Constants = require('../../constants');
 
@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
         }
 
         const _participantQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${participantId}`
@@ -74,7 +74,7 @@ router.post('/', async (req, res) => {
 
 
         const _muteUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${participantId}`
@@ -109,7 +109,7 @@ router.post('/', async (req, res) => {
     // mute action message to all participants (except creator) and all club subscribed audience.
 
     const _creatorQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
@@ -125,7 +125,7 @@ router.post('/', async (req, res) => {
     const creatorId = creatorData.creator.userId;
 
     const _participantsQuery = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: audienceDynamicDataIndex,
 
         KeyConditionExpression: 'P_K = :pk and begins_with(AudienceDynamicField,:adf)',
@@ -163,7 +163,7 @@ router.post('/', async (req, res) => {
         const id = participantIds[index];
         const _updateQuery = {
             Update: {
-                TableName: tableName,
+                TableName: myTable,
                 Key: {
                     P_K: `CLUB#${clubId}`,
                     S_K: `AUDIENCE#${id}`

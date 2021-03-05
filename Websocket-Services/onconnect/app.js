@@ -3,11 +3,10 @@ AWS.config.update({
     region: "us-east-1",
 });
 
-const ddb = new AWS.DynamoDB.DocumentClient();
+const dynamoClient = new AWS.DynamoDB.DocumentClient();
 
 const WsTable = 'WsTable';
 const myTable = 'MyTable';
-const clubCategoryIndex = 'ClubCategoryIndex';
 
 
 // key in headers are automatically transformed in lowercase
@@ -63,10 +62,10 @@ exports.handler = async event => {
 
     try {
 
-        await ddb.put(putParams).promise();
+        await dynamoClient.put(putParams).promise();
 
         // this function is not awaited as it is additional operation.
-        ddb.update(_onlineStatusUpdateParamas, (err, data) => {
+        dynamoClient.update(_onlineStatusUpdateParamas, (err, data) => {
             if (err) {
                 console.log('error in modifying online status: ', err);
             }

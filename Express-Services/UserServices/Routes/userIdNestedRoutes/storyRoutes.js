@@ -7,7 +7,7 @@ const {
     imageUploadConstParams,
     s3,
     dynamoClient,
-    tableName,
+    myTable,
     timestampSortIndex,
 } = require('../../config');
 
@@ -31,7 +31,7 @@ router.post("/", async (req, res) => {
     }
 
     const _userSummaryQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`,
@@ -77,7 +77,7 @@ router.post("/", async (req, res) => {
     }
 
     const _storyQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Item: storyData,
     }
 
@@ -104,7 +104,7 @@ router.get("/", async (req, res) => {
     const thresholdTime = Date.parse(currentDate);
 
     const _storySearchQuery = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: timestampSortIndex,
         KeyConditions: {
             "P_K": {
@@ -146,7 +146,7 @@ router.get("/home/all", async (req, res) => {
     const userId = req.userId;
 
     const _followingsQuery = {
-        TableName: tableName,
+        TableName: myTable,
 
         KeyConditionExpression: 'P_K = :pk and begins_with(S_K,:sk)',
         FilterExpression: "relationIndexObj.B1 = :tr OR relationIndexObj.B5 = :tr",
@@ -181,7 +181,7 @@ router.get("/home/all", async (req, res) => {
 
     for (var followId of _followingsIds) {
         const _storySearchQuery = {
-            TableName: tableName,
+            TableName: myTable,
             IndexName: timestampSortIndex,
             KeyConditions: {
                 "P_K": {

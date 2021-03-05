@@ -5,7 +5,7 @@ const {
 } = require('../Schemas/UserBase');
 const {
     dynamoClient,
-    tableName
+    myTable
 } = require('../config');
 
 const {
@@ -31,7 +31,7 @@ router.post("/", async (req, res) => {
         }
 
         const query = {
-            TableName: tableName,
+            TableName: myTable,
             Item: result,
             ConditionExpression: "P_K <> :hkey and S_K <> :skey",
             ExpressionAttributeValues: {
@@ -41,7 +41,7 @@ router.post("/", async (req, res) => {
         };
 
         const phoneRecordQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: {
                 P_K: `PHONE#${result.phone}`,
                 S_K: `PHONEMETA#${result.phone}`,

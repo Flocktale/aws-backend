@@ -1,16 +1,18 @@
-const AWS = require('aws-sdk');
+const {
+    incrementAudienceCount,
+    decrementAudienceCount,
+    decrementParticipantCount
+} = require('./clubFunctions');
+const {
+    WsTable,
+    myTable,
+    timestampSortIndex,
+    audienceDynamicDataIndex,
+    dynamoClient,
+    wsInvertIndex
+} = require('./config');
 
-AWS.config.update({
-    region: "us-east-1",
-});
-
-const ddb = new AWS.DynamoDB.DocumentClient();
-
-const WsTable = 'WsTable';
-
-const myTable = 'MyTable';
-const timestampSortIndex = 'TimestampSortIndex';
-const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
+const Constants = require('./constants');
 
 
 exports.handler = async event => {
@@ -21,68 +23,30 @@ exports.handler = async event => {
     const toggleMethod = body.toggleMethod;
     const clubId = body.clubId;
 
-    if ((!toggleMethod) || (!(toggleMethod === 'enter' || toggleMethod === 'exit')) || (!clubId)) {
+    if ((!toggleMethod) || (!(toggleMethod === 'enter' || toggleMethod === 'exit' || toggleMethod === 'play' || toggleMethod === 'stop')) || (!clubId)) {
         return {
             statusCode: 400,
-            body: 'Bad request. toggleMethod should be either enter or exit. ClubId should also exist in headers'
+            body: 'Bad request. toggleMethod should be either enter/exit/play or stop. ClubId should also exist in headers'
         };
     }
 
     const connectionId = event.requestContext.connectionId;
-
+    const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+        apiVersion: '2018-11-29',
+        endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
+    });
 
     if (toggleMethod === 'enter') {
-        const updateParams = {
-            TableName: WsTable,
-            Key: {
-                connectionId: connectionId
-            },
-            UpdateExpression: 'SET skey = :skey',
-            ExpressionAttributeValues: {
-                ':skey': `CLUB#${clubId}`,
-            }
 
-        };
         try {
-            await ddb.update(updateParams).promise();
-
-
-            const apigwManagementApi = new AWS.ApiGatewayManagementApi({
-                apiVersion: '2018-11-29',
-                endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
-            });
-
-            for (var i = 0; i <= 2; i++) {
-                await _getReactionCount(clubId, i, async (err, data) => {
-                    if (data) {
-                        await apigwManagementApi.postToConnection({
-                            ConnectionId: connectionId,
-                            Data: JSON.stringify(data)
-                        }).promise();
-                    }
-                });
-            }
-
-            await _getAudienceCount(clubId, async data => {
-                await apigwManagementApi.postToConnection({
-                    ConnectionId: connectionId,
-                    Data: JSON.stringify(data)
-                }).promise();
-            });
-
-            await _getParticipantList(clubId, async data => {
-                await apigwManagementApi.postToConnection({
-                    ConnectionId: connectionId,
-                    Data: JSON.stringify(data)
-                }).promise();
-            })
-
-            await _getOldComments(clubId, async data => {
-                await apigwManagementApi.postToConnection({
-                    ConnectionId: connectionId,
-                    Data: JSON.stringify(data)
-                }).promise();
-            });
+            const messageList = await _enterClub(connectionId, clubId);
+            await apigwManagementApi.postToConnection({
+                ConnectionId: connectionId,
+                Data: JSON.stringify({
+                    what: 'ListOfWhat',
+                    list: messageList,
+                })
+            }).promise();
 
             return {
                 statusCode: 200,
@@ -95,34 +59,292 @@ exports.handler = async event => {
                 body: 'Failed to subscribe: ' + JSON.stringify(err)
             };
         }
-    } else if (toggleMethod === 'exit') {
-        const updateParams = {
-            TableName: WsTable,
-            Key: {
-                connectionId: connectionId
-            },
-            UpdateExpression: 'REMOVE skey',
-        };
-        try {
-            await ddb.update(updateParams).promise();
-            return {
-                statusCode: 200,
-                body: 'Unsubscribed from club: ' + clubId
-            };
-        } catch (error) {
-            return {
-                statusCode: 500,
-                body: 'Failed to Unsubscribe: ' + JSON.stringify(err)
-            };
-        }
-
-    } else {
+    } else if (toggleMethod === 'play') {
+        await _playClub(connectionId, clubId);
         return {
-            statusCode: 500,
-            body: 'Unexpected toggleMethod value, valid are - enter, exit'
+            statusCode: 200,
+            body: 'Successful',
         };
+
+    } else if (toggleMethod === 'exit') {
+        const response = await _exitClub(connectionId, clubId);
+        return response;
+    } else if (toggleMethod === 'stop') {
+        await _stopClub(apigwManagementApi, connectionId, clubId);
+        return {
+            statusCode: 200,
+            body: 'Successful',
+        };
+
     }
 };
+
+async function _stopClub(apigwManagementApi, connectionId, clubId) {
+
+    var promises = [];
+
+    const updateParams = {
+        TableName: WsTable,
+        Key: {
+            connectionId: connectionId
+        },
+        UpdateExpression: 'SET clubStatus = :stat',
+        ExpressionAttributeValues: {
+            ':stat': 'STOPPED',
+        },
+        ReturnValues: 'ALL_NEW',
+    };
+
+    const userId = (await dynamoClient.update(updateParams).promise())['Attributes']['userId'];
+
+
+    const _audienceDocQuery = {
+        TableName: myTable,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `Audience#${userId}`
+        },
+        AttributesToGet: ['status', 'isOwner']
+    };
+
+    const _audienceData = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
+    const audienceStatus = _audienceData.status;
+
+    if (_audienceData.isOwner === true) {
+        //owner is stopping the club. This functionality will be handled by clubs/{clubId}/conclude REST API
+        return;
+    }
+
+    if (audienceStatus === Constants.AudienceStatus.Blocked) {
+        // All necessary database operations will be handled by REST API for block method.
+        // including conditional decrement of audience count (if prior to blocking, user wasn't a participant)
+        return;
+    }
+
+    const _audienceUpdateQuery = {
+        TableName: myTable,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `Audience#${userId}`
+        },
+        UpdateExpression: '',
+    };
+
+    if (audienceStatus === Constants.AudienceStatus.Participant) {
+        _audienceUpdateQuery['UpdateExpression'] = 'REMOVE #status, AudienceDynamicField';
+        _audienceUpdateQuery['ExpressionAttributeNames'] = {
+            '#status': 'status'
+        };
+
+        //decrementing participant count.
+        promises.push(decrementParticipantCount(clubId));
+
+
+        promises.push(_postParticipantListToAllClubSubscribers(apigwManagementApi, clubId));
+
+    } else if (audienceStatus === Constants.AudienceStatus.ActiveJoinRequest) {
+        _audienceUpdateQuery['UpdateExpression'] = 'REMOVE #status, AudienceDynamicField, TimestampSortField, UsernameSortField';
+        _audienceUpdateQuery['ExpressionAttributeNames'] = {
+            '#status': 'status'
+        };
+
+        // decrementing audience count 
+        promises.push(decrementAudienceCount(clubId));
+
+    } else {
+        // this user was just a listener.
+        _audienceUpdateQuery['UpdateExpression'] = 'REMOVE TimestampSortField';
+
+        // decrementing audience count 
+        promises.push(decrementAudienceCount(clubId));
+    }
+
+
+
+    promises.push(dynamoClient.update(_audienceUpdateQuery).promise());
+
+    await Promise.all(promises);
+
+}
+
+async function _playClub(connectionId, clubId) {
+    var promises = [];
+
+    const updateParams = {
+        TableName: WsTable,
+        Key: {
+            connectionId: connectionId
+        },
+        UpdateExpression: 'SET clubStatus = :stat',
+        ExpressionAttributeValues: {
+            ':stat': 'PLAYING',
+        },
+        ReturnValues: 'ALL_NEW',
+    };
+
+    const userId = (await dynamoClient.update(updateParams).promise())['Attributes']['userId'];
+
+
+    try {
+
+        // this operation will generate error if condition expression fails
+        // which is the case when owner plays the club, for participant, TimestampSortField doesn't exists.
+        const _audienceUpdateQuery = {
+            TableName: myTable,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `Audience#${userId}`
+            },
+            ConditionExpression: 'attribute_not_exists(isOwner)',
+            UpdateExpression: 'set TimestampSortField = :tsf',
+            ExpressionAttributeValues: {
+                ':tsf': `AUDIENCE-SORT-TIMESTAMP#${Date.now()}#${userId}`
+            },
+        };
+
+        await dynamoClient.update(_audienceUpdateQuery).promise();
+
+        // incementing audience count 
+        promises.push(incrementAudienceCount(clubId));
+
+    } catch (_) {}
+
+
+    await Promise.all(promises);
+}
+
+async function _exitClub(connectionId, clubId) {
+    const updateParams = {
+        TableName: WsTable,
+        Key: {
+            connectionId: connectionId
+        },
+        UpdateExpression: 'set skey = :skey',
+        ExpressionAttributeValues: {
+            ':skey': `EXIT#${clubId}`,
+        }
+    };
+    try {
+        await dynamoClient.update(updateParams).promise();
+        return {
+            statusCode: 200,
+            body: 'Unsubscribed from club: ' + clubId
+        };
+    } catch (error) {
+        return {
+            statusCode: 500,
+            body: 'Failed to Unsubscribe: ' + JSON.stringify(err)
+        };
+    }
+}
+
+async function _enterClub(connectionId, clubId) {
+
+    var promises = [];
+    var messageList = [];
+
+    const updateParams = {
+        TableName: WsTable,
+        Key: {
+            connectionId: connectionId
+        },
+        UpdateExpression: 'SET skey = :skey',
+        ExpressionAttributeValues: {
+            ':skey': `CLUB#${clubId}`,
+        }
+    };
+    try {
+        promises.push(dynamoClient.update(updateParams).promise())
+
+
+        for (var i = 0; i <= 2; i++) {
+            promises.push(_getReactionCount(clubId, i, async (err, data) => {
+                if (data) {
+                    messageList.push(data);
+                }
+            }));
+        }
+
+
+        promises.push(_getAudienceCount(clubId, async data => {
+            messageList.push(data)
+        }));
+
+
+        promises.push(_getParticipantList(clubId, async data => {
+            messageList.push(data)
+        }))
+
+        promises.push(_getOldComments(clubId, async data => {
+            messageList.push(data)
+        }))
+
+        await Promise.all(promises);
+
+        return messageList;
+
+    } catch (err) {
+        console.log('error while entering club in websocket: ', err);
+        throw err;
+    }
+}
+
+async function _postParticipantListToAllClubSubscribers(apigwManagementApi, clubId) {
+
+    if (!clubId) return;
+
+    const connectionIds = await _fetchAllConnectionIdsForClub(clubId);
+
+    var data;
+    await _getParticipantList(clubId, participantData => {
+        data = participantData;
+    });
+
+    const postCalls = connectionIds.map(async connectionId => {
+        try {
+            await apigwManagementApi.postToConnection({
+                ConnectionId: connectionId,
+                Data: JSON.stringify(data)
+            }).promise();
+        } catch (error) {
+            if (error.statusCode === 410) {
+                console.log(`Found stale connection, deleting ${connectionId} from club with clubId: ${clubId}`);
+                await dynamoClient.delete({
+                    TableName: WsTable,
+                    Key: {
+                        connectionId: connectionId
+                    }
+                }).promise();
+            } else {
+                console.log(error);
+                throw error;
+            }
+        }
+    });
+
+    await Promise.all(postCalls);
+
+}
+
+async function _fetchAllConnectionIdsForClub(clubId) {
+    if (!clubId) return;
+
+    const _connectionQuery = {
+        TableName: WsTable,
+        IndexName: wsInvertIndex,
+        KeyConditionExpression: 'skey= :skey',
+        ExpressionAttributeValues: {
+            ":skey": `CLUB#${clubId}`,
+        },
+        ProjectionExpression: 'connectionId',
+    };
+
+    const connectionIds = ((await dynamoClient.query(_connectionQuery).promise())['Items']).map(({
+        connectionId
+    }) => connectionId);
+
+    return connectionIds;
+}
 
 
 async function _getParticipantList(clubId, callback) {
@@ -146,7 +368,7 @@ async function _getParticipantList(clubId, callback) {
 
 
     try {
-        const participantList = (await ddb.query(_participantQuery).promise())['Items'];
+        const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'];
         console.log('participantList: ', participantList);
 
         return callback({
@@ -181,7 +403,7 @@ async function _getOldComments(clubId, callback) {
     };
     try {
 
-        const oldComments = (await ddb.query(_commentQuery).promise())['Items'];
+        const oldComments = (await dynamoClient.query(_commentQuery).promise())['Items'];
         console.log('old Comments: ', oldComments);
         return callback({
             what: "oldComments",
@@ -210,7 +432,7 @@ async function _getReactionCount(clubId, index, callback) {
         AttributesToGet: ['count']
     };
 
-    const doc = (await ddb.get(_reactionQuery).promise())['Item'];
+    const doc = (await dynamoClient.get(_reactionQuery).promise())['Item'];
 
     return callback(null, {
         what: "reactionCount",
@@ -231,7 +453,7 @@ async function _getAudienceCount(clubId, callback) {
     };
 
 
-    const doc = (await ddb.get(_audienceQuery).promise())['Item'];
+    const doc = (await dynamoClient.get(_audienceQuery).promise())['Item'];
 
     return callback({
         what: "audienceCount",

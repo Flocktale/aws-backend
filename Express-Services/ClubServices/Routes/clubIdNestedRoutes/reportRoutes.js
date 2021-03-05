@@ -6,7 +6,7 @@ const { CountReportSchema } = require('../../Schemas/AtomicCountSchemas');
 const { ReportSchemaWithDatabaseKeys } = require('../../Schemas/Report');
 
 
-const { timestampSortIndex, dynamoClient, tableName } = require('../../config');
+const { timestampSortIndex, dynamoClient, myTable } = require('../../config');
 
 // required
 // query parameters - "userId"
@@ -30,7 +30,7 @@ router.post('/', async (req, res) => {
 
 
     const _userSummaryQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`,
@@ -59,13 +59,13 @@ router.post('/', async (req, res) => {
         });
 
         const _putQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: result
         };
 
         const counterDoc = await CountReportSchema.validateAsync({ clubId: clubId });
         const _counterUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: counterDoc.P_K,
                 S_K: counterDoc.S_K
@@ -112,7 +112,7 @@ router.get('/', async (req, res) => {
     const clubId = req.clubId;
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: timestampSortIndex,
         Limit: 20,
         KeyConditions: {

@@ -2,7 +2,7 @@ const router = require('express').Router();
 
 const { ReactionSchemaWithDatabaseKeys } = require('../../Schemas/Reaction');
 
-const { timestampSortIndex, dynamoClient, tableName } = require('../../config');
+const { timestampSortIndex, dynamoClient, myTable } = require('../../config');
 const Joi = require('joi');
 
 
@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
     };
 
     const _oldReactionQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: _reactionDocKey,
     };
 
@@ -55,7 +55,7 @@ router.post('/', async (req, res) => {
         // decrementing counter of previous reaction
         _transactQuery['TransactItems'].push({
             Update: {
-                TableName: tableName,
+                TableName: myTable,
                 Key: {
                     P_K: `CLUB#${clubId}`,
                     S_K: `CountReaction#${previousIndexValue}`
@@ -73,7 +73,7 @@ router.post('/', async (req, res) => {
         if (previousIndexValue === newIndexValue) {
             _transactQuery['TransactItems'].push({
                 Delete: {
-                    TableName: tableName,
+                    TableName: myTable,
                     Key: _reactionDocKey,
                 }
             });
@@ -82,7 +82,7 @@ router.post('/', async (req, res) => {
             // incremeting counter of new reaction
             _transactQuery['TransactItems'].push({
                 Update: {
-                    TableName: tableName,
+                    TableName: myTable,
                     Key: {
                         P_K: `CLUB#${clubId}`,
                         S_K: `CountReaction#${newIndexValue}`
@@ -105,7 +105,7 @@ router.post('/', async (req, res) => {
             // upadating index value of reaction doc
             _transactQuery['TransactItems'].push({
                 Update: {
-                    TableName: tableName,
+                    TableName: myTable,
                     Key: _reactionDocKey,
                     UpdateExpression: 'set #indVal = :val, #tsp = :tsp, #tspSort = :tspSort ',
                     ExpressionAttributeNames: {
@@ -128,7 +128,7 @@ router.post('/', async (req, res) => {
 
 
         const _userSummaryQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${audienceId}`,
                 S_K: `USERMETA#${audienceId}`,
@@ -162,7 +162,7 @@ router.post('/', async (req, res) => {
 
 
         const _reactionDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: reactionDoc
         };
         _transactQuery['TransactItems'].push({ Put: _reactionDocQuery });   // creating reaction document of user
@@ -170,7 +170,7 @@ router.post('/', async (req, res) => {
         // incremeting counter of new reaction
         _transactQuery['TransactItems'].push({
             Update: {
-                TableName: tableName,
+                TableName: myTable,
                 Key: {
                     P_K: `CLUB#${clubId}`,
                     S_K: `CountReaction#${newIndexValue}`
@@ -210,7 +210,7 @@ router.get('/', async (req, res) => {
     const clubId = req.clubId;
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: timestampSortIndex,
         Limit: 30,
         KeyConditions: {

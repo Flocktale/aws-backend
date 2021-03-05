@@ -1,6 +1,6 @@
 const {
     dynamoClient,
-    tableName,
+    myTable,
 } = require('../config');
 const {
     postSocialCountToBothUser
@@ -14,7 +14,7 @@ async function _fetchOldRelationDoc({
     AttributesToGet = ['primaryUser', 'relationIndexObj', 'requestId'],
 }) {
     const oldRelationDocQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`
@@ -32,7 +32,7 @@ async function _relationDocConditionalDeleteTransaction({
 }) {
 
     const _conditionalDeleteQuery = {
-        TableName: tableName,
+        TableName: myTable,
         ConditionExpression: '#rIO.#b1 = :fal and #rIO.#b2 = :fal and #rIO.#b3 = :fal and #rIO.#b4 = :fal and #rIO.#b5 = :fal',
         ExpressionAttributeNames: {
             '#rIO': 'relationIndexObj',
@@ -106,7 +106,7 @@ async function deleteFriendRequest({
 
 
     const primaryUserRelationDocUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`,
@@ -125,7 +125,7 @@ async function deleteFriendRequest({
     };
 
     const foreignUserRelationDocUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${foreignUserId}`,
             S_K: `RELATION#${userId}`,
@@ -151,7 +151,7 @@ async function deleteFriendRequest({
 
         // deleting the notification
         const _notificationDeleteQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${userId}`,
                 S_K: `NOTIFICATION#${oldRelationDoc.requestId}`,
@@ -171,7 +171,7 @@ async function deleteFriendRequest({
         // we don't have requestId in this case, for which we will query now.
 
         const _requestIdQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${foreignUserId}`,
                 S_K: `RELATION#${userId}`
@@ -183,7 +183,7 @@ async function deleteFriendRequest({
 
         if (_requestData) {
             const _notificationDeleteQuery = {
-                TableName: tableName,
+                TableName: myTable,
                 Key: {
                     P_K: `USER#${foreignUserId}`,
                     S_K: `NOTIFICATION#${_requestData.requestId}`,
@@ -259,7 +259,7 @@ async function unfriendUser({
     }
 
     const _primaryUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
@@ -272,7 +272,7 @@ async function unfriendUser({
     };
 
     const _foreignUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${foreignUserId}`,
             S_K: `USERMETA#${foreignUserId}`
@@ -303,7 +303,7 @@ async function unfriendUser({
 
 
     const primaryUserRelationDocUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`,
@@ -323,7 +323,7 @@ async function unfriendUser({
     };
 
     const foreignUserRelationDocUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${foreignUserId}`,
             S_K: `RELATION#${userId}`,
@@ -408,7 +408,7 @@ async function unfollowUser({
     }
 
     const _primaryUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
@@ -420,7 +420,7 @@ async function unfollowUser({
     };
 
     const _foreignUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${foreignUserId}`,
             S_K: `USERMETA#${foreignUserId}`
@@ -442,7 +442,7 @@ async function unfollowUser({
 
 
     const primaryUserRelationDocUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`,
@@ -460,7 +460,7 @@ async function unfollowUser({
     };
 
     const foreignUserRelationDocUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${foreignUserId}`,
             S_K: `RELATION#${userId}`,

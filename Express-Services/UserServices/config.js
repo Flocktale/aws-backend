@@ -23,7 +23,7 @@ const imageUploadConstParams = {
     // Key:             populate it
 };
 
-const tableName = "MyTable";
+const myTable = "MyTable";
 const searchByUsernameIndex = "SearchByUsernameIndex";
 
 const timestampSortIndex = "TimestampSortIndex";
@@ -42,7 +42,7 @@ module.exports = {
     s3,
     sns,
     imageUploadConstParams,
-    tableName,
+    myTable,
     searchByUsernameIndex,
     usernameSortIndex,
     timestampSortIndex,

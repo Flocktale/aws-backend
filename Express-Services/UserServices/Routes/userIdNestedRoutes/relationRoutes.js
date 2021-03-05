@@ -7,7 +7,7 @@ const {
     usernameSortIndex,
     timestampSortIndex,
     dynamoClient,
-    tableName,
+    myTable,
 } = require('../../config');
 
 const {
@@ -38,7 +38,7 @@ router.get('/object', async (req, res) => {
 
 
     const oldRelationDocQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`
@@ -112,7 +112,7 @@ router.get('/', async (req, res) => {
     }
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: _indexName,
         FilterExpression: 'relationIndexObj.#bit = :tr',
         KeyConditionExpression: 'P_K = :pk and begins_with(#sk,:sk)',

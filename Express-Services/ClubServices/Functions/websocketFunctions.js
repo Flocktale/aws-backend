@@ -2,7 +2,7 @@ const {
     audienceDynamicDataIndex,
     dynamoClient,
     apigwManagementApi,
-    tableName,
+    myTable,
     WsTable,
     wsInvertIndex,
     wsUserIdIndex,
@@ -95,7 +95,7 @@ async function postParticipantListToWebsocketUsers(clubId) {
     if (!clubId) return;
 
     const _participantQuery = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: audienceDynamicDataIndex,
         KeyConditions: {
             "P_K": {

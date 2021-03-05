@@ -1,6 +1,6 @@
 const {
     dynamoClient,
-    tableName,
+    myTable,
 } = require('../config');
 
 
@@ -20,7 +20,7 @@ const {
 
 async function _getUserSummaryData(userId) {
     const userDocQuery = {
-        TableName: tableName,
+        TableName: myTable,
         AttributesToGet: ['userId', 'username', 'avatar', 'name'],
         Key: {
             P_K: `USER#${userId}`,
@@ -63,7 +63,7 @@ async function _fetchOldRelationDoc({
     AttributesToGet = ['primaryUser', 'relationIndexObj', 'requestId'],
 }) {
     const oldRelationDocQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`
@@ -96,7 +96,7 @@ async function acceptFriendRequest({
 
 
     const primaryUserRelationDocUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`,
@@ -118,7 +118,7 @@ async function acceptFriendRequest({
     };
 
     const foreignUserRelationDocUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${foreignUserId}`,
             S_K: `RELATION#${userId}`,
@@ -140,7 +140,7 @@ async function acceptFriendRequest({
 
 
     const _primaryUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
@@ -153,7 +153,7 @@ async function acceptFriendRequest({
     };
 
     const _foreignUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${foreignUserId}`,
             S_K: `USERMETA#${foreignUserId}`
@@ -175,7 +175,7 @@ async function acceptFriendRequest({
 
     // deleting notification (reference from requestId)
     const _notificationDeleteQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `NOTIFICATION#${oldRelationDoc.requestId}`,
@@ -284,7 +284,7 @@ async function sendFriendRequest({
 
 
     const _primaryUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
@@ -296,7 +296,7 @@ async function sendFriendRequest({
     };
 
     const _foreignUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${foreignUserId}`,
             S_K: `USERMETA#${foreignUserId}`
@@ -322,7 +322,7 @@ async function sendFriendRequest({
 
 
         const primaryUserRelationDocUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${userId}`,
                 S_K: `RELATION#${foreignUserId}`,
@@ -341,7 +341,7 @@ async function sendFriendRequest({
         };
 
         const foreignUserRelationDocUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${foreignUserId}`,
                 S_K: `RELATION#${userId}`,
@@ -391,12 +391,12 @@ async function sendFriendRequest({
 
 
         const newPrimaryUserRelationDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: newPrimaryUserRelationDoc
         }
 
         const newForeignUserRelationDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: newForeignUserRelationDoc
         }
 
@@ -445,7 +445,7 @@ async function sendFriendRequest({
                 // saving notificationId in user relation doc of foreign user.
 
                 const _requestIdUpdateQuery = {
-                    TableName: tableName,
+                    TableName: myTable,
                     Key: {
                         P_K: `USER#${foreignUserId}`,
                         S_K: `RELATION#${userId}`
@@ -514,7 +514,7 @@ async function followUser({
 
 
     const _primaryUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
@@ -526,7 +526,7 @@ async function followUser({
     };
 
     const _foreignUserUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${foreignUserId}`,
             S_K: `USERMETA#${foreignUserId}`
@@ -544,7 +544,7 @@ async function followUser({
 
 
         const primaryUserRelationDocUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${userId}`,
                 S_K: `RELATION#${foreignUserId}`,
@@ -562,7 +562,7 @@ async function followUser({
         };
 
         const foreignUserRelationDocUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${foreignUserId}`,
                 S_K: `RELATION#${userId}`,
@@ -609,12 +609,12 @@ async function followUser({
 
 
         const newPrimaryUserRelationDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: newPrimaryUserRelationDoc
         }
 
         const newForeignUserRelationDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: newForeignUserRelationDoc
         }
 

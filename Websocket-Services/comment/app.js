@@ -12,7 +12,7 @@ AWS.config.update({
     region: "us-east-1",
 });
 
-const ddb = new AWS.DynamoDB.DocumentClient();
+const dynamoClient = new AWS.DynamoDB.DocumentClient();
 
 const WsTable = 'WsTable';
 const myTable = 'MyTable';
@@ -49,7 +49,7 @@ exports.handler = async event => {
 
     try {
 
-        const user = (await ddb.get(_userSummaryQuery).promise())['Item'];
+        const user = (await dynamoClient.get(_userSummaryQuery).promise())['Item'];
 
         result = await CommentSchemaWithDatabaseKeys.validateAsync({
             clubId: body.clubId,
@@ -80,7 +80,7 @@ exports.handler = async event => {
     };
 
     try {
-        await ddb.put(putParams).promise();
+        await dynamoClient.put(putParams).promise();
     } catch (err) {
         console.log('error in putting comment in table: ', err);
         return {
@@ -102,7 +102,7 @@ exports.handler = async event => {
     var connectionData;
 
     try {
-        connectionData = await ddb.query(_query).promise();
+        connectionData = await dynamoClient.query(_query).promise();
     } catch (e) {
         console.log('error in getting connectionData: ', e);
         return {
@@ -133,7 +133,7 @@ exports.handler = async event => {
         } catch (error) {
             if (error.statusCode === 410) {
                 console.log(`Found stale connection, deleting ${connectionId} of username: ${result.username} from club with clubId: ${result.clubId}`);
-                await ddb.delete({
+                await dynamoClient.delete({
                     TableName: WsTable,
                     Key: {
                         connectionId: connectionId

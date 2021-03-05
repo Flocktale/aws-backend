@@ -8,7 +8,7 @@ app.listen(3000, () => {
 
 
 // const {
-//     tableName,
+//     myTable,
 //     searchByUsernameIndex,
 //     dynamoClient
 // } = require('./config');

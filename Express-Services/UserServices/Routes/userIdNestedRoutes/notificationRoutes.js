@@ -3,7 +3,7 @@ const router = require('express').Router();
 
 const {
     dynamoClient,
-    tableName,
+    myTable,
     sns,
     timestampSortIndex,
 } = require('../../config');
@@ -27,6 +27,9 @@ const {
 const {
     deleteFriendRequest
 } = require('../../Functions/removeRelationFunctions');
+const {
+    decrementAudienceCount
+} = require('../../Functions/clubFunctions');
 
 // required
 // body - {"deviceToken"}
@@ -39,7 +42,7 @@ router.post("/device-token", async (req, res) => {
     }
 
     const _tokenQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: 'SNS_DATA#',
             S_K: `USER#${userId}`
@@ -87,7 +90,7 @@ router.post("/device-token", async (req, res) => {
         });
 
         const _putQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: snsData,
         }
 
@@ -106,7 +109,7 @@ router.delete("/device-token", async (req, res) => {
     const userId = req.userId;
 
     const _tokenDeleteQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: 'SNS_DATA#',
             S_K: `USER#${userId}`
@@ -139,7 +142,7 @@ router.delete("/device-token", async (req, res) => {
 router.get("/", async (req, res) => {
     const userId = req.userId;
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: timestampSortIndex,
         KeyConditions: {
             'P_K': {
@@ -207,7 +210,7 @@ router.post("/opened", async (req, res) => {
     }
 
     const _notificationQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `NOTIFICATION#${notificationId}`,
@@ -238,7 +241,7 @@ router.post("/opened", async (req, res) => {
         const clubId = _notification.data.targetResourceId;
 
         const _audienceQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${userId}`,
@@ -253,7 +256,7 @@ router.post("/opened", async (req, res) => {
         } else {
 
             const _audienceUpdateQuery = {
-                TableName: tableName,
+                TableName: myTable,
                 Key: {
                     P_K: `CLUB#${clubId}`,
                     S_K: `AUDIENCE#${userId}`,
@@ -273,7 +276,7 @@ router.post("/opened", async (req, res) => {
 
 
                 const _updateParticipantCounterQuery = {
-                    TableName: tableName,
+                    TableName: myTable,
                     Key: {
                         P_K: `CLUB#${clubId}`,
                         S_K: `CountParticipant#`,
@@ -298,9 +301,13 @@ router.post("/opened", async (req, res) => {
 
             await dynamoClient.transactWrite(_transactQuery).promise();
 
-            // sending updated participant list to all subscribed users of this club.
             if (action === 'accept') {
+                // sending updated participant list to all subscribed users of this club.
                 await postParticipantListToWebsocketUsers(clubId);
+
+
+                //decrementing audience count as this user is converted from audience to participant
+                await decrementAudienceCount(clubId);
             }
 
         }
@@ -341,7 +348,7 @@ router.post("/opened", async (req, res) => {
         // in all other cases, just updating the notification
 
         const _updateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${userId}`,
                 S_K: `NOTIFICATION#${notificationId}`,

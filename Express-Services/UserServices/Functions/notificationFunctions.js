@@ -1,6 +1,6 @@
 const {
     dynamoClient,
-    tableName,
+    myTable,
     sns
 } = require('../config');
 
@@ -20,7 +20,7 @@ async function sendAndSaveNotification(notificationObj, callback) {
     const notifData = await NotificationSchemaWithDatabaseKeys.validateAsync(notificationObj);
 
     const _notificationPutQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Item: notifData,
     }
 
@@ -37,7 +37,7 @@ async function sendAndSaveNotification(notificationObj, callback) {
     // fetching endpoint arn to publish notification.
 
     const _endpointQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: 'SNS_DATA#',
             S_K: `USER#${notifData.userId}`,

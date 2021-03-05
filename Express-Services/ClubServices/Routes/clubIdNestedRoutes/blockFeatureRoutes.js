@@ -3,7 +3,7 @@ const router = require('express').Router();
 const {
     audienceDynamicDataIndex,
     dynamoClient,
-    tableName
+    myTable
 } = require('../../config');
 
 const {
@@ -24,6 +24,9 @@ const {
     postBlockMessageToWebsocketUser,
 } = require('../../Functions/websocketFunctions');
 const Constants = require('../../constants');
+const {
+    decrementAudienceCount
+} = require('../../Functions/clubFunctions');
 
 
 router.get('/', async (req, res) => {
@@ -31,7 +34,7 @@ router.get('/', async (req, res) => {
     const clubId = req.clubId;
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: audienceDynamicDataIndex,
         KeyConditions: {
             "P_K": {
@@ -73,7 +76,7 @@ router.post('/', async (req, res) => {
 
     // fetching audience info for this club
     const _audienceDocQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
@@ -112,7 +115,7 @@ router.post('/', async (req, res) => {
     // updating all possible attriubtes
 
     const _audienceBlockQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`
@@ -148,7 +151,7 @@ router.post('/', async (req, res) => {
         });
 
         const _counterUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: counterDoc.P_K,
                 S_K: counterDoc.S_K
@@ -173,12 +176,15 @@ router.post('/', async (req, res) => {
             console.log(data);
 
 
+            var promises = [];
+
+
             // send a message through websocket to user.
-            await postBlockMessageToWebsocketUser({
+            promises.push(postBlockMessageToWebsocketUser({
                 clubId: clubId,
                 blockAction: "blocked",
                 userId: audienceId
-            });
+            }));
 
 
             // send notification to affected user
@@ -190,16 +196,23 @@ router.post('/', async (req, res) => {
                 title: 'You are blocked from  ' + clubName,
                 image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
             }
-            await publishNotification({
+            promises.push(publishNotification({
                 userId: audienceId,
                 notifData: notifData
-            });
+            }));
+
+            // if this user was not a participant, then remove its count contribution from audience
+            if (wasParticipant !== true) {
+                promises.push(decrementAudienceCount(clubId));
+            }
 
 
             if (wasParticipant === true) {
                 // send updated participant list to club subscribers.
-                await postParticipantListToWebsocketUsers(clubId);
+                promises.push(postParticipantListToWebsocketUsers(clubId));
             }
+
+            await Promise.all(promises);
 
             return res.status(202).json('blocked user');
 
@@ -214,7 +227,7 @@ async function _getClubData(clubId) {
         return;
     }
     const _clubQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
@@ -243,7 +256,7 @@ router.delete('/', async (req, res) => {
 
     // fetching audience info for this club
     const _audienceDocQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
@@ -279,7 +292,7 @@ router.delete('/', async (req, res) => {
     };
 
     const _audienceUnblockQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`

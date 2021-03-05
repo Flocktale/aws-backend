@@ -2,7 +2,7 @@ const router = require('express').Router();
 
 const {
     dynamoClient,
-    tableName
+    myTable
 } = require('../../config');
 
 const {
@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
     const currTime = Date.now();
 
     const _clubQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
@@ -41,7 +41,7 @@ router.post('/', async (req, res) => {
     const duration = Math.floor((currTime - _clubData.scheduleTime) / 1000);
 
     const _updateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`

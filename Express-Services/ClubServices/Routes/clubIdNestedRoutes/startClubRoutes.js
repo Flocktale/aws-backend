@@ -2,7 +2,7 @@ const router = require('express').Router();
 
 const {
     dynamoClient,
-    tableName,
+    myTable,
 } = require('../../config');
 
 const {
@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
     }
 
     const _clubQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`,
@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
         });
 
         const _updateDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `CLUBMETA#${clubId}`,

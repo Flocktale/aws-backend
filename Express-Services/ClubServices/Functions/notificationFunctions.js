@@ -1,6 +1,6 @@
 const {
     dynamoClient,
-    tableName,
+    myTable,
     sns
 } = require('../config');
 
@@ -16,7 +16,7 @@ async function publishNotification({
     // fetching endpoint arn to publish notification.
 
     const _endpointQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: 'SNS_DATA#',
             S_K: `USER#${userId}`,

@@ -21,7 +21,7 @@ const {
 
 const {
     dynamoClient,
-    tableName
+    myTable
 } = require('../../config');
 
 const {
@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
     try {
 
         const _creatorSummaryQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${creatorId}`,
                 S_K: `USERMETA#${creatorId}`
@@ -64,24 +64,24 @@ router.post('/', async (req, res) => {
         const newClub = await ClubRoomCompleteSchema.validateAsync(req.body);
 
         const _createClubQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: newClub,
         };
 
         const _audienceDoc = await AudienceSchemaWithDatabaseKeys.validateAsync({
             clubId: clubId,
+            isOwner: true,
             audience: {
                 userId: newClub.creator.userId,
                 username: newClub.creator.username,
                 avatar: newClub.creator.avatar,
             },
-
             status: Constants.AudienceStatus.Participant,
             timestamp: newClub.scheduleTime,
         });
 
         const _audienceQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Item: _audienceDoc,
         };
 
@@ -117,43 +117,43 @@ router.post('/', async (req, res) => {
                 },
                 {
                     Put: {
-                        TableName: tableName,
+                        TableName: myTable,
                         Item: countCommentObject
                     }
                 },
                 {
                     Put: {
-                        TableName: tableName,
+                        TableName: myTable,
                         Item: countReactionObject_0
                     }
                 }, {
                     Put: {
-                        TableName: tableName,
+                        TableName: myTable,
                         Item: countReactionObject_1
                     }
                 }, {
                     Put: {
-                        TableName: tableName,
+                        TableName: myTable,
                         Item: countReactionObject_2
                     }
                 }, {
                     Put: {
-                        TableName: tableName,
+                        TableName: myTable,
                         Item: countReportObject
                     }
                 }, {
                     Put: {
-                        TableName: tableName,
+                        TableName: myTable,
                         Item: countParticipantObject
                     }
                 }, {
                     Put: {
-                        TableName: tableName,
+                        TableName: myTable,
                         Item: countAudienceObject
                     }
                 }, {
                     Put: {
-                        TableName: tableName,
+                        TableName: myTable,
                         Item: countJoinRequestObject
                     }
                 },

@@ -4,6 +4,9 @@ const Constants = require('../constants');
 const AudienceSchema = Joi.object({
     clubId: Joi.string().required(),
 
+    // exists only for owner
+    isOwner: Joi.boolean(),
+
     status: Joi.string(),
 
     joinRequestAttempts: Joi.number().default(0),

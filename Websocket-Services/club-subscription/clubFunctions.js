@@ -1,27 +1,8 @@
 const {
-    imageUploadConstParams,
-    s3,
     myTable,
     dynamoClient,
-} = require('../config');
+} = require('./config');
 
-async function uploadFile(key, buffer) {
-    return new Promise(async function (resolve, reject) {
-
-        var params = {
-            ...imageUploadConstParams,
-            Body: buffer,
-            Key: key,
-        };
-
-        await s3.upload(params, function (s3Err, data) {
-            if (s3Err) {
-                reject('error in uploading image: ', s3Err);
-            }
-            resolve(data);
-        });
-    });
-}
 
 async function _updateAudienceCount(clubId, value) {
 
@@ -87,9 +68,33 @@ async function decrementAudienceCount(clubId) {
     });
 }
 
+async function decrementParticipantCount(clubId) {
+    return new Promise(async (resolve, reject) => {
+
+        const _updateParticipantCounterQuery = {
+            TableName: myTable,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `CountParticipant#`,
+            },
+            UpdateExpression: 'set #cnt = #cnt - :counter', // decrementing
+            ExpressionAttributeNames: {
+                '#cnt': 'count'
+            },
+            ExpressionAttributeValues: {
+                ':counter': 1,
+            }
+        }
+        await dynamoClient.update(_updateParticipantCounterQuery).promise();
+        resolve();
+    });
+}
+
+
+
 
 module.exports = {
-    uploadFile,
     incrementAudienceCount,
     decrementAudienceCount,
+    decrementParticipantCount,
 };

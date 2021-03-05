@@ -4,7 +4,7 @@ const Joi = require('joi');
 const {
     searchByUsernameIndex,
     dynamoClient,
-    tableName
+    myTable
 } = require('../../config');
 
 
@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
 
 
     const _query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: searchByUsernameIndex,
         KeyConditions: {
             "PublicSearch": {

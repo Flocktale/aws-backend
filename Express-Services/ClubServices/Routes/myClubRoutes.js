@@ -4,7 +4,7 @@ const {
     clubCreatorIdIndex,
     sortKeyWithTimestampIndex,
     dynamoClient,
-    tableName
+    myTable
 } = require('../config');
 
 
@@ -16,7 +16,7 @@ router.get('/:userId/organized', async (req, res) => {
     const userId = req.params.userId;
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: clubCreatorIdIndex,
         KeyConditions: {
             "ClubCreatorIdField": {
@@ -55,7 +55,7 @@ router.get('/:userId/organized', async (req, res) => {
 router.get('/:userId/history', async (req, res) => {
     const userId = req.params.userId;
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: sortKeyWithTimestampIndex,
         KeyConditions: {
             "S_K": {
@@ -85,7 +85,7 @@ router.get('/:userId/history', async (req, res) => {
             primaryData['Items'].forEach((element) => {
                 _transactItems.push({
                     Get: {
-                        TableName: tableName,
+                        TableName: myTable,
                         Key: {
                             P_K: `CLUB#${element.clubId}`,
                             S_K: `CLUBMETA#${element.clubId}`

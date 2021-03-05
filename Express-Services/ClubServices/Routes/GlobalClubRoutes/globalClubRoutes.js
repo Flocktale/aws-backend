@@ -3,7 +3,7 @@ const router = require('express').Router();
 const {
     clubCategoryIndex,
     dynamoClient,
-    tableName
+    myTable
 } = require('../../config');
 
 const categoryData = require('../../static/categoryData.json');
@@ -75,7 +75,7 @@ router.get("/", async (req, res) => {
 
 async function _fetchClubsByCategory(category, lastevaluatedkey) {
     const _query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: clubCategoryIndex,
         KeyConditions: {
             'category': {

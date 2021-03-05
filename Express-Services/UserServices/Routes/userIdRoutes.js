@@ -2,7 +2,7 @@ const router = require('express').Router();
 
 const {
     dynamoClient,
-    tableName,
+    myTable,
 } = require('../config');
 
 const {
@@ -48,9 +48,10 @@ router.get("/", async (req, res) => {
         AttributesToGet: [
             'userId', 'username', 'avatar', 'createdOn', 'modifiedOn', 'name', 'phone', 'email', 'tagline', 'bio', 'termsAccepted',
             'policyAccepted', 'lngPref', 'regionCode', 'geoLat', 'geoLong',
-            'followerCount', 'followingCount', 'friendsCount', 'clubsCreated', 'clubsParticipated', 'clubsJoinRequests', 'clubsAttended'
+            'followerCount', 'followingCount', 'friendsCount', 'clubsCreated', 'clubsParticipated', 'clubsJoinRequests', 'clubsAttended',
+            'online',
         ],
-        TableName: tableName
+        TableName: myTable
     };
     var relationQuery;
 
@@ -61,7 +62,7 @@ router.get("/", async (req, res) => {
                 S_K: `RELATION#${userId}`
             },
             AttributesToGet: ["relationIndexObj"],
-            TableName: tableName,
+            TableName: myTable,
         };
     }
 
@@ -104,7 +105,7 @@ router.patch("/", async (req, res) => {
 
     const _getQuery = {
         Key: _key,
-        TableName: tableName
+        TableName: myTable
     };
 
     var _oldItem;
@@ -160,7 +161,7 @@ router.patch("/", async (req, res) => {
     console.log('attriubtes to update', attributeUpdates);
 
     const _updateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: _key,
         AttributeUpdates: attributeUpdates,
         ReturnConsumedCapacity: "INDEXES",

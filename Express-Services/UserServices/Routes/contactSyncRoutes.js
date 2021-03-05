@@ -1,7 +1,7 @@
 const router = require('express').Router();
 
 const {
-    tableName,
+    myTable,
     dynamoClient
 } = require('../config');
 
@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
 
 
         const _getQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `PHONE#${phone}`,
                 S_K: `PHONEMETA#${phone}`,

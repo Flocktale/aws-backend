@@ -4,7 +4,7 @@ const Joi = require('joi');
 
 const {
     dynamoClient,
-    tableName,
+    myTable,
 } = require('../../config');
 
 const {
@@ -19,6 +19,7 @@ const {
     publishNotification
 } = require('../../Functions/notificationFunctions');
 const Constants = require('../../constants');
+
 
 
 //required
@@ -45,7 +46,7 @@ router.post('/', async (req, res) => {
 
 
     const _clubDocQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`,
@@ -87,7 +88,7 @@ router.post('/', async (req, res) => {
 
     } else {
         const _sponsorDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${sponsorId}`,
                 S_K: `USERMETA#${sponsorId}`,
@@ -109,7 +110,7 @@ router.post('/', async (req, res) => {
 
             // checking if an audience doc already exists or not for this user.
             const _oldAudienceDocQuery = {
-                TableName: tableName,
+                TableName: myTable,
                 Key: {
                     P_K: `CLUB#${clubId}`,
                     S_K: `AUDIENCE#${userId}`,
@@ -129,7 +130,7 @@ router.post('/', async (req, res) => {
                 }
             } else {
                 const _userQuery = {
-                    TableName: tableName,
+                    TableName: myTable,
                     Key: {
                         P_K: `USER#${userId}`,
                         S_K: `USERMETA#${userId}`,
@@ -144,7 +145,7 @@ router.post('/', async (req, res) => {
                 if (oldAudienceDoc) {
                     // updating oldAudienceDoc
                     const _audienceUpdateQuery = {
-                        TableName: tableName,
+                        TableName: myTable,
                         Key: {
                             P_K: `CLUB#${clubId}`,
                             S_K: `AUDIENCE#${userId}`
@@ -171,8 +172,12 @@ router.post('/', async (req, res) => {
                         invitationId: notificationId,
                     });
 
+                    // deleting TimestampSortField as it projects this user into audience list
+                    // once user play the club, this field will be inserted there
+                    delete _audienceDoc.TimestampSortField;
+
                     const _audiencePutQuery = {
-                        TableName: tableName,
+                        TableName: myTable,
                         Item: _audienceDoc,
                     };
                     await dynamoClient.put(_audiencePutQuery).promise();
@@ -199,7 +204,7 @@ async function _sendAndSaveNotification(notificationObj, callback) {
     const notifData = await NotificationSchemaWithDatabaseKeys.validateAsync(notificationObj);
 
     const _notificationPutQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Item: notifData,
     }
 
@@ -230,7 +235,7 @@ router.post('/all-followers', async (req, res) => {
     }
 
     const _clubDocQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`,
@@ -267,7 +272,7 @@ router.post('/all-followers', async (req, res) => {
 
     } else {
         const _sponsorDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `USER#${sponsorId}`,
                 S_K: `USERMETA#${sponsorId}`,
@@ -283,7 +288,7 @@ router.post('/all-followers', async (req, res) => {
     // get list of all followers
 
     const _followersQuery = {
-        TableName: tableName,
+        TableName: myTable,
 
         KeyConditionExpression: 'P_K = :pk and begins_with(S_K,:sk)',
         FilterExpression: "relationIndexObj.B4 = :tr",

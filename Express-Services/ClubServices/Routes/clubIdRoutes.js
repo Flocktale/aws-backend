@@ -3,7 +3,7 @@ const router = require('express').Router();
 const {
     audienceDynamicDataIndex,
     dynamoClient,
-    tableName,
+    myTable,
     timestampSortIndex,
 } = require('../config');
 
@@ -51,6 +51,7 @@ const {
 const Constants = require('../constants');
 
 
+
 async function fetchAndRegisterAudience({
     clubId,
     audienceId,
@@ -65,7 +66,7 @@ async function fetchAndRegisterAudience({
 
         // checking if user already exists as an audience
         const _oldAudienceDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
@@ -79,12 +80,40 @@ async function fetchAndRegisterAudience({
             reject('BLOCKED_USER');
         }
 
+        var promises = [];
+
         if (_audienceDoc) {
-            // data we retrieved is same as what we want to send back.
-            _responseAudienceData = {
-                clubId: clubId,
-                ..._audienceDoc,
-            };
+
+            _audienceDoc['clubId'] = clubId;
+
+            //updating timestamp and TimestampSortField of audience if it is not participant( participant case can only be possible if this is owner coming back to his club)
+            if (_audienceDoc.status === Constants.AudienceStatus.Participant) {
+                // data we retrieved is same as what we want to send back.
+                _responseAudienceData = _audienceDoc;
+
+            } else {
+
+                _audienceDoc['timestamp'] = Date.now();
+                _responseAudienceData = _audienceDoc;
+
+                const _audienceUpdateQuery = {
+                    TableName: myTable,
+                    Key: {
+                        P_K: _audienceDoc.P_K,
+                        S_K: _audienceDoc.S_K,
+                    },
+                    UpdateExpression: 'set #tsp = :tsp',
+                    ExpressionAttributeNames: {
+                        '#tsp': 'timestamp'
+                    },
+                    ExpressionAttributeValues: {
+                        ':tsp': _audienceDoc.timestamp,
+                    },
+                };
+
+                promises.push(dynamoClient.update(_audienceUpdateQuery).promise());
+
+            }
 
         } else {
 
@@ -92,7 +121,7 @@ async function fetchAndRegisterAudience({
 
             // retrieving summary data for user
             const _audienceSummaryQuery = {
-                TableName: tableName,
+                TableName: myTable,
                 Key: {
                     P_K: `USER#${audienceId}`,
                     S_K: `USERMETA#${audienceId}`,
@@ -116,64 +145,25 @@ async function fetchAndRegisterAudience({
 
             const _newAudienceDoc = await AudienceSchemaWithDatabaseKeys.validateAsync(_responseAudienceData);
 
+            // deleting TimestampSortField as it projects this user into audience list
+            // once user play the club, this field will be inserted there        
+            delete _newAudienceDoc.TimestampSortField;
+
             const _newAudienceDocQuery = {
-                TableName: tableName,
+                TableName: myTable,
                 Item: _newAudienceDoc,
             };
 
 
-            const _audienceCountUpdateQuery = {
-                TableName: tableName,
-                Key: {
-                    P_K: `CLUB#${clubId}`,
-                    S_K: 'CountAudience#'
-                },
-                UpdateExpression: 'set #cnt = #cnt + :counter',
-                ExpressionAttributeNames: {
-                    '#cnt': 'count'
-                },
-                ExpressionAttributeValues: {
-                    ':counter': 1,
-                },
-                ReturnValues: 'UPDATED_NEW',
-            };
 
-            // we are not using transaction because that won't return the data of audienceCount.
-
-            await dynamoClient.put(_newAudienceDocQuery).promise();
-            const countReturnedData = (await dynamoClient.update(_audienceCountUpdateQuery).promise())['Attributes'];
-
-            if (countReturnedData) {
-                const estimatedAudience = countReturnedData['count'];
-
-                const _updateClubEstimatedCountQuery = {
-                    TableName: tableName,
-                    Key: {
-                        P_K: `CLUB#${clubId}`,
-                        S_K: `CLUBMETA#${clubId}`
-                    },
-                    UpdateExpression: 'SET estimatedAudience = :est',
-                    ExpressionAttributeValues: {
-                        ':est': estimatedAudience,
-                    },
-                }
-                const condition_1 = (estimatedAudience <= 100);
-                const condition_2 = (estimatedAudience > 100 && estimatedAudience <= 1000) ? (estimatedAudience % 13 === 0) : false;
-                const condition_3 = (estimatedAudience > 1000 && estimatedAudience <= 10000) ? (estimatedAudience % 127 === 0) : false;
-                const condition_4 = (estimatedAudience > 10000 && estimatedAudience <= 100000) ? (estimatedAudience % 1700 === 0) : false;
-                const condition_5 = (estimatedAudience % 10000 === 0);
-
-                if (condition_1 || condition_2 || condition_3 || condition_4 || condition_5) {
-                    await dynamoClient.update(_updateClubEstimatedCountQuery).promise();
-                    console.log('ho gya');
-                }
-
-            }
-
-
+            promises.push(dynamoClient.put(_newAudienceDocQuery).promise());
 
         }
+
+        await Promise.all(promises);
+
         resolve(_responseAudienceData);
+
     })
 }
 
@@ -182,22 +172,26 @@ async function fetchAudienceReactionValue({
     audienceId,
 }) {
 
-    if (!clubId || !audienceId) {
-        console.log(clubId, audienceId);
-        reject('INSUFFICIENT_PARAMETERS');
-    }
-    const _reactionQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `CLUB#${clubId}`,
-            S_K: `REACT#${audienceId}`
-        },
-        AttributesToGet: ['indexValue'],
-    };
-    const data = (await dynamoClient.get(_reactionQuery).promise())['Item'];
-    if (data) {
-        return data.indexValue;
-    }
+    return new Promise(async (resolve, reject) => {
+
+        if (!clubId || !audienceId) {
+            console.log(clubId, audienceId);
+            reject('INSUFFICIENT_PARAMETERS');
+        }
+        const _reactionQuery = {
+            TableName: myTable,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `REACT#${audienceId}`
+            },
+            AttributesToGet: ['indexValue'],
+        };
+        const data = (await dynamoClient.get(_reactionQuery).promise())['Item'];
+        if (data) {
+            resolve(data.indexValue);
+        }
+        resolve();
+    });
 }
 
 // required
@@ -212,13 +206,42 @@ router.get('/', async (req, res) => {
         return;
     }
 
-    // audience data to be sent in response
-    var _responseAudienceData = {};
 
-    try {
-        _responseAudienceData = await fetchAndRegisterAudience({
+    const _getQuery = {
+        TableName: myTable,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `CLUBMETA#${clubId}`
+        },
+        AttributesToGet: ['clubId', 'clubName', 'creator', 'agoraToken', 'category',
+            'isLive', 'isConcluded',
+            'scheduleTime', 'clubAvatar', 'description', 'isPrivate', 'tags',
+        ],
+    };
+
+    // audience data to be sent in response
+    var _responseAudienceData, _reactionIndexValue, _clubData;
+
+    const promises = [
+        fetchAndRegisterAudience({
             clubId: clubId,
             audienceId: audienceId,
+        }),
+        fetchAudienceReactionValue({
+            clubId: clubId,
+            audienceId: audienceId,
+        }),
+        new Promise(async (resolve, _) => {
+            const data = (await dynamoClient.get(_getQuery).promise())['Item'];
+            resolve(data);
+        }),
+    ];
+
+    try {
+        await Promise.all(promises).then(values => {
+            _responseAudienceData = values[0];
+            _reactionIndexValue = values[1];
+            _clubData = values[2];
         });
     } catch (error) {
         if (error === 'BLOCKED_USER') {
@@ -230,35 +253,11 @@ router.get('/', async (req, res) => {
     }
 
 
-    const _reactionIndexValue = await fetchAudienceReactionValue({
-        clubId: clubId,
-        audienceId: audienceId,
+    return res.status(200).json({
+        club: _clubData,
+        audienceData: _responseAudienceData,
+        reactionIndexValue: _reactionIndexValue,
     });
-
-    const _getQuery = {
-        TableName: tableName,
-        Key: {
-            P_K: `CLUB#${clubId}`,
-            S_K: `CLUBMETA#${clubId}`
-        },
-        AttributesToGet: ['clubId', 'clubName', 'creator', 'agoraToken', 'category',
-            'isLive', 'isConcluded',
-            'scheduleTime', 'clubAvatar', 'description', 'isPrivate', 'tags',
-        ],
-    };
-
-    try {
-        const data = (await dynamoClient.get(_getQuery).promise())['Item'];
-
-        return res.status(200).json({
-            club: data,
-            audienceData: _responseAudienceData,
-            reactionIndexValue: _reactionIndexValue,
-        });
-    } catch (error) {
-        console.log(error);
-        return res.status(404).json(error);
-    }
 
 });
 
@@ -268,7 +267,7 @@ router.get('/participants', async (req, res) => {
     const clubId = req.clubId;
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: audienceDynamicDataIndex,
         KeyConditions: {
             "P_K": {
@@ -301,7 +300,7 @@ router.get('/audience', async (req, res) => {
     const clubId = req.clubId;
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: timestampSortIndex,
         KeyConditions: {
             "P_K": {

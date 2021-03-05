@@ -13,7 +13,7 @@ const {
 const {
     audienceDynamicDataIndex,
     dynamoClient,
-    tableName,
+    myTable,
     usernameSortIndex,
 } = require('../../config');
 
@@ -27,6 +27,9 @@ const {
     publishNotification
 } = require('../../Functions/notificationFunctions');
 const Constants = require('../../constants');
+const {
+    decrementAudienceCount
+} = require('../../Functions/clubFunctions');
 
 // required
 // headers - "lastevaluatedkey"  (optional)
@@ -36,7 +39,7 @@ router.get('/', async (req, res) => {
     const clubId = req.clubId;
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: audienceDynamicDataIndex,
         Limit: 30,
         KeyConditions: {
@@ -85,7 +88,7 @@ router.get('/query', async (req, res) => {
     }
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: usernameSortIndex,
         Limit: 10,
         KeyConditions: {
@@ -138,7 +141,7 @@ router.post('/', async (req, res) => {
     try {
         // fetching audience info for this club
         const _audienceDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
@@ -186,7 +189,7 @@ router.post('/', async (req, res) => {
         const result = await AudienceSchemaWithDatabaseKeys.validateAsync(audienceDoc);
 
         var _audienceUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: result.P_K,
                 S_K: result.S_K
@@ -215,7 +218,7 @@ router.post('/', async (req, res) => {
         });
 
         const _counterUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: counterDoc.P_K,
                 S_K: counterDoc.S_K
@@ -295,7 +298,7 @@ router.delete('/', async (req, res) => {
     }
 
     const _audienceUpdateQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
@@ -350,7 +353,7 @@ router.post('/response', async (req, res) => {
     try {
         // fetching audience info for this club
         const _audienceDocQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`,
@@ -405,12 +408,12 @@ router.post('/response', async (req, res) => {
         }
 
         const _audienceUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: result.P_K,
                 S_K: result.S_K
             },
-            UpdateExpression: 'SET #status = :status, AudienceDynamicField = :adf REMOVE UsernameSortField',
+            UpdateExpression: 'SET #status = :status, AudienceDynamicField = :adf REMOVE UsernameSortField, TimestampSortField',
             ExpressionAttributeNames: {
                 '#status': 'status',
             },
@@ -434,7 +437,7 @@ router.post('/response', async (req, res) => {
         });
 
         const _counterUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: counterDoc.P_K,
                 S_K: counterDoc.S_K
@@ -487,6 +490,8 @@ router.post('/response', async (req, res) => {
             // sending new participant list to all connected users.
             await postParticipantListToWebsocketUsers(clubId);
 
+            // decrementing audience count as this user is participant now.
+            await decrementAudienceCount(clubId);
 
             return res.status(201).json('Accepted join request');
         } catch (error) {
@@ -500,7 +505,7 @@ router.post('/response', async (req, res) => {
 
 
         const _audienceUpdateQuery = {
-            TableName: tableName,
+            TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${audienceId}`
@@ -566,7 +571,7 @@ async function _getClubData({
         return;
     }
     const _clubQuery = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`

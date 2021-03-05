@@ -1,23 +1,26 @@
 // const Joi = require('joi');
 
-// const app = require('./app');
 
-// app.listen(3000, () => {
-//     console.log("Listening on port 3000");
-// });
+const app = require('./app');
 
-// const {
-//     dynamoClient,
-//     tableName,
-//     apigwManagementApi
-// } = require('./config');
+app.listen(3000, () => {
+    console.log("Listening on port 3000");
+});
+
+const {
+    dynamoClient,
+    myTable,
+    apigwManagementApi
+} = require('./config');
 
 // const data = require('./static/categoryData.json');
 
-// async function testing() {
-//     console.log('hello');
-// }
+async function testing() {
+    const a = 'club#asdfdaf';
+    console.log(a.split('#'));
+}
 
 
 
-// testing();
+
+testing();

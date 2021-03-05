@@ -1,6 +1,6 @@
 const {
     dynamoClient,
-    tableName,
+    myTable,
     searchByUsernameIndex,
     imageUploadConstParams,
     s3
@@ -12,7 +12,7 @@ async function isUsernameAvailable(username) {
     username = username.toLowerCase();
 
     const query = {
-        TableName: tableName,
+        TableName: myTable,
         IndexName: searchByUsernameIndex,
 
         KeyConditionExpression: 'PublicSearch = :ps and FilterDataName = :fd ',
@@ -38,7 +38,7 @@ async function fetchSocialCountData(userId) {
     if (!userId) return;
 
     const _query = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`,
@@ -57,7 +57,7 @@ async function fetchSocialRelationIndexObj({
     if (!userId || !foreignUserId) return;
 
     const _query = {
-        TableName: tableName,
+        TableName: myTable,
         Key: {
             P_K: `USER#${userId}`,
             S_K: `RELATION#${foreignUserId}`
