@@ -255,6 +255,7 @@ router.post("/opened", async (req, res) => {
             responseString = 'INVITATION_EXPIRED';
         } else {
 
+
             const _audienceUpdateQuery = {
                 TableName: myTable,
                 Key: {
@@ -270,6 +271,24 @@ router.post("/opened", async (req, res) => {
             };
 
             if (action === 'accept') {
+
+                const _clubLiveQuery = {
+                    TableName: myTable,
+                    Key: {
+                        P_K: `CLUB#${clubId}`,
+                        S_K: `CLUBMETA#${clubId}`,
+                    },
+                    AttributesToGet: ['isLive'],
+                }
+
+                const _clubData = (await dynamoClient.get(_clubLiveQuery).promise())['Item'];
+
+                if (!_clubData || (_clubData.isLive !== true)) {
+                    return res.status(403).json('NOT_LIVE_YET');
+                }
+
+
+
                 _audienceUpdateQuery['UpdateExpression'] += ' SET #status = :status, AudienceDynamicField = :adf';
                 _audienceUpdateQuery['ExpressionAttributeNames']['#status'] = 'status';
 
