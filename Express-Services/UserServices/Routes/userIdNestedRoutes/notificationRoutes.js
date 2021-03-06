@@ -271,6 +271,8 @@ router.post("/opened", async (req, res) => {
 
             if (action === 'accept') {
                 _audienceUpdateQuery['UpdateExpression'] += ' SET #status = :status, AudienceDynamicField = :adf';
+                _audienceUpdateQuery['ExpressionAttributeNames']['#status'] = 'status';
+
                 _audienceUpdateQuery['ExpressionAttributeValues'][':status'] = Constants.AudienceStatus.Participant;
                 _audienceUpdateQuery['ExpressionAttributeValues'][':adf'] = Constants.AudienceStatus.Participant + '#' + Date.now() + '#' + userId;
 

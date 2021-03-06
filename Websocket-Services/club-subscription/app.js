@@ -23,7 +23,6 @@ exports.handler = async event => {
         endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
     });
 
-    console.log(event);
 
     const body = JSON.parse(event.body);
     const toggleMethod = body.toggleMethod;
@@ -209,7 +208,9 @@ async function _playClub(connectionId, clubId) {
         // incementing audience count 
         promises.push(incrementAudienceCount(clubId));
 
-    } catch (_) {}
+    } catch (error) {
+        console.log('error while updating Timestamp Sort Field in playing club: ', error);
+    }
 
 
     await Promise.all(promises);

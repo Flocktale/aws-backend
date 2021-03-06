@@ -31,6 +31,7 @@ exports.handler = async event => {
   };
   const data = (await dynamoClient.get(_userIdQuery).promise())['Item'];
   const userId = data.userId;
+  const skey = data.skey;
 
 
   // if clubStatus is STOPPED then all necessary operations must have been resolved already.
@@ -59,7 +60,7 @@ exports.handler = async event => {
         P_K: `CLUB#${clubId}`,
         S_K: `Audience#${userId}`
       },
-      UpdateExpression: '',
+      // UpdateExpression: '',
     };
 
     if (_audienceData.isOwner === true) {
@@ -92,8 +93,9 @@ exports.handler = async event => {
       // decrementing audience count 
       promises.push(decrementAudienceCount(clubId));
     }
-
-    promises.push(dynamoClient.update(_audienceUpdateQuery).promise());
+    if (_audienceUpdateQuery.UpdateExpression) {
+      promises.push(dynamoClient.update(_audienceUpdateQuery).promise());
+    }
 
     await Promise.all(promises);
 
@@ -190,7 +192,7 @@ async function _fetchAllConnectionIdsForClub(clubId) {
   const _connectionQuery = {
     TableName: WsTable,
     IndexName: wsInvertIndex,
-    KeyConditionExpression: 'skey= :skey',
+    KeyConditionExpression: 'skey = :skey',
     ExpressionAttributeValues: {
       ":skey": `CLUB#${clubId}`,
     },
