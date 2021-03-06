@@ -9,13 +9,19 @@ const {
     timestampSortIndex,
     audienceDynamicDataIndex,
     dynamoClient,
-    wsInvertIndex
+    wsInvertIndex,
+    AWS,
 } = require('./config');
 
 const Constants = require('./constants');
 
 
+
 exports.handler = async event => {
+    const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+        apiVersion: '2018-11-29',
+        endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
+    });
 
     console.log(event);
 
@@ -31,10 +37,6 @@ exports.handler = async event => {
     }
 
     const connectionId = event.requestContext.connectionId;
-    const apigwManagementApi = new AWS.ApiGatewayManagementApi({
-        apiVersion: '2018-11-29',
-        endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
-    });
 
     if (toggleMethod === 'enter') {
 

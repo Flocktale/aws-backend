@@ -8,13 +8,19 @@ const {
   myTable,
   audienceDynamicDataIndex,
   dynamoClient,
-  wsInvertIndex
+  wsInvertIndex,
+  AWS,
 } = require('./config');
 
 const Constants = require('./constants');
 
 exports.handler = async event => {
   const connectionId = event.requestContext.connectionId;
+
+  const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+    apiVersion: '2018-11-29',
+    endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
+  });
 
   const _userIdQuery = {
     TableName: WsTable,
@@ -26,10 +32,6 @@ exports.handler = async event => {
   const data = (await dynamoClient.get(_userIdQuery).promise())['Item'];
   const userId = data.userId;
 
-  const apigwManagementApi = new AWS.ApiGatewayManagementApi({
-    apiVersion: '2018-11-29',
-    endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
-  });
 
   // if clubStatus is STOPPED then all necessary operations must have been resolved already.
   if (skey && (data.clubStatus === 'PLAYING')) {

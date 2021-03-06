@@ -99,8 +99,8 @@ async function fetchAndRegisterAudience({
                 const _audienceUpdateQuery = {
                     TableName: myTable,
                     Key: {
-                        P_K: _audienceDoc.P_K,
-                        S_K: _audienceDoc.S_K,
+                        P_K: `CLUB#${clubId}`,
+                        S_K: `AUDIENCE#${audienceId}`,
                     },
                     UpdateExpression: 'set #tsp = :tsp',
                     ExpressionAttributeNames: {

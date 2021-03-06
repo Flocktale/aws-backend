@@ -14,6 +14,7 @@ const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
 
 module.exports = {
     dynamoClient,
+    AWS,
 
     WsTable,
     wsInvertIndex,
