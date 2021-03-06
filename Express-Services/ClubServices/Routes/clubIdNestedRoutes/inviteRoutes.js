@@ -19,6 +19,9 @@ const {
     publishNotification
 } = require('../../Functions/notificationFunctions');
 const Constants = require('../../constants');
+const {
+    postParticipationInvitationMessageToInvitee
+} = require('../../Functions/websocketFunctions');
 
 
 
@@ -83,6 +86,10 @@ router.post('/', async (req, res) => {
             notificationObj['data']['title'] = clubData.creator.username + ' would like you to be a Panelist on ' + clubData.clubName;
             notificationObj['data']['type'] = 'CLUB#INV#prt';
         } else {
+
+            // setting invitation type to audience if this api is not requested by owner of club.
+            invitation.type = "audience";
+
             notificationObj['data']['title'] = 'Tune to ' + clubData.clubName + ' and listen to what ' + clubData.creator.username + ' and others have to say';
         }
 
@@ -184,9 +191,21 @@ router.post('/', async (req, res) => {
                 }
 
             });
+
+
         } else {
             await _sendAndSaveNotification(notificationObj);
         }
+    }
+
+    // sending websocket message to all these invitee about participation type invitation
+    // if any or all of these users are already on app, this way they will be notified by notified and websocket both.
+    if (invitation.type === 'participant') {
+        await postParticipationInvitationMessageToInvitee({
+            clubId: clubId,
+            invitee: invitation.invitee,
+            message: notificationObj.data.title
+        });
     }
 
     return res.status(202).json('Notifications sent to invitee');

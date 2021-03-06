@@ -259,6 +259,30 @@ async function postClubConcludedMessageToWebsocketUsers({
 
 }
 
+async function postParticipationInvitationMessageToInvitee({
+    clubId,
+    invitee,
+    message,
+}) {
+    if (!clubId || !invitee || !message) return;
+    const data = {
+        what: 'INV#prt',
+        clubId: clubId,
+        message: message,
+    };
+
+    var promises = [];
+
+    for (var userId of invitee) {
+        promises.push(new Promise(async (resolve, _) => {
+            await _postToOneUserConnection(userId, data);
+            resolve();
+        }));
+    }
+
+    await Promise.all(promises);
+
+}
 
 
 module.exports = {
@@ -275,5 +299,7 @@ module.exports = {
 
     postMuteMessageToParticipantOnly,
     postMuteActionMessageToClubSubscribers,
+
+    postParticipationInvitationMessageToInvitee,
 
 };
