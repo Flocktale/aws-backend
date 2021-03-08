@@ -4,6 +4,7 @@ const {
 
 const router = require('express').Router();
 const sharp = require('sharp');
+const Constants = require('../../constants');
 
 
 //required
@@ -42,9 +43,9 @@ router.post("/", async (req, res) => {
 
 
     const uploadPromises = [
-        uploadFile(`clubAvatar/${fileName}_thumb`, _thumbnail),
-        uploadFile(`clubAvatar/${fileName}`, _default),
-        uploadFile(`clubAvatar/${fileName}_large`, _large),
+        uploadFile(Constants.s3ClubAvatarThumbKey(fileName), _thumbnail),
+        uploadFile(Constants.s3ClubAvatarDefaultKey(fileName), _default),
+        uploadFile(Constants.s3ClubAvatarLargeKey(fileName), _large),
     ];
 
     Promise.all(uploadPromises).then(data => {

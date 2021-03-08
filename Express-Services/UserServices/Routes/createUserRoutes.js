@@ -12,6 +12,7 @@ const {
     isUsernameAvailable,
     uploadFile
 } = require('../Functions/userFunctions');
+const Constants = require('../constants');
 
 
 
@@ -22,7 +23,7 @@ const {
 router.post("/", async (req, res) => {
 
     try {
-        req.body['avatar'] = `https://mootclub-public.s3.amazonaws.com/userAvatar/${req.body.userId}`;
+        req.body['avatar'] = Constants.UserAvatarUrl(req.body.userId);
         const result = await UserBaseCompleteSchema.validateAsync(req.body);
 
         const _availability = await isUsernameAvailable(result.username);
@@ -76,9 +77,9 @@ router.post("/", async (req, res) => {
                 const _large = fs.createReadStream('./static/dp_large.jpg');
 
                 const uploadPromises = [
-                    uploadFile(`userAvatar/${fileName}_thumb`, _thumbnail),
-                    uploadFile(`userAvatar/${fileName}`, _default),
-                    uploadFile(`userAvatar/${fileName}_large`, _large),
+                    uploadFile(Constants.s3UserAvatarThumbKey(fileName), _thumbnail),
+                    uploadFile(Constants.s3UserAvatarDefaultKey(fileName), _default),
+                    uploadFile(Constants.s3UserAvatarLargeKey(fileName), _large),
                 ];
 
                 try {

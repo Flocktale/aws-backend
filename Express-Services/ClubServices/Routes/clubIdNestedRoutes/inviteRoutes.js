@@ -65,13 +65,12 @@ router.post('/', async (req, res) => {
         data: {
             type: "CLUB#INV#adc", // by default
             title: "undefined",
-            avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${sponsorId}`,
+            avatar: Constants.UserAvatarUrl(sponsorId),
             timestamp: Date.now(),
 
             targetResourceId: clubId,
 
-            secondaryAvatar: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
-
+            secondaryAvatar: Constants.ClubAvatarUrl(clubId),
             extraData: {
                 scheduleTime: clubData.scheduleTime,
                 category: clubData.category
@@ -270,12 +269,12 @@ router.post('/all-followers', async (req, res) => {
         data: {
             type: "CLUB#INV#adc", // invitation for being audience
             title: "undefined",
-            avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${sponsorId}`,
+            avatar: Constants.UserAvatarUrl(sponsorId),
             timestamp: Date.now(),
 
             targetResourceId: clubId,
 
-            secondaryAvatar: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+            secondaryAvatar: Constants.ClubAvatarUrl(clubId),
 
             extraData: {
                 scheduleTime: clubData.scheduleTime,

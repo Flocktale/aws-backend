@@ -383,7 +383,7 @@ router.post('/response', async (req, res) => {
     // we don't need to save these notifications in database as they are temporary.
     var notificationObj = {
         title: 'undefined',
-        image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+        image: Constants.ClubAvatarUrl(clubId),
     }
 
 

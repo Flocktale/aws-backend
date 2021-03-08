@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const sharp = require('sharp');
+const Constants = require('../../constants');
 const {
     uploadFile
 } = require('../../Functions/userFunctions');
@@ -38,9 +39,9 @@ router.post("/", async (req, res) => {
     }).toBuffer();
 
     const uploadPromises = [
-        uploadFile(`userAvatar/${fileName}_thumb`, _thumbnail),
-        uploadFile(`userAvatar/${fileName}`, _default),
-        uploadFile(`userAvatar/${fileName}_large`, _large),
+        uploadFile(Constants.s3UserAvatarThumbKey(fileName), _thumbnail),
+        uploadFile(Constants.s3UserAvatarDefaultKey(fileName), _default),
+        uploadFile(Constants.s3UserAvatarLargeKey(fileName), _large),
     ];
 
 

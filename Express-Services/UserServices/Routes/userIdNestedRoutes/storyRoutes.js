@@ -10,6 +10,7 @@ const {
     myTable,
     timestampSortIndex,
 } = require('../../config');
+const Constants = require('../../constants');
 
 const {
     StorySchemaWithDatabaseKeys
@@ -48,7 +49,7 @@ router.post("/", async (req, res) => {
 
 
     const storyId = nanoid();
-    const url = `https://mootclub-public.s3.amazonaws.com/userAvatar/${userId}/${storyId}`;
+    const url = Constants.UserAvatarUrl(`${userId}/${storyId}`);
 
     const storyData = await StorySchemaWithDatabaseKeys.validateAsync({
         user: user,

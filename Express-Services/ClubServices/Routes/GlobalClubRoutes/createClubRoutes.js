@@ -59,8 +59,7 @@ router.post('/', async (req, res) => {
 
         req.body['creator'] = _creatorSummaryDoc;
         req.body['clubId'] = clubId;
-        req.body['clubAvatar'] = `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`;
-
+        req.body['clubAvatar'] = Constants.ClubAvatarUrl(clubId);
         const newClub = await ClubRoomCompleteSchema.validateAsync({
             ...req.body,
 
@@ -179,9 +178,9 @@ router.post('/', async (req, res) => {
                 const _large = fs.createReadStream('./static/microphone_large.jpg');
 
                 const uploadPromises = [
-                    uploadFile(`clubAvatar/${fileName}_thumb`, _thumbnail),
-                    uploadFile(`clubAvatar/${fileName}`, _default),
-                    uploadFile(`clubAvatar/${fileName}_large`, _large),
+                    uploadFile(Constants.s3ClubAvatarThumbKey(fileName), _thumbnail),
+                    uploadFile(Constants.s3ClubAvatarDefaultKey(fileName), _default),
+                    uploadFile(Constants.s3ClubAvatarLargeKey(fileName), _large),
                 ];
 
                 try {

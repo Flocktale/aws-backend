@@ -1,4 +1,5 @@
     const AWS = require('aws-sdk');
+    const Constants = require('./constants');
 
     AWS.config.update({
         region: "us-east-1",
@@ -17,7 +18,7 @@
 
     const imageUploadConstParams = {
         ACL: 'public-read',
-        Bucket: 'mootclub-public',
+        Bucket: Constants.avatarBucketName(),
         // Body:            populate it 
         // Key:             populate it
     };

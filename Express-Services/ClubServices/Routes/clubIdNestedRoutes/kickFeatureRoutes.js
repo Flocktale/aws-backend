@@ -152,7 +152,7 @@ router.post('/', async (req, res) => {
 
         var notifData = {
             title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
-            image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+            image: Constants.ClubAvatarUrl(clubId),
         }
         await publishNotification({
             userId: audienceId,

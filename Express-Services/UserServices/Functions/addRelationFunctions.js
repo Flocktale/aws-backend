@@ -2,6 +2,7 @@ const {
     dynamoClient,
     myTable,
 } = require('../config');
+const Constants = require('../constants');
 
 
 const {
@@ -211,7 +212,7 @@ async function acceptFriendRequest({
         data: {
             type: "FR#accepted",
             title: "You and " + oldRelationDoc.primaryUser.username + " are now bound in a great friendship pact.",
-            avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${userId}`,
+            avatar: Constants.UserAvatarUrl(userId),
             targetResourceId: userId,
             timestamp: Date.now(),
         },
@@ -270,7 +271,7 @@ async function sendFriendRequest({
         data: {
             type: "FR#new",
             title: "undefined",
-            avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${userId}`,
+            avatar: Constants.UserAvatarUrl(userId),
             targetResourceId: userId,
             timestamp: Date.now(),
         },
@@ -498,7 +499,7 @@ async function followUser({
         data: {
             type: "FLW#new",
             title: "undefined",
-            avatar: `https://mootclub-public.s3.amazonaws.com/userAvatar/${userId}`,
+            avatar: Constants.UserAvatarUrl(userId),
             targetResourceId: userId,
             timestamp: Date.now(),
         },

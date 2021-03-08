@@ -218,7 +218,7 @@ router.post('/', async (req, res) => {
 
             var notifData = {
                 title: 'You are blocked from  ' + clubName,
-                image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+                image: Constants.ClubAvatarUrl(clubId),
             }
             promises.push(publishNotification({
                 userId: audienceId,
@@ -343,7 +343,7 @@ router.delete('/', async (req, res) => {
 
             var notifData = {
                 title: 'No more blocking from  ' + clubName + '. You can listen to it now.',
-                image: `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`,
+                image: Constants.ClubAvatarUrl(clubId),
             }
             await publishNotification({
                 userId: audienceId,
