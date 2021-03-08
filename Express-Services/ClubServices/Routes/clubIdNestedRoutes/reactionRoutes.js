@@ -1,8 +1,14 @@
 const router = require('express').Router();
 
-const { ReactionSchemaWithDatabaseKeys } = require('../../Schemas/Reaction');
+const {
+    ReactionSchemaWithDatabaseKeys
+} = require('../../Schemas/Reaction');
 
-const { timestampSortIndex, dynamoClient, myTable } = require('../../config');
+const {
+    timestampSortIndex,
+    dynamoClient,
+    myTable
+} = require('../../config');
 const Joi = require('joi');
 
 
@@ -22,7 +28,7 @@ router.post('/', async (req, res) => {
 
     try {
         newIndexValue = await Joi.number().integer().valid(0, 1, 2).validateAsync(newIndexValue);
-        
+
     } catch (error) {
         res.status(400).json(` indexValue should be a valid integer (0,1,2) :${error}`);
         return;
@@ -40,7 +46,9 @@ router.post('/', async (req, res) => {
 
     let _oldReactionDoc;
 
-    const _transactQuery = { TransactItems: [] };
+    const _transactQuery = {
+        TransactItems: []
+    };
 
     try {
         _oldReactionDoc = (await dynamoClient.get(_oldReactionQuery).promise())['Item'];
@@ -60,16 +68,16 @@ router.post('/', async (req, res) => {
                     P_K: `CLUB#${clubId}`,
                     S_K: `CountReaction#${previousIndexValue}`
                 },
-                UpdateExpression: 'set #cnt = #cnt - :counter',
+                UpdateExpression: 'ADD #cnt :counter',
                 ExpressionAttributeNames: {
                     '#cnt': 'count'
                 },
                 ExpressionAttributeValues: {
-                    ':counter': 1
+                    ':counter': -1
                 }
             }
         });
-        console.log(previousIndexValue,newIndexValue);
+        console.log(previousIndexValue, newIndexValue);
         if (previousIndexValue === newIndexValue) {
             _transactQuery['TransactItems'].push({
                 Delete: {
@@ -87,7 +95,7 @@ router.post('/', async (req, res) => {
                         P_K: `CLUB#${clubId}`,
                         S_K: `CountReaction#${newIndexValue}`
                     },
-                    UpdateExpression: 'set #cnt = #cnt + :counter',
+                    UpdateExpression: 'ADD #cnt :counter',
                     ExpressionAttributeNames: {
                         '#cnt': 'count'
                     },
@@ -165,7 +173,9 @@ router.post('/', async (req, res) => {
             TableName: myTable,
             Item: reactionDoc
         };
-        _transactQuery['TransactItems'].push({ Put: _reactionDocQuery });   // creating reaction document of user
+        _transactQuery['TransactItems'].push({
+            Put: _reactionDocQuery
+        }); // creating reaction document of user
 
         // incremeting counter of new reaction
         _transactQuery['TransactItems'].push({
@@ -175,7 +185,7 @@ router.post('/', async (req, res) => {
                     P_K: `CLUB#${clubId}`,
                     S_K: `CountReaction#${newIndexValue}`
                 },
-                UpdateExpression: 'set #cnt = #cnt + :counter',
+                UpdateExpression: 'ADD #cnt :counter',
                 ExpressionAttributeNames: {
                     '#cnt': 'count'
                 },
@@ -185,10 +195,10 @@ router.post('/', async (req, res) => {
             }
         });
 
-    }  
+    }
 
     // _transactQuery.TransactItems.forEach((e)=>console.log(e));
-    
+
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
         if (err) res.status(404).json(`Error modifying reaction: ${err}`);
         else {

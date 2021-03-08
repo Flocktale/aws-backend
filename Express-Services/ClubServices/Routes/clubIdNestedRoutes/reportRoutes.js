@@ -1,12 +1,22 @@
 const router = require('express').Router();
-const { nanoid } = require('nanoid');
+const {
+    nanoid
+} = require('nanoid');
 
 
-const { CountReportSchema } = require('../../Schemas/AtomicCountSchemas');
-const { ReportSchemaWithDatabaseKeys } = require('../../Schemas/Report');
+const {
+    CountReportSchema
+} = require('../../Schemas/AtomicCountSchemas');
+const {
+    ReportSchemaWithDatabaseKeys
+} = require('../../Schemas/Report');
 
 
-const { timestampSortIndex, dynamoClient, myTable } = require('../../config');
+const {
+    timestampSortIndex,
+    dynamoClient,
+    myTable
+} = require('../../config');
 
 // required
 // query parameters - "userId"
@@ -19,7 +29,7 @@ router.post('/', async (req, res) => {
 
     const reportBody = req.body.body;
 
-    if(!reportBody){
+    if (!reportBody) {
         res.status(400).json('Body is Required');
     }
 
@@ -63,14 +73,16 @@ router.post('/', async (req, res) => {
             Item: result
         };
 
-        const counterDoc = await CountReportSchema.validateAsync({ clubId: clubId });
+        const counterDoc = await CountReportSchema.validateAsync({
+            clubId: clubId
+        });
         const _counterUpdateQuery = {
             TableName: myTable,
             Key: {
                 P_K: counterDoc.P_K,
                 S_K: counterDoc.S_K
             },
-            UpdateExpression: 'set #cnt = #cnt + :counter',
+            UpdateExpression: 'ADD #cnt :counter',
             ExpressionAttributeNames: {
                 '#cnt': 'count'
             },
@@ -80,9 +92,12 @@ router.post('/', async (req, res) => {
         }
 
         const _transactQuery = {
-            TransactItems: [
-                { Put: _putQuery },
-                { Update: _counterUpdateQuery }
+            TransactItems: [{
+                    Put: _putQuery
+                },
+                {
+                    Update: _counterUpdateQuery
+                }
             ]
         };
 

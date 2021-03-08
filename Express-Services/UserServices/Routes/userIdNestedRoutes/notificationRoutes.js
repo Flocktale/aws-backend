@@ -302,7 +302,7 @@ router.post("/opened", async (req, res) => {
                         P_K: `CLUB#${clubId}`,
                         S_K: `CountParticipant#`,
                     },
-                    UpdateExpression: 'set #cnt = #cnt + :counter', // incrementing
+                    UpdateExpression: 'ADD #cnt :counter', // incrementing
                     ExpressionAttributeNames: {
                         '#cnt': 'count'
                     },

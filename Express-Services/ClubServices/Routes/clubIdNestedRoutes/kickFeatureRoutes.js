@@ -75,12 +75,12 @@ router.post('/', async (req, res) => {
             P_K: counterDoc.P_K,
             S_K: counterDoc.S_K
         },
-        UpdateExpression: 'set #cnt = #cnt - :counter', // decrementing
+        UpdateExpression: 'ADD #cnt :counter', // decrementing
         ExpressionAttributeNames: {
             '#cnt': 'count'
         },
         ExpressionAttributeValues: {
-            ':counter': 1,
+            ':counter': -1,
         }
     }
 

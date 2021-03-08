@@ -264,9 +264,9 @@ async function unfriendUser({
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
         },
-        UpdateExpression: "SET friendsCount = friendsCount - :friendCounter, followingCount = followingCount - :followingCounter",
+        UpdateExpression: "ADD friendsCount :friendCounter, followingCount :followingCounter",
         ExpressionAttributeValues: {
-            ':friendCounter': 1,
+            ':friendCounter': -1,
             ':followingCounter': 0,
         },
     };
@@ -278,9 +278,9 @@ async function unfriendUser({
             S_K: `USERMETA#${foreignUserId}`
         },
 
-        UpdateExpression: "SET friendsCount = friendsCount - :friendCounter, followerCount = followerCount - :followerCounter",
+        UpdateExpression: "ADD friendsCount :friendCounter, followerCount :followerCounter",
         ExpressionAttributeValues: {
-            ':friendCounter': 1,
+            ':friendCounter': -1,
             ':followerCounter': 0,
         },
     };
@@ -288,9 +288,9 @@ async function unfriendUser({
     // checking if user follows foreign user
     if (oldRelationDoc.relationIndexObj.B5 === true) {
         // decrementing follow/following count from corresponding user data.
-        _primaryUserUpdateQuery["ExpressionAttributeValues"][":followingCounter"] = 1;
+        _primaryUserUpdateQuery["ExpressionAttributeValues"][":followingCounter"] = -1;
 
-        _foreignUserUpdateQuery["ExpressionAttributeValues"][":followerCounter"] = 1;
+        _foreignUserUpdateQuery["ExpressionAttributeValues"][":followerCounter"] = -1;
     }
 
     _transactQuery.TransactItems.push({
@@ -413,9 +413,9 @@ async function unfollowUser({
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
         },
-        UpdateExpression: "SET followingCount = followingCount - :followingCounter",
+        UpdateExpression: "ADD followingCount :followingCounter",
         ExpressionAttributeValues: {
-            ':followingCounter': 1,
+            ':followingCounter': -1,
         },
     };
 
@@ -426,9 +426,9 @@ async function unfollowUser({
             S_K: `USERMETA#${foreignUserId}`
         },
 
-        UpdateExpression: "SET followerCount = followerCount - :followerCounter",
+        UpdateExpression: "ADD followerCount :followerCounter",
         ExpressionAttributeValues: {
-            ':followerCounter': 1,
+            ':followerCounter': -1,
         },
     };
 

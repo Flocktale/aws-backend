@@ -12,7 +12,7 @@ async function _updateAudienceCount(clubId, value) {
             P_K: `CLUB#${clubId}`,
             S_K: 'CountAudience#'
         },
-        UpdateExpression: 'set #cnt = #cnt + :counter',
+        UpdateExpression: 'ADD #cnt :counter',
         ExpressionAttributeNames: {
             '#cnt': 'count'
         },
@@ -77,12 +77,12 @@ async function decrementParticipantCount(clubId) {
                 P_K: `CLUB#${clubId}`,
                 S_K: `CountParticipant#`,
             },
-            UpdateExpression: 'set #cnt = #cnt - :counter', // decrementing
+            UpdateExpression: 'ADD #cnt :counter', // decrementing
             ExpressionAttributeNames: {
                 '#cnt': 'count'
             },
             ExpressionAttributeValues: {
-                ':counter': 1,
+                ':counter': -1,
             }
         }
         await dynamoClient.update(_updateParticipantCounterQuery).promise();

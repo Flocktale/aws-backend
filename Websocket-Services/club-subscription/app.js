@@ -93,10 +93,18 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
         ExpressionAttributeValues: {
             ':stat': 'STOPPED',
         },
-        ReturnValues: 'ALL_NEW',
+        ReturnValues: 'ALL_OLD',
     };
 
-    const userId = (await dynamoClient.update(updateParams).promise())['Attributes']['userId'];
+    const {
+        userId,
+        clubStatus: oldClubStatus,
+    } = (await dynamoClient.update(updateParams).promise())['Attributes'];
+
+    if (oldClubStatus !== 'PLAYING') {
+        // in events of calling this for just ensuring the stop event.
+        return;
+    }
 
 
     const _audienceDocQuery = {

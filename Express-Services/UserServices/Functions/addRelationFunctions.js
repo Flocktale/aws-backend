@@ -145,7 +145,7 @@ async function acceptFriendRequest({
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
         },
-        UpdateExpression: "SET friendsCount = friendsCount + :friendCounter, followingCount = followingCount + :followingCounter",
+        UpdateExpression: "Add friendsCount :friendCounter, followingCount :followingCounter",
         ExpressionAttributeValues: {
             ':friendCounter': 1,
             ':followingCounter': 1, // default, in case of already following, it has to be changed to 0.
@@ -158,7 +158,7 @@ async function acceptFriendRequest({
             P_K: `USER#${foreignUserId}`,
             S_K: `USERMETA#${foreignUserId}`
         },
-        UpdateExpression: "SET friendsCount = friendsCount + :friendCounter, followerCount = followerCount + :followerCounter",
+        UpdateExpression: "ADD friendsCount :friendCounter, followerCount :followerCounter",
         ExpressionAttributeValues: {
             ':friendCounter': 1,
             ':followerCounter': 1, // default, in case of already being followed, it has to be changed to 0.
@@ -289,7 +289,7 @@ async function sendFriendRequest({
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
         },
-        UpdateExpression: "SET followingCount = followingCount + :followingCounter",
+        UpdateExpression: "ADD followingCount :followingCounter",
         ExpressionAttributeValues: {
             ':followingCounter': 1, // default, in case of already following, it has to be changed to 0.
         },
@@ -302,7 +302,7 @@ async function sendFriendRequest({
             S_K: `USERMETA#${foreignUserId}`
         },
 
-        UpdateExpression: "SET followerCount = followerCount + :followerCounter",
+        UpdateExpression: "ADD followerCount :followerCounter",
         ExpressionAttributeValues: {
             ':followerCounter': 1, // default, in case of already being followed, it has to be changed to 0.
         },
@@ -519,7 +519,7 @@ async function followUser({
             P_K: `USER#${userId}`,
             S_K: `USERMETA#${userId}`
         },
-        UpdateExpression: "SET followingCount = followingCount + :followingCounter",
+        UpdateExpression: "ADD followingCount :followingCounter",
         ExpressionAttributeValues: {
             ':followingCounter': 1,
         },
@@ -532,7 +532,7 @@ async function followUser({
             S_K: `USERMETA#${foreignUserId}`
         },
 
-        UpdateExpression: "SET followerCount = followerCount + :followerCounter",
+        UpdateExpression: "ADD followerCount :followerCounter",
         ExpressionAttributeValues: {
             ':followerCounter': 1,
         },

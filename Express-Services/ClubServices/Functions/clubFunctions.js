@@ -31,7 +31,7 @@ async function _updateAudienceCount(clubId, value) {
             P_K: `CLUB#${clubId}`,
             S_K: 'CountAudience#'
         },
-        UpdateExpression: 'set #cnt = #cnt + :counter',
+        UpdateExpression: 'ADD #cnt :counter',
         ExpressionAttributeNames: {
             '#cnt': 'count'
         },
