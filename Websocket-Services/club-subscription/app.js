@@ -113,7 +113,7 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
             P_K: `CLUB#${clubId}`,
             S_K: `Audience#${userId}`
         },
-        AttributesToGet: ['status', 'isOwner']
+        AttributesToGet: ['status', 'isOwner', 'audience']
     };
 
     const _audienceData = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -150,6 +150,24 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
 
 
         promises.push(_postParticipantListToAllClubSubscribers(apigwManagementApi, clubId));
+
+
+        // if this participant is owner, then this code won't be executed (handled above)
+        // deleting this participant's username from club data.
+        const _participantInClubUpdateQuery = {
+            TableName: myTable,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `CLUBMETA#${clubId}`,
+            },
+            UpdateExpression: 'DELETE participants :prtUser',
+            ExpressionAttributeValues: {
+                ':prtUser': dynamoClient.createSet([_audienceData.audience.username]),
+            }
+        };
+
+        promises.push(dynamoClient.update(_participantInClubUpdateQuery).promise());
+
 
     } else if (audienceStatus === Constants.AudienceStatus.ActiveJoinRequest) {
         _audienceUpdateQuery['UpdateExpression'] = 'REMOVE #status, AudienceDynamicField, TimestampSortField, UsernameSortField';

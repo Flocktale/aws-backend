@@ -23,6 +23,7 @@ const {
     incrementAudienceCount
 } = require('../../Functions/clubFunctions');
 
+const Constants = require('../../constants');
 
 // required
 // query parameters - 
@@ -40,6 +41,29 @@ router.post('/', async (req, res) => {
         res.status(400).json('audienceId is required');
         return;
     }
+
+    const _oldAudienceQuery = {
+        TableName: myTable,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `AUDIENCE#${audienceId}`
+        },
+        AttributesToGet: ['status', 'audience', 'isOwner']
+    };
+
+    const _oldAudienceData = (await dynamoClient.get(_oldAudienceQuery).promise())['Item'];
+
+    if (_oldAudienceData.isOwner === true) {
+        res.status(400).json('Can not kick out the owner of this club');
+        return;
+    }
+
+    if (_oldAudienceData.status !== Constants.AudienceStatus.Participant) {
+        return res.status(400).json('this user is not a participant, whom are you kicking out?');
+    }
+
+
+
 
     const newTimestamp = Date.now();
 
@@ -84,6 +108,19 @@ router.post('/', async (req, res) => {
         }
     }
 
+    // deleting this participant's username from club data.
+    const _participantInClubUpdateQuery = {
+        TableName: myTable,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: `CLUBMETA#${clubId}`,
+        },
+        UpdateExpression: 'DELETE participants :prtUser',
+        ExpressionAttributeValues: {
+            ':prtUser': dynamoClient.createSet([_oldAudienceData.audience.username]),
+        }
+    };
+
 
     const _transactQuery = {
         TransactItems: [{
@@ -91,6 +128,9 @@ router.post('/', async (req, res) => {
             },
             {
                 Update: _counterUpdateQuery
+            },
+            {
+                Update: _participantInClubUpdateQuery
             }
         ]
     };

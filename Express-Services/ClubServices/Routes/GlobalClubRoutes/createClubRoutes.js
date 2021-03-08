@@ -61,7 +61,12 @@ router.post('/', async (req, res) => {
         req.body['clubId'] = clubId;
         req.body['clubAvatar'] = `https://mootclub-public.s3.amazonaws.com/clubAvatar/${clubId}`;
 
-        const newClub = await ClubRoomCompleteSchema.validateAsync(req.body);
+        const newClub = await ClubRoomCompleteSchema.validateAsync({
+            ...req.body,
+
+            /// adding creator in list of participants
+            participants: dynamoClient.createSet([_creatorSummaryDoc.username]),
+        });
 
         const _createClubQuery = {
             TableName: myTable,
@@ -108,6 +113,8 @@ router.post('/', async (req, res) => {
         const countAudienceObject = await CountAudienceSchema.validateAsync(_countBaseObject);
         const countJoinRequestObject = await CountJoinRequestSchema.validateAsync(_countBaseObject);
 
+
+        // at max 10 operations are allowed in transactWrite (remember that).
         const _transactQuery = {
             TransactItems: [{
                     Put: _createClubQuery

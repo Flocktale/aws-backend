@@ -449,7 +449,20 @@ router.post('/response', async (req, res) => {
             ExpressionAttributeValues: {
                 ':counter': 1,
             }
-        }
+        };
+
+        // inserting this new participant's username in club data.
+        const _participantInClubUpdateQuery = {
+            TableName: myTable,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `CLUBMETA#${clubId}`,
+            },
+            UpdateExpression: 'ADD participants :prtUser',
+            ExpressionAttributeValues: {
+                ':prtUser': dynamoClient.createSet([audienceDoc.audience.username]),
+            }
+        };
 
 
         const _transactQuery = {
@@ -459,6 +472,9 @@ router.post('/response', async (req, res) => {
                 {
                     Update: _counterUpdateQuery
                 },
+                {
+                    Update: _participantInClubUpdateQuery
+                }
             ]
         };
 

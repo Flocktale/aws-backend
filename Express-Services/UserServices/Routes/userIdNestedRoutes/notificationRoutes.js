@@ -246,7 +246,7 @@ router.post("/opened", async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${userId}`,
             },
-            AttributesToGet: ['invitationId', 'status'],
+            AttributesToGet: ['invitationId', 'status', 'audience'],
         }
 
         const _audienceData = (await dynamoClient.get(_audienceQuery).promise())['Item'];
@@ -313,6 +313,24 @@ router.post("/opened", async (req, res) => {
                 _transactQuery.TransactItems.push({
                     Update: _updateParticipantCounterQuery,
                 });
+
+                // inserting this new participant's username in club data.
+                const _participantInClubUpdateQuery = {
+                    TableName: myTable,
+                    Key: {
+                        P_K: `CLUB#${clubId}`,
+                        S_K: `CLUBMETA#${clubId}`,
+                    },
+                    UpdateExpression: 'ADD participants :prtUser',
+                    ExpressionAttributeValues: {
+                        ':prtUser': dynamoClient.createSet([_audienceData.audience.username]),
+                    }
+                };
+
+                _transactQuery.TransactItems.push({
+                    Update: _participantInClubUpdateQuery
+                });
+
             }
 
             _transactQuery.TransactItems.push({

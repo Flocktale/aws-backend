@@ -81,7 +81,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${audienceId}`,
         },
-        AttributesToGet: ['audience', 'status', 'invitationId'],
+        AttributesToGet: ['audience', 'status', 'invitationId', 'isOwner'],
     };
 
     var audienceDoc = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -89,6 +89,11 @@ router.post('/', async (req, res) => {
 
     if (!audienceDoc) {
         res.status(404).json("This user doesn't exist as audience");
+        return;
+    }
+
+    if (audienceDoc.isOwner === true) {
+        res.status(400).json('Can not block the owner of this club');
         return;
     }
 
@@ -164,8 +169,27 @@ router.post('/', async (req, res) => {
                 ':counter': -1,
             }
         }
+
         _transactQuery.TransactItems.push({
             Update: _counterUpdateQuery
+        });
+
+        // deleting this participant's username from club data.
+        const _participantInClubUpdateQuery = {
+            TableName: myTable,
+            Key: {
+                P_K: `CLUB#${clubId}`,
+                S_K: `CLUBMETA#${clubId}`,
+            },
+            UpdateExpression: 'DELETE participants :prtUser',
+            ExpressionAttributeValues: {
+                ':prtUser': dynamoClient.createSet([audienceDoc.audience.username]),
+            }
+        };
+
+
+        _transactQuery.TransactItems.push({
+            Update: _participantInClubUpdateQuery
         });
     }
 
