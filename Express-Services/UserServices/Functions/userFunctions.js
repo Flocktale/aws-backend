@@ -11,24 +11,32 @@ async function isUsernameAvailable(username) {
 
     username = username.toLowerCase();
 
-    const query = {
-        TableName: myTable,
-        IndexName: searchByUsernameIndex,
+    var lastevaluatedkey;
 
-        KeyConditionExpression: 'PublicSearch = :ps and FilterDataName = :fd ',
-        ExpressionAttributeValues: {
-            ":ps": 1,
-            ":fd": `USER#${username}`
-        },
-        ProjectionExpression: 'username',
-    };
-    const data = (await dynamoClient.query(query).promise())['Items'];
-    console.log(data);
+    do {
+        const data = await dynamoClient.query({
+            TableName: myTable,
+            IndexName: searchByUsernameIndex,
+            KeyConditionExpression: 'PublicSearch = :ps and FilterDataName = :fd ',
+            ExpressionAttributeValues: {
+                ":ps": 1,
+                ":fd": `USER#${username}`
+            },
+            ProjectionExpression: 'username',
+            Limit: 1,
+            ExclusiveStartKey: lastevaluatedkey,
+        }).promise();
 
-    for (var item of data) {
-        // it means username already exists and not available
-        if (item && item.username === username) return false;
+        const item = data['Items'][0];
+        if (item && item.username === username) {
+            // it means username already exists and not available
+            return false;
+        }
+
+        lastevaluatedkey = data['LastEvaluatedKey'];
+
     }
+    while (lastevaluatedkey)
 
     // username is available
     return true;

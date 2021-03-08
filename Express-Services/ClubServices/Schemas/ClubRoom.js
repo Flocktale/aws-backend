@@ -67,6 +67,7 @@ const ClubRoomCompleteSchema = ClubInputSchemaWithDatabaseKeys.append({
 
     estimatedAudience: Joi.number().integer().default(0), // used for rough estimation of total audience
 
+
 });
 
 
