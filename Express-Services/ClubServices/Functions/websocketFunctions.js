@@ -261,26 +261,19 @@ async function postClubConcludedMessageToWebsocketUsers({
 
 async function postParticipationInvitationMessageToInvitee({
     clubId,
-    invitee,
+    userId,
+    invitationId,
     message,
 }) {
     if (!clubId || !invitee || !message) return;
     const data = {
         what: 'INV#prt',
         clubId: clubId,
+        invitationId: invitationId,
         message: message,
     };
 
-    var promises = [];
-
-    for (var userId of invitee) {
-        promises.push(new Promise(async (resolve, _) => {
-            await _postToOneUserConnection(userId, data);
-            resolve();
-        }));
-    }
-
-    await Promise.all(promises);
+    await _postToOneUserConnection(userId, data);
 
 }
 

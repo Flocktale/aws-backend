@@ -189,6 +189,16 @@ router.post('/', async (req, res) => {
                     await dynamoClient.put(_audiencePutQuery).promise();
                 }
 
+
+                // sending websocket message to all these invitee about participation type invitation
+                // if any or all of these users are already on app, this way they will be notified by notified and websocket both.
+                await postParticipationInvitationMessageToInvitee({
+                    clubId: clubId,
+                    userId: userId,
+                    invitationId: invitationId,
+                    message: notificationObj.data.title
+                });
+
             });
 
 
@@ -197,15 +207,6 @@ router.post('/', async (req, res) => {
         }
     }
 
-    // sending websocket message to all these invitee about participation type invitation
-    // if any or all of these users are already on app, this way they will be notified by notified and websocket both.
-    if (invitation.type === 'participant') {
-        await postParticipationInvitationMessageToInvitee({
-            clubId: clubId,
-            invitee: invitation.invitee,
-            message: notificationObj.data.title
-        });
-    }
 
     return res.status(202).json('Notifications sent to invitee');
 
