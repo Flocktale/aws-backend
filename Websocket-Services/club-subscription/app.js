@@ -111,7 +111,7 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
         TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
-            S_K: `Audience#${userId}`
+            S_K: `AUDIENCE#${userId}`
         },
         AttributesToGet: ['status', 'isOwner', 'audience']
     };
@@ -134,7 +134,7 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
         TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
-            S_K: `Audience#${userId}`
+            S_K: `AUDIENCE#${userId}`
         },
         UpdateExpression: '',
     };
@@ -220,7 +220,7 @@ async function _playClub(connectionId, clubId) {
             TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
-                S_K: `Audience#${userId}`
+                S_K: `AUDIENCE#${userId}`
             },
             ConditionExpression: 'attribute_not_exists(isOwner)',
             UpdateExpression: 'set TimestampSortField = :tsf',

@@ -58,7 +58,7 @@ exports.handler = async event => {
       TableName: myTable,
       Key: {
         P_K: `CLUB#${clubId}`,
-        S_K: `Audience#${userId}`
+        S_K: `AUDIENCE#${userId}`
       },
       // UpdateExpression: '',
     };
