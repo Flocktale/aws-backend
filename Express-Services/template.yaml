@@ -27,7 +27,7 @@ Resources:
             TableName: "WsTable"
 
         - S3CrudPolicy:
-            BucketName: "mootclub-public"
+            BucketName: "flocktale-public"
 
         - AmazonSNSFullAccess
 
@@ -165,7 +165,7 @@ Resources:
             TableName: "WsTable"
 
         - S3CrudPolicy:
-            BucketName: "mootclub-public"
+            BucketName: "flocktale-public"
 
         - AmazonSNSFullAccess
 

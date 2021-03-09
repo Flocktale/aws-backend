@@ -1,4 +1,4 @@
-const _avatarBucketName = "mootclub-public";
+const _avatarBucketName = "flocktale-public";
 const _userAvatarPrefix = 'userAvatar/';
 const _clubAvatarPrefix = 'clubAvatar/';
 
