@@ -121,7 +121,7 @@ Resources:
     Properties:
       CodeUri: onconnect/
       Handler: app.handler
-      MemorySize: 256
+      MemorySize: 128
       Runtime: nodejs12.x
       Policies:
         - DynamoDBCrudPolicy:
@@ -149,7 +149,7 @@ Resources:
     Properties:
       CodeUri: ondisconnect/
       Handler: app.handler
-      MemorySize: 256
+      MemorySize: 128
       Runtime: nodejs12.x
       Policies:
         - DynamoDBCrudPolicy:
@@ -172,7 +172,7 @@ Resources:
     Properties:
       CodeUri: club-subscription/
       Handler: app.handler
-      MemorySize: 256
+      MemorySize: 128
       Runtime: nodejs12.x
       Policies:
         - DynamoDBCrudPolicy:
@@ -200,7 +200,7 @@ Resources:
     Properties:
       CodeUri: comment/
       Handler: app.handler
-      MemorySize: 256
+      MemorySize: 128
       Runtime: nodejs12.x
       Policies:
         - DynamoDBCrudPolicy:

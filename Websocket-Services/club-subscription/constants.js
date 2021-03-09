@@ -5,11 +5,13 @@ const _clubAvatarPrefix = 'clubAvatar/';
 class Constants {
 
     // audience data related
-    static AudienceStatus = {
-        Blocked: 'Blocked',
-        Participant: 'Participant',
-        ActiveJoinRequest: 'ActiveJoinRequest',
-    };
+    static get AudienceStatus() {
+        return {
+            Blocked: 'Blocked',
+            Participant: 'Participant',
+            ActiveJoinRequest: 'ActiveJoinRequest',
+        };
+    }
 
     static isAudienceStatusValid(status) {
         return (status === Constants.AudienceStatus.Blocked ||
@@ -25,36 +27,36 @@ class Constants {
     }
 
     //\// User Avatar related 
-    static get s3UserAvatarThumbKey(uniqueKey) {
+    static s3UserAvatarThumbKey(uniqueKey) {
         return _userAvatarPrefix + uniqueKey + "_thumb";
     }
 
-    static get s3UserAvatarDefaultKey(uniqueKey) {
+    static s3UserAvatarDefaultKey(uniqueKey) {
         return _userAvatarPrefix + uniqueKey;
     }
 
-    static get s3UserAvatarLargeKey(uniqueKey) {
+    static s3UserAvatarLargeKey(uniqueKey) {
         return _userAvatarPrefix + uniqueKey + "_large";
     }
 
-    static get UserAvatarUrl(uniqueKey) {
+    static UserAvatarUrl(uniqueKey) {
         return "https://" + _avatarBucketName + ".s3.amazonaws.com/" + _userAvatarPrefix + uniqueKey;
     }
 
     //\// Club Avatar related 
-    static get s3ClubAvatarThumbKey(uniqueKey) {
+    static s3ClubAvatarThumbKey(uniqueKey) {
         return _clubAvatarPrefix + uniqueKey + "_thumb";
     }
 
-    static get s3ClubAvatarDefaultKey(uniqueKey) {
+    static s3ClubAvatarDefaultKey(uniqueKey) {
         return _clubAvatarPrefix + uniqueKey;
     }
 
-    static get s3ClubAvatarLargeKey(uniqueKey) {
+    static s3ClubAvatarLargeKey(uniqueKey) {
         return _clubAvatarPrefix + uniqueKey + "_large";
     }
 
-    static get ClubAvatarUrl(uniqueKey) {
+    static ClubAvatarUrl(uniqueKey) {
         return "https://" + _avatarBucketName + ".s3.amazonaws.com/" + _clubAvatarPrefix + uniqueKey;
     }
 

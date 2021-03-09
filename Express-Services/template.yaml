@@ -17,7 +17,7 @@ Resources:
       FunctionName: UserServiceFunction
       CodeUri: UserServices/
       Handler: handler.handler
-      MemorySize: 256
+      MemorySize: 192
       Runtime: nodejs12.x
       Policies:
         - DynamoDBCrudPolicy:
@@ -155,7 +155,7 @@ Resources:
       FunctionName: ClubServiceFunction
       CodeUri: ClubServices/
       Handler: handler.handler
-      MemorySize: 256
+      MemorySize: 192
       Runtime: nodejs12.x
       Policies:
         - DynamoDBCrudPolicy:

@@ -5,6 +5,7 @@ const {
     dynamoClient,
     myTable,
     sns,
+    platformEndpointCreateParams,
     timestampSortIndex,
 } = require('../../config');
 const Constants = require('../../constants');
@@ -66,9 +67,9 @@ router.post("/device-token", async (req, res) => {
     }
 
 
-    // creating platform endpoint in sns (using platform application - "mootclub" which is GCM (FCM) enabled )
+    // creating platform endpoint in sns
     const params = {
-        PlatformApplicationArn: 'arn:aws:sns:us-east-1:556316647006:app/GCM/mootclub',
+        ...platformEndpointCreateParams,
         Token: deviceToken,
     };
 

@@ -19,10 +19,18 @@ const apigwManagementApi = new AWS.ApiGatewayManagementApi({
 
 const imageUploadConstParams = {
     ACL: 'public-read',
-    Bucket: Constants.avatarBucketName(),
+    Bucket: Constants.avatarBucketName,
     // Body:            populate it 
     // Key:             populate it
 };
+
+// (using platform application - "mootclub" which is GCM (FCM) enabled )
+const platformEndpointCreateParams = {
+    PlatformApplicationArn: 'arn:aws:sns:us-east-1:556316647006:app/GCM/mootclub',
+    // Token:               (deviceToken) populate it
+
+};
+
 
 const myTable = "MyTable";
 const searchByUsernameIndex = "SearchByUsernameIndex";
@@ -43,6 +51,8 @@ module.exports = {
     s3,
     sns,
     imageUploadConstParams,
+    platformEndpointCreateParams,
+
     myTable,
     searchByUsernameIndex,
     usernameSortIndex,

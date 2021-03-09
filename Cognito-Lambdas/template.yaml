@@ -14,6 +14,7 @@ Resources:
       FunctionName: PreSignUpFunction
       CodeUri: pre-sign-up/
       Handler: app.handler
+      MemorySize: 128
       Runtime: nodejs12.x
 
   DefineAuthChallengeFunction:
@@ -22,6 +23,7 @@ Resources:
       FunctionName: DefineAuthChallengeFunction
       CodeUri: define-auth-challenge/
       Handler: app.handler
+      MemorySize: 128
       Runtime: nodejs12.x
 
   CreateAuthChallengeFunction:
@@ -30,6 +32,7 @@ Resources:
       FunctionName: CreateAuthChallengeFunction
       CodeUri: create-auth-challenge/
       Handler: app.handler
+      MemorySize: 128
       Runtime: nodejs12.x
       Policies:
         - Statement:
@@ -44,4 +47,5 @@ Resources:
       FunctionName: VerifyAuthChallengeFunction
       CodeUri: verify-auth-challenge/
       Handler: app.handler
+      MemorySize: 128
       Runtime: nodejs12.x

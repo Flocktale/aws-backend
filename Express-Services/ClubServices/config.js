@@ -18,7 +18,7 @@
 
     const imageUploadConstParams = {
         ACL: 'public-read',
-        Bucket: Constants.avatarBucketName(),
+        Bucket: Constants.avatarBucketName,
         // Body:            populate it 
         // Key:             populate it
     };
