@@ -24,9 +24,9 @@ const imageUploadConstParams = {
     // Key:             populate it
 };
 
-// (using platform application - "mootclub" which is GCM (FCM) enabled )
+// (using platform application - "flocktale-fcm" which is GCM (FCM) enabled ) (AWS region is Mumbai (ap-south-1))
 const platformEndpointCreateParams = {
-    PlatformApplicationArn: 'arn:aws:sns:us-east-1:556316647006:app/GCM/mootclub',
+    PlatformApplicationArn: 'arn:aws:sns:ap-south-1:524663372903:app/GCM/flocktale-fcm',
     // Token:               (deviceToken) populate it
 
 };
