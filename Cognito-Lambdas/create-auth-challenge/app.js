@@ -1,11 +1,29 @@
 const AWS = require('aws-sdk');
 
+let plivo = require('plivo');
+let client = new plivo.Client('MAMWY3ODGXZWY4NJQ1OD', 'Y2ViY2NjYmJjYjUzODM1YjcwMjgyMTQ3NWJmODY4');
+
+
 async function sendSMS(phone, code) {
     const params = {
         Message: `OTP for FlockTale - ${code}`,
         /* required */
         PhoneNumber: phone,
     };
+
+    try {
+        const message_created = await client.messages.create(
+            '+914151234567', // just random src number
+            params.PhoneNumber, // destination number
+            params.Message, // text message
+        );
+        console.log("plivo success", message_created);
+
+    } catch (error) {
+        console.log("plivo error", error);
+    }
+
+    // sending message through AWS SNS
 
     const sns = new AWS.SNS();
     await sns.setSMSAttributes({
