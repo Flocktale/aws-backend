@@ -2,9 +2,9 @@
     const Constants = require('./constants');
 
     AWS.config.update({
-        region: "us-east-1",
+        region: "ap-south-1",
         // endpoint: "http://localhost:3000"        //this endpoint is used in case of local dynamodb on pc.
-        // endpoint: "http://dynamodb.us-east-1.amazonaws.com"  // by default it is set according to region
+        // endpoint: "http://dynamodb.ap-south-1.amazonaws.com"  // by default it is set according to region
     });
 
     const dynamoClient = new AWS.DynamoDB.DocumentClient();
@@ -13,7 +13,7 @@
 
     const apigwManagementApi = new AWS.ApiGatewayManagementApi({
         apiVersion: '2018-11-29',
-        endpoint: 'https://08oc4tw1hb.execute-api.us-east-1.amazonaws.com' + '/' + 'Dev'
+        endpoint: 'https://08oc4tw1hb.execute-api.ap-south-1.amazonaws.com' + '/' + 'Dev'
     });
 
     const imageUploadConstParams = {

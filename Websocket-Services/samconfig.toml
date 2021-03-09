@@ -5,6 +5,6 @@ version = 0.1
 stack_name = "Websocket-Services"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1fx764orwneqn"
 s3_prefix = "Websocket-Services"
-region = "us-east-1"
+region = "ap-south-1"
 confirm_changeset = false
 capabilities = "CAPABILITY_IAM"

@@ -9,7 +9,7 @@ const {
 } = require('./Schemas/Comment');
 
 AWS.config.update({
-    region: "us-east-1",
+    region: "ap-south-1",
 });
 
 const dynamoClient = new AWS.DynamoDB.DocumentClient();

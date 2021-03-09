@@ -119,6 +119,7 @@ Resources:
   OnConnectFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: OnConnectFunction
       CodeUri: onconnect/
       Handler: app.handler
       MemorySize: 128
@@ -147,6 +148,7 @@ Resources:
   OnDisconnectFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: OnDisconnectFunction
       CodeUri: ondisconnect/
       Handler: app.handler
       MemorySize: 128
@@ -170,6 +172,7 @@ Resources:
   ClubSubscriptionFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: ClubSubscriptionFunction
       CodeUri: club-subscription/
       Handler: app.handler
       MemorySize: 128
@@ -198,6 +201,7 @@ Resources:
   CommentFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: CommentFunction
       CodeUri: comment/
       Handler: app.handler
       MemorySize: 128

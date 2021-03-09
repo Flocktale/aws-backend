@@ -5,5 +5,5 @@ version = 0.1
 stack_name = "Cognito-Lambdas"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1fx764orwneqn"
 s3_prefix = "Cognito-Lambdas"
-region = "us-east-1"
+region = "ap-south-1"
 capabilities = "CAPABILITY_IAM"
