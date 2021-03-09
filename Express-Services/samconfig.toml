@@ -3,8 +3,7 @@ version = 0.1
 [default.deploy]
 [default.deploy.parameters]
 stack_name = "Express-app"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1fx764orwneqn"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1mh05w5uu8qtp"
 s3_prefix = "Express-app"
 region = "ap-south-1"
-confirm_changeset = false
 capabilities = "CAPABILITY_IAM"

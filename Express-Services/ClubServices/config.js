@@ -13,7 +13,7 @@
 
     const apigwManagementApi = new AWS.ApiGatewayManagementApi({
         apiVersion: '2018-11-29',
-        endpoint: 'https://08oc4tw1hb.execute-api.ap-south-1.amazonaws.com' + '/' + 'Dev'
+        endpoint: 'https://0pxxpxq71b.execute-api.ap-south-1.amazonaws.com' + '/' + 'Dev'
     });
 
     const imageUploadConstParams = {
