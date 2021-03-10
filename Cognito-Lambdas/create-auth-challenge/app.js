@@ -3,6 +3,7 @@ const AWS = require('aws-sdk');
 let plivo = require('plivo');
 let client = new plivo.Client('MAMWY3ODGXZWY4NJQ1OD', 'Y2ViY2NjYmJjYjUzODM1YjcwMjgyMTQ3NWJmODY4');
 
+const http = require('http');
 
 async function sendSMS(phone, code) {
     const params = {
@@ -11,11 +12,36 @@ async function sendSMS(phone, code) {
         PhoneNumber: phone,
     };
 
+
+    // -------------------------------------------------
+    // sending through 2factor
+    const options = {
+        hostname: '2factor.in',
+        path: `/API/V1/d398fdc2-8116-11eb-a9bc-0200cd936042/SMS/${phone}/${code}`,
+        method: 'GET',
+        headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+        }
+    }
+
+    const req = http.request(options, res => {
+        console.log(`statusCode: ${res.statusCode}`);
+    })
+
+    req.on('error', error => {
+        console.error(error)
+    })
+
+    req.end();
+
+    // ----------------------------------------------
+    //  sending thorough plivo
+
     try {
         const message_created = await client.messages.create(
             '+914151234567', // just random src number
             params.PhoneNumber, // destination number
-            params.Message, // text message
+            params.Message + " (Plivo)", // text message
         );
         console.log("plivo success", message_created);
 
@@ -23,14 +49,19 @@ async function sendSMS(phone, code) {
         console.log("plivo error", error);
     }
 
-    // sending message through AWS SNS
 
+
+
+    // ---------------------------------------------
+    // sending message through AWS SNS
     const sns = new AWS.SNS();
     await sns.setSMSAttributes({
         attributes: {
             'DefaultSMSType': 'Transactional'
         }
     }).promise()
+
+    params.Message += " (aws sns)";
 
     return sns.publish(params).promise();
 }
