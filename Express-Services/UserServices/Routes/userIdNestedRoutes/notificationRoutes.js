@@ -29,7 +29,8 @@ const {
     deleteFriendRequest
 } = require('../../Functions/removeRelationFunctions');
 const {
-    decrementAudienceCount
+    decrementAudienceCount,
+    getNoOfParticipants
 } = require('../../Functions/clubFunctions');
 
 // required
@@ -272,6 +273,16 @@ router.post("/opened", async (req, res) => {
             };
 
             if (action === 'accept') {
+
+                // first checking the no of participants including owner.
+                const oldParticipantCount = await getNoOfParticipants(clubId);
+
+                // not allowing more than 10 participant at current.
+                if (oldParticipantCount >= Constants.maxParticipantLimit) {
+                    return res.status(400).json('MAX_LIMIT_REACHED');
+                }
+
+
 
                 const _clubLiveQuery = {
                     TableName: myTable,

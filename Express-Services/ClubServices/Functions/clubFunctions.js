@@ -87,9 +87,27 @@ async function decrementAudienceCount(clubId) {
     });
 }
 
+async function getNoOfParticipants(clubId) {
+    const _numberParticipantsQuery = {
+        TableName: myTable,
+        Key: {
+            P_K: `CLUB#${clubId}`,
+            S_K: 'CountParticipant#',
+        },
+        AttributesToGet: ['count'],
+    };
+
+    const data = (await dynamoClient.get(_numberParticipantsQuery).promise())['Item'];
+    if (data) {
+        return data.count;
+    } else return;
+}
+
 
 module.exports = {
     uploadFile,
     incrementAudienceCount,
     decrementAudienceCount,
+
+    getNoOfParticipants,
 };

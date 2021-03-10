@@ -19,6 +19,10 @@ class Constants {
             status === Constants.AudienceStatus.ActiveJoinRequest);
     }
 
+    static get maxParticipantLimit() {
+        return 10;
+    }
+
 
 
     // S3 object related

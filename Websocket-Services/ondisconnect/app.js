@@ -96,6 +96,25 @@ exports.handler = async event => {
       promises.push(dynamoClient.update(_participantInClubUpdateQuery).promise());
 
 
+
+      // decrementing participant counter
+      const _counterUpdateQuery = {
+        TableName: myTable,
+        Key: {
+          P_K: `CLUB#${clubId}`,
+          S_K: 'CountParticipant#',
+        },
+        UpdateExpression: 'ADD #cnt :counter', // decrementing
+        ExpressionAttributeNames: {
+          '#cnt': 'count'
+        },
+        ExpressionAttributeValues: {
+          ':counter': -1,
+        }
+      }
+
+      promises.push(dynamoClient.update(_counterUpdateQuery).promise());
+
     } else if (audienceStatus === Constants.AudienceStatus.ActiveJoinRequest) {
       _audienceUpdateQuery['UpdateExpression'] = 'REMOVE #status, AudienceDynamicField, TimestampSortField, UsernameSortField';
       _audienceUpdateQuery['ExpressionAttributeNames'] = {

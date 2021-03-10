@@ -28,7 +28,8 @@ const {
 } = require('../../Functions/notificationFunctions');
 const Constants = require('../../constants');
 const {
-    decrementAudienceCount
+    decrementAudienceCount,
+    getNoOfParticipants
 } = require('../../Functions/clubFunctions');
 
 // required
@@ -389,6 +390,14 @@ router.post('/response', async (req, res) => {
 
 
     if (requestAction === 'accept') {
+
+        // first checking the no of participants including owner.
+        const oldParticipantCount = await getNoOfParticipants(clubId);
+
+        // not allowing more than 10 participant at current.
+        if (oldParticipantCount >= Constants.maxParticipantLimit) {
+            return res.status(400).json('MAX_LIMIT_REACHED');
+        }
 
 
         const newTimestamp = Date.now();
