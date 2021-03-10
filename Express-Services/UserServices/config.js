@@ -35,6 +35,8 @@ const platformEndpointCreateParams = {
 const myTable = "MyTable";
 const searchByUsernameIndex = "SearchByUsernameIndex";
 
+const clubCreatorIdIndex = "ClubCreatorIdIndex";
+
 const timestampSortIndex = "TimestampSortIndex";
 const usernameSortIndex = "UsernameSortIndex";
 
@@ -55,6 +57,9 @@ module.exports = {
 
     myTable,
     searchByUsernameIndex,
+
+    clubCreatorIdIndex,
+
     usernameSortIndex,
     timestampSortIndex,
 

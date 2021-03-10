@@ -20,12 +20,14 @@ const storyRouter = require('./userIdNestedRoutes/storyRoutes');
 
 const notificationRouter = require('./userIdNestedRoutes/notificationRoutes');
 
+const clubsOfRelationRouter = require('./userIdNestedRoutes/clubsOfRelation');
+
 router.use('/avatar', avatarRouter);
 router.use('/relations', relationsRouter);
 router.use('/story', storyRouter);
 router.use('/notifications', notificationRouter);
 
-
+router.use('/clubs', clubsOfRelationRouter);
 
 
 //query parameters - "primaryUserId"

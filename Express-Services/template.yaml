@@ -71,6 +71,12 @@ Resources:
             Path: /users/{userId}
             Method: get
 
+        GetClubsOfSocialRelatives:
+          Type: Api
+          Properties:
+            Path: /users/{userId}/clubs/relation
+            Method: get
+
         UpdateUser:
           Type: Api
           Properties:
