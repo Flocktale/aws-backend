@@ -36,7 +36,11 @@ app.use(express.urlencoded({
     extended: true,
 }));
 
-
+app.use((req, res, next) => {
+    // printing the path.
+    console.log(req.path);
+    next();
+})
 
 const createRouter = require('./Routes/createUserRoutes');
 const userIdRouter = require('./Routes/userIdRoutes');

@@ -69,28 +69,41 @@ router.get("/", async (req, res) => {
     }
 
     try {
-        const userData = (await dynamoClient.get(query).promise())['Item'];
-        var relationIndexObj;
+        var userData, relationIndexObj;
+        const promises = [];
+
+        promises.push(dynamoClient.get(query).promise().then(({
+            Item
+        }) => {
+            userData = Item;
+        }))
+
         if (relationQuery) {
-            var tmp = (await dynamoClient.get(relationQuery).promise())['Item'];
-            if (tmp) relationIndexObj = tmp.relationIndexObj;
-            if (!relationIndexObj) {
-                relationIndexObj = (await RelationIndexObjectSchema.validateAsync({
-                    relationIndexObj: {}
-                })).relationIndexObj;
-            }
+            promises.push(new Promise(async (resolve, _) => {
+                var tmp = (await dynamoClient.get(relationQuery).promise())['Item'];
+
+                if (tmp) relationIndexObj = tmp.relationIndexObj;
+                if (!relationIndexObj) {
+                    relationIndexObj = (await RelationIndexObjectSchema.validateAsync({
+                        relationIndexObj: {}
+                    })).relationIndexObj;
+                }
+                resolve();
+            }));
         }
 
+        await Promise.all(promises);
 
 
-        res.status(200).json({
+
+        return res.status(200).json({
             user: userData,
             relationIndexObj: relationIndexObj,
         });
 
     } catch (err) {
         console.log(err);
-        res.status(404).json(err);
+        return res.status(404).json(err);
     }
 
 });
@@ -126,29 +139,25 @@ router.patch("/", async (req, res) => {
 
     console.log(req.body);
 
-    var isUsernameModified = false;
 
     for (let key of _newItemKeys) {
         if (_oldItem[key] !== req.body[key]) {
 
-            if (key === 'username') {
-                isUsernameModified = true;
+            // this api is not used for updating username and name.
+            if (key === 'username' || key === 'name') {
+                continue;
+            } else {
+                attributeUpdates[key] = {
+                    "Action": "PUT",
+                    "Value": req.body[key]
+                };
+                console.log(key, _oldItem[key] + " => ", req.body[key]);
             }
 
-            console.log(key, _oldItem[key] + " => ", req.body[key]);
-            attributeUpdates[key] = {
-                "Action": "PUT",
-                "Value": req.body[key]
-            };
+
         }
     }
 
-    if (isUsernameModified === true) {
-        const isAvalaible = await isUsernameAvailable(req.body['username']);
-        if (isAvalaible !== true) {
-            return res.status(400).json('username is not available');
-        }
-    }
 
     let len = 0;
     for (var _ in attributeUpdates) {

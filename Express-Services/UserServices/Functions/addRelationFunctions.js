@@ -231,17 +231,24 @@ async function acceptFriendRequest({
         }
 
         try {
+
             await dynamoClient.transactWrite(_transactQuery).promise();
 
-            // handling notification part
-            await sendAndSaveNotification(notificationObj);
+            const promises = [
 
-            // send updated social counters.
-            await postSocialCountToBothUser({
-                userId1: userId,
-                userId2: foreignUserId
-            });
+                // handling notification part
+                sendAndSaveNotification(notificationObj),
 
+                // send updated social counters.
+                postSocialCountToBothUser({
+                    userId1: userId,
+                    userId2: foreignUserId
+                }),
+
+            ];
+
+
+            await Promise.all(promises);
 
             resolve('accept_friend_request successful');
 
@@ -372,13 +379,22 @@ async function sendFriendRequest({
 
         // it is a brand new relation :)
 
-        const primaryUser = await _getUserSummaryData(userId);
-        const foreignUser = await _getUserSummaryData(foreignUserId);
+        var primaryUser, foreignUser;
+
+        await Promise.all([_getUserSummaryData(userId), _getUserSummaryData(foreignUserId)]).then((users) => {
+            primaryUser = users[0];
+            foreignUser = users[1];
+        });
 
         notificationObj.data.title = primaryUser.username + " would like to be your friend.";
 
-        const newPrimaryUserRelationDoc = await _prepareNewRelationDoc(primaryUser, foreignUser, newTimestmap);
-        const newForeignUserRelationDoc = await _prepareNewRelationDoc(foreignUser, primaryUser, newTimestmap);
+        var newPrimaryUserRelationDoc, newForeignUserRelationDoc;
+
+        await Promise.all([_prepareNewRelationDoc(primaryUser, foreignUser, newTimestmap), _prepareNewRelationDoc(foreignUser, primaryUser, newTimestmap)])
+            .then((relationDocs) => {
+                newPrimaryUserRelationDoc = relationDocs[0];
+                newForeignUserRelationDoc = relationDocs[1];
+            })
 
         if (!newPrimaryUserRelationDoc || !newForeignUserRelationDoc) {
             throw new Error('internal server issue, please check the logs');
@@ -434,10 +450,12 @@ async function sendFriendRequest({
         }
 
         try {
-            await dynamoClient.transactWrite(_transactQuery).promise();
+            await dynamoClient.transactWrite(_transactQuery).promise()
+
+            const promises = [];
 
             // handling notification part
-            await sendAndSaveNotification(notificationObj, async ({
+            const notifPromise = sendAndSaveNotification(notificationObj, async ({
                 notificationId,
                 type
             }) => {
@@ -461,16 +479,19 @@ async function sendFriendRequest({
                 };
 
                 await dynamoClient.update(_requestIdUpdateQuery).promise();
-
             });
 
+            promises.push(notifPromise);
 
             // send updated social counters.
-            await postSocialCountToBothUser({
+            promises.push(postSocialCountToBothUser({
                 userId1: userId,
                 userId2: foreignUserId
-            });
+            }));
 
+
+
+            await Promise.all(promises);
 
             resolve('send_friend_request successful');
 
@@ -591,14 +612,23 @@ async function followUser({
     } else {
 
         // it is a brand new relation :)
+        var primaryUser, foreignUser;
 
-        const primaryUser = await _getUserSummaryData(userId);
-        const foreignUser = await _getUserSummaryData(foreignUserId);
+        await Promise.all([_getUserSummaryData(userId), _getUserSummaryData(foreignUserId)]).then((users) => {
+            primaryUser = users[0];
+            foreignUser = users[1];
+        });
+
 
         notificationObj.data.title = primaryUser.username + " has started following you.";
 
-        const newPrimaryUserRelationDoc = await _prepareNewRelationDoc(primaryUser, foreignUser, newTimestmap);
-        const newForeignUserRelationDoc = await _prepareNewRelationDoc(foreignUser, primaryUser, newTimestmap);
+        var newPrimaryUserRelationDoc, newForeignUserRelationDoc;
+
+        await Promise.all([_prepareNewRelationDoc(primaryUser, foreignUser, newTimestmap), _prepareNewRelationDoc(foreignUser, primaryUser, newTimestmap)])
+            .then((relationDocs) => {
+                newPrimaryUserRelationDoc = relationDocs[0];
+                newForeignUserRelationDoc = relationDocs[1];
+            })
 
         if (!newPrimaryUserRelationDoc || !newForeignUserRelationDoc) {
             throw new Error('internal server issue, please check the logs');
@@ -648,15 +678,21 @@ async function followUser({
         try {
             await dynamoClient.transactWrite(_transactQuery).promise();
 
-            // handling notification part
-            await sendAndSaveNotification(notificationObj);
+            const promises = [
+
+                // handling notification part
+                sendAndSaveNotification(notificationObj),
 
 
-            // send updated social counters.
-            await postSocialCountToBothUser({
-                userId1: userId,
-                userId2: foreignUserId
-            });
+                // send updated social counters.
+                postSocialCountToBothUser({
+                    userId1: userId,
+                    userId2: foreignUserId
+                })
+            ];
+
+            await Promise.all(promises);
+
 
             resolve('follow successful');
 

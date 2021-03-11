@@ -256,8 +256,6 @@ router.post("/opened", async (req, res) => {
         if (!_audienceData.invitationId) {
             responseString = 'INVITATION_EXPIRED';
         } else {
-
-
             const _audienceUpdateQuery = {
                 TableName: myTable,
                 Key: {
@@ -353,12 +351,16 @@ router.post("/opened", async (req, res) => {
             await dynamoClient.transactWrite(_transactQuery).promise();
 
             if (action === 'accept') {
-                // sending updated participant list to all subscribed users of this club.
-                await postParticipantListToWebsocketUsers(clubId);
 
+                await Promise.all([
+                    // sending updated participant list to all subscribed users of this club.
+                    postParticipantListToWebsocketUsers(clubId),
 
-                //decrementing audience count as this user is converted from audience to participant
-                await decrementAudienceCount(clubId);
+                    //decrementing audience count as this user is converted from audience to participant
+                    decrementAudienceCount(clubId),
+
+                ]);
+
             }
 
         }

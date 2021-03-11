@@ -362,19 +362,22 @@ async function unfriendUser({
         try {
             await dynamoClient.transactWrite(_transactQuery).promise();
 
+            const promises = [
 
-            // deletion of relation doc itself after updation (if condition satisfies)
-            await _relationDocConditionalDeleteTransaction({
-                userId: userId,
-                foreignUserId: foreignUserId
-            });
+                // deletion of relation doc itself after updation (if condition satisfies)
+                _relationDocConditionalDeleteTransaction({
+                    userId: userId,
+                    foreignUserId: foreignUserId
+                }),
 
-            // send updated social counters.
-            await postSocialCountToBothUser({
-                userId1: userId,
-                userId2: foreignUserId
-            });
+                // send updated social counters.
+                postSocialCountToBothUser({
+                    userId1: userId,
+                    userId2: foreignUserId
+                })
+            ];
 
+            await Promise.all(promises);
 
 
             resolve('unfriend successful');
@@ -498,17 +501,22 @@ async function unfollowUser({
         try {
             await dynamoClient.transactWrite(_transactQuery).promise();
 
-            // deletion of relation doc itself after updation (if condition satisfies)
-            await _relationDocConditionalDeleteTransaction({
-                userId: userId,
-                foreignUserId: foreignUserId
-            });
+            const promises = [
 
-            // send updated social counters.
-            await postSocialCountToBothUser({
-                userId1: userId,
-                userId2: foreignUserId
-            });
+                // deletion of relation doc itself after updation (if condition satisfies)
+                await _relationDocConditionalDeleteTransaction({
+                    userId: userId,
+                    foreignUserId: foreignUserId
+                }),
+
+                // send updated social counters.
+                await postSocialCountToBothUser({
+                    userId1: userId,
+                    userId2: foreignUserId
+                })
+            ];
+
+            await Promise.all(promises);
 
             resolve('unfollow successful');
         } catch (error) {

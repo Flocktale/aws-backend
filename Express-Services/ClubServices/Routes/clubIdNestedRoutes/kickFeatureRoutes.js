@@ -138,13 +138,15 @@ router.post('/', async (req, res) => {
     await dynamoClient.transactWrite(_transactQuery).promise();
 
 
+    const promises = [];
 
     if (isSelf !== true) {
+
         // sending this event info to affected user.
-        await postKickOutMessageToWebsocketUser({
+        promises.push(postKickOutMessageToWebsocketUser({
             userId: audienceId,
             clubId: clubId
-        });
+        }));
 
         const {
             clubName
@@ -154,20 +156,23 @@ router.post('/', async (req, res) => {
             title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
             image: Constants.ClubAvatarUrl(clubId),
         }
-        await publishNotification({
+        promises.push(publishNotification({
             userId: audienceId,
             notifData: notifData,
-        })
+        }));
 
     }
 
 
     // sending new participant list to all connected users.
-    await postParticipantListToWebsocketUsers(clubId);
+    promises.push(postParticipantListToWebsocketUsers(clubId));
 
 
     // incrmenting audience count as this participant has a become audience now (and club is already in playing state).
-    await incrementAudienceCount(clubId);
+    promises.push(incrementAudienceCount(clubId));
+
+    await Promise.all(promises);
+
 
     return res.status(201).json('kicked out participant');
 

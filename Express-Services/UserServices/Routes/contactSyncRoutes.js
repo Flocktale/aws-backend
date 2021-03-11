@@ -10,68 +10,72 @@ const {
 // phone_number should be of E.164 format (with + sign and contrycode)
 router.post('/', async (req, res) => {
 
-    const contacts = req.body.contacts;
-    if (!contacts) {
+    if (!req.body.contacts) {
         return res.status(400).json('contacts are required in body');
     }
 
+    // removing duplicate items and then converting it to array type.
+    const contacts = Array.from((new Set(req.body.contacts)).values());
+
+
+
     const responseList = [];
 
-
-    const _transactQuery = {
-        TransactItems: []
+    const _batchQuery = {
+        RequestItems: {
+            'MyTable': {
+                Keys: [],
+                ProjectionExpression: '#userId, #username, #avatar, P_K',
+                ExpressionAttributeNames: {
+                    '#userId': 'userId',
+                    '#username': 'username',
+                    '#avatar': 'avatar',
+                },
+                ConsistentRead: false,
+            }
+        }
     };
 
-    for (var index in contacts) {
-
-        const phone = contacts[index];
 
 
-        if (index !== 0 && index % 25 === 0) {
+    for (var phone of contacts) {
 
-            const data = (await dynamoClient.transactGet(_transactQuery).promise()).Responses;
-            data.map(({
-                Item
-            }) => {
+        _batchQuery.RequestItems.MyTable.Keys.push({
+            P_K: `PHONE#${phone}`,
+            S_K: `PHONEMETA#${phone}`,
+        });
+
+
+        // batchGet can retrieve upto 100 items and at max 16MB in one call.
+        if (_batchQuery.RequestItems.MyTable.Keys.length % 100 === 0) {
+
+            const batchData = await dynamoClient.batchGet(_batchQuery).promise();
+
+            batchData.Responses.MyTable.map(Item => {
                 responseList.push({
-                    phone: phone,
-                    ...Item
+                    phone: Item.P_K.split('#')[1],
+                    userId: Item.userId,
+                    username: Item.username,
+                    avatar: Item.avatar,
                 });
             });
 
-            _transactQuery.TransactItems = []; // emptying the array
+            _batchQuery.RequestItems.MyTable.Keys = []; // emptying the array
         }
 
-
-        const _getQuery = {
-            TableName: myTable,
-            Key: {
-                P_K: `PHONE#${phone}`,
-                S_K: `PHONEMETA#${phone}`,
-            },
-            ProjectionExpression: '#userId, #username, #avatar',
-            ExpressionAttributeNames: {
-                '#userId': 'userId',
-                '#username': 'username',
-                '#avatar': 'avatar',
-            },
-        }
-
-        _transactQuery.TransactItems.push({
-            Get: _getQuery
-        });
     }
 
-    // in case, index didn't reach 25x at last iteration.
-    if (_transactQuery.TransactItems[0]) {
+    // in case, keys are left at last iteration.
+    if (_batchQuery.RequestItems.MyTable.Keys.length) {
         try {
-            const data = (await dynamoClient.transactGet(_transactQuery).promise()).Responses;
-            data.map(({
-                Item
-            }) => {
+            const batchData = await dynamoClient.batchGet(_batchQuery).promise();
+
+            batchData.Responses.MyTable.map(Item => {
                 responseList.push({
-                    phone: phone,
-                    ...Item
+                    phone: Item.P_K.split('#')[1],
+                    userId: Item.userId,
+                    username: Item.username,
+                    avatar: Item.avatar,
                 });
             });
 

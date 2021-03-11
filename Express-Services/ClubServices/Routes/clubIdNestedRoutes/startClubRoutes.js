@@ -74,6 +74,7 @@ router.post('/', async (req, res) => {
         try {
             await dynamoClient.update(_updateDocQuery).promise();
 
+
             // sending agoraToken to all user subscribed to this club at this moment
             await postClubStartedMessageToWebsocketUsers({
                 clubId: clubId,

@@ -76,10 +76,16 @@ router.get('/', async (req, res) => {
 
     if (type === "unified") {
 
+        var clubData, userData;
 
+        await Promise.all([
+            getSearchResult(searchString, _query, "CLUB", clubAttributes, req),
+            getSearchResult(searchString, _query, "USER", userAttributes, req)
+        ]).then(values => {
+            clubData = values[0];
+            userData = values[1];
+        });
 
-        const clubData = await getSearchResult(searchString, _query, "CLUB", clubAttributes, req);
-        const userData = await getSearchResult(searchString, _query, "USER", userAttributes, req)
 
         return res.status(200).json({
             clubs: clubData['Items'],

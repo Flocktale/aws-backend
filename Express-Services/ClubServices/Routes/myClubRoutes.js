@@ -104,44 +104,43 @@ router.get('/:userId/history', async (req, res) => {
 
             console.log('fetched clubs with only clubId for history timeline', primaryData);
 
-            // TODO: use batchGet instead (for eventual read), transactGet is consistent read therefore consumes twice RCUs.
 
-            const _transactItems = [];
-
-            primaryData['Items'].forEach((element) => {
-                _transactItems.push({
-                    Get: {
-                        TableName: myTable,
-                        Key: {
-                            P_K: `CLUB#${element.clubId}`,
-                            S_K: `CLUBMETA#${element.clubId}`
-                        },
+            const _batchQuery = {
+                RequestItems: {
+                    'MyTable': {
+                        Keys: [],
                         AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
                             'clubAvatar', 'tags', 'isLive', 'subCategory',
                             'estimatedAudience', 'participants'
                         ],
+                        ConsistentRead: false,
                     }
+                }
+            };
+
+
+            primaryData['Items'].forEach((element) => {
+                _batchQuery.RequestItems.MyTable.Keys.push({
+                    P_K: `CLUB#${element.clubId}`,
+                    S_K: `CLUBMETA#${element.clubId}`
                 });
             });
 
-            const _transactQuery = {
-                TransactItems: _transactItems
-            };
 
-            dynamoClient.transactGet(_transactQuery, (err, data) => {
+
+            dynamoClient.batchGet(_batchQuery, (err, data) => {
                 if (err) res.status(404).json(`Error getting club history for user: ${err}`);
                 else {
                     console.log(data);
-                    var historyClubs = [];
-                    data['Responses'].map((response) => {
-                        historyClubs.push(response['Item']);
-                    })
+                    var historyClubs = data['Responses']['MyTable'];
+
                     res.status(200).json({
                         "clubs": historyClubs,
                         'lastevaluatedkey': primaryData["LastEvaluatedKey"]
                     });
                 }
             });
+
         }
     });
 

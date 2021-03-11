@@ -48,17 +48,28 @@ async function postParticipantListToWebsocketUsers(clubId) {
             },
         },
         AttributesToGet: ['audience', 'isMuted'],
-    }
+    };
 
-    const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'].map(({
-        audience
+    var participantList, connectionIds;
+
+    const promises = [];
+
+    const prtPromise = dynamoClient.query(_participantQuery).promise().then(({
+        Items
     }) => {
-        return audience;
+        participantList = Items.map(({
+            audience
+        }) => {
+            return audience;
+        });
     });
 
+    promises.push(prtPromise);
+    promises.push(_fetchAllConnectionIdsForClub(clubId).then((ids) => {
+        connectionIds = ids;
+    }));
 
-
-    const connectionIds = await _fetchAllConnectionIdsForClub(clubId);
+    await Promise.all(promises);
 
     const postCalls = connectionIds.map(async connectionId => {
         try {
@@ -99,20 +110,19 @@ async function _postToOneUserConnection(userId, data) {
             ':id': userId
         },
         ProjectionExpression: 'connectionId',
-
     };
     const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
 
+    const promises = [];
 
     for (var connection of connectionData) {
-
-        const posted = await apigwManagementApi.postToConnection({
+        promises.push(apigwManagementApi.postToConnection({
             ConnectionId: connection.connectionId,
             Data: JSON.stringify(data)
-        }).promise();
-        console.log('posted', posted);
-
+        }).promise());
     }
+
+    await Promise.all(promises);
 
 }
 
@@ -121,20 +131,24 @@ async function postSocialCountToBothUser({
     userId2
 }) {
     if (!userId1 && !userId2) return;
+    var user1Data, user2Data;
 
-    const user1Data = await fetchSocialCountData(userId1);
-
-    await _postToOneUserConnection(userId1, {
-        what: 'socialCounts',
-        ...user1Data
+    await Promise.all([fetchSocialCountData(userId1), fetchSocialCountData(userId2)]).then((values) => {
+        user1Data = values[0];
+        user2Data = values[1];
     });
 
-    const user2Data = await fetchSocialCountData(userId2);
+    await Promise.all([
+        _postToOneUserConnection(userId1, {
+            what: 'socialCounts',
+            ...user1Data
+        }),
+        _postToOneUserConnection(userId2, {
+            what: 'socialCounts',
+            ...user2Data
+        })
+    ]);
 
-    await _postToOneUserConnection(userId2, {
-        what: 'socialCounts',
-        ...user2Data
-    });
 
 }
 

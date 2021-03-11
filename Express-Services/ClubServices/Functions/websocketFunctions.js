@@ -78,16 +78,16 @@ async function _postToOneUserConnection(userId, data) {
     };
     const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
 
+    var promises = [];
 
     for (var connection of connectionData) {
-
-        const posted = await apigwManagementApi.postToConnection({
+        promises.push(apigwManagementApi.postToConnection({
             ConnectionId: connection.connectionId,
             Data: JSON.stringify(data)
-        }).promise();
-        console.log('posted', posted);
-
+        }).promise());
     }
+
+    await Promise.all(promises);
 
 }
 
@@ -108,9 +108,23 @@ async function postParticipantListToWebsocketUsers(clubId) {
             },
         },
         AttributesToGet: ['audience', 'isMuted'],
-    }
+    };
 
-    const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'];
+    var participantList, connectionIds, promises = [];
+
+    const prtPromise = dynamoClient.query(_participantQuery).promise().then(({
+        Items
+    }) => {
+        participantList = Items;
+    });
+
+    promises.push(prtPromise);
+
+    promises.push(_fetchAllConnectionIdsForClub(clubId).then(ids => {
+        connectionIds = ids;
+    }));
+
+    await Promise.all(promises);
 
     const data = {
         what: "participantList",
@@ -118,7 +132,7 @@ async function postParticipantListToWebsocketUsers(clubId) {
         participantList: participantList,
     };
 
-    await _postMessageToAllClubSubscribers(clubId, data);
+    await _postMessageToAllClubSubscribers(clubId, data, connectionIds);
 }
 
 

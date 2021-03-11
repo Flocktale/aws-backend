@@ -245,7 +245,8 @@ router.post('/', async (req, res) => {
 
         await dynamoClient.transactWrite(_transactQuery).promise();
 
-        // sending notification and websocket message to club owner
+
+        //for  sending notification and websocket message to club owner
         const {
             clubName,
             creator,
@@ -260,17 +261,22 @@ router.post('/', async (req, res) => {
         }
 
 
-        // sending websocket msg.
-        await postNewJoinRequestToWebsocketUser({
-            creatorId: creator.userId,
-            username: audienceDoc.audience.username,
-            clubId: clubId,
-        });
+        const promises = [
 
-        await publishNotification({
-            userId: creator.userId,
-            notifData: notificationObj
-        });
+            // sending websocket msg.
+            postNewJoinRequestToWebsocketUser({
+                creatorId: creator.userId,
+                username: audienceDoc.audience.username,
+                clubId: clubId,
+            }),
+
+            publishNotification({
+                userId: creator.userId,
+                notifData: notificationObj
+            }),
+        ];
+
+        await Promise.all(promises);
 
 
         return res.status(201).json('posted join request');
@@ -490,14 +496,15 @@ router.post('/response', async (req, res) => {
         try {
             await dynamoClient.transactWrite(_transactQuery).promise();
 
+            const promises = [
+                // sending websocket msg to this user.
+                postJoinRequestResponseToWebsocketUser({
+                    userId: audienceDoc.audience.userId,
+                    clubId: clubId,
+                    response: 'accept'
+                }),
+            ];
 
-
-            // sending websocket msg to this user.
-            await postJoinRequestResponseToWebsocketUser({
-                userId: audienceDoc.audience.userId,
-                clubId: clubId,
-                response: 'accept'
-            });
 
             const {
                 clubName
@@ -507,20 +514,24 @@ router.post('/response', async (req, res) => {
 
             // sending notification
             notificationObj['title'] = 'Congratulations, you are now a panelist on ' + clubName;
-            await publishNotification({
+            promises.push(publishNotification({
                 userId: audienceId,
                 notifData: notificationObj
-            });
+            }));
 
             // sending new participant list to all connected users.
-            await postParticipantListToWebsocketUsers(clubId);
+            promises.push(postParticipantListToWebsocketUsers(clubId));
+
+
 
             // decrementing audience count as this user is participant now.
-            await decrementAudienceCount(clubId);
+            promises.push(decrementAudienceCount(clubId));
+
+            await Promise.all(promises);
 
             return res.status(201).json('Accepted join request');
         } catch (error) {
-            res.status(404).json(`Error accepting join request: ${error}`);
+            return res.status(404).json(`Error accepting join request: ${error}`);
         }
 
 
@@ -556,12 +567,14 @@ router.post('/response', async (req, res) => {
             if (err) res.status(404).json(`Error in cancelling join request: ${err}`);
             else {
 
+                const promises = [];
+
                 // sending websocket msg to this user.
-                await postJoinRequestResponseToWebsocketUser({
+                promises.push(postJoinRequestResponseToWebsocketUser({
                     userId: audienceDoc.audience.userId,
                     clubId: clubId,
                     response: 'cancel',
-                });
+                }));
 
                 // sending notification
                 const {
@@ -570,10 +583,10 @@ router.post('/response', async (req, res) => {
                     clubId: clubId
                 });
                 notificationObj['title'] = 'Your request to speak could not be fulfilled on  ' + clubName;
-                await publishNotification({
+                promises.push(publishNotification({
                     userId: audienceId,
                     notifData: notificationObj
-                });
+                }));
 
                 return res.status(202).json('Cancelled join request');
 

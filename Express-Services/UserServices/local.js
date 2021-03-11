@@ -7,16 +7,17 @@ app.listen(3000, () => {
 // const Joi = require('joi');
 
 
-// const {
-//     myTable,
-//     searchByUsernameIndex,
-//     dynamoClient
-// } = require('./config');
+const {
+    myTable,
+    searchByUsernameIndex,
+    dynamoClient
+} = require('./config');
 
 
-// async function testing() {
-//     console.log('abcd: ' + Date.now() + ' hello');
+async function testing() {
 
-// }
 
-// testing();
+
+}
+
+testing();

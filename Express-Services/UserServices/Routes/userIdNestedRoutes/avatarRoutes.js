@@ -21,22 +21,23 @@ router.post("/", async (req, res) => {
 
     const buffer = Buffer.from(req.body.image, 'base64');
 
+    var _thumbnail, _default, _large;
 
-    const _thumbnail = await sharp(buffer).resize(96, 96).jpeg({
+    const sharpParams = {
         quality: 90,
         force: true,
-    }).toBuffer();
+    };
 
+    await Promise.all([
+        sharp(buffer).resize(96, 96).jpeg(sharpParams).toBuffer(),
+        sharp(buffer).resize(144, 144).jpeg(sharpParams).toBuffer(),
+        sharp(buffer).resize(216, 216).jpeg(sharpParams).toBuffer(),
+    ]).then((images) => {
+        _thumbnail = images[0];
+        _default = images[1];
+        _large = images[2];
 
-    const _default = await sharp(buffer).resize(144, 144).jpeg({
-        quality: 90,
-        force: true,
-    }).toBuffer();
-
-    const _large = await sharp(buffer).resize(216, 216).jpeg({
-        quality: 90,
-        force: true,
-    }).toBuffer();
+    })
 
     const uploadPromises = [
         uploadFile(Constants.s3UserAvatarThumbKey(fileName), _thumbnail),

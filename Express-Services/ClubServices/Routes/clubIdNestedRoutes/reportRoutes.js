@@ -31,6 +31,7 @@ router.post('/', async (req, res) => {
 
     if (!reportBody) {
         res.status(400).json('Body is Required');
+        return;
     }
 
     if (!userId) {

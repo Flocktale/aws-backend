@@ -9,8 +9,8 @@ const {
     dynamoClient,
     myTable
 } = require('../../config');
-const Joi = require('joi');
 
+const Joi = require('joi');
 
 // required
 // query parameters - "indexValue" , "audienceId"
@@ -177,6 +177,7 @@ router.post('/', async (req, res) => {
             Put: _reactionDocQuery
         }); // creating reaction document of user
 
+
         // incremeting counter of new reaction
         _transactQuery['TransactItems'].push({
             Update: {
@@ -197,7 +198,6 @@ router.post('/', async (req, res) => {
 
     }
 
-    // _transactQuery.TransactItems.forEach((e)=>console.log(e));
 
     dynamoClient.transactWrite(_transactQuery, (err, data) => {
         if (err) res.status(404).json(`Error modifying reaction: ${err}`);

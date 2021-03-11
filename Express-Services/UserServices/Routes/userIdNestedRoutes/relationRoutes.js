@@ -204,12 +204,17 @@ router.post('/add', async (req, res) => {
             return res.status(500).json('Dead end');
         }
 
-        const newSocialRelationIndex = await fetchSocialRelationIndexObj({
-            userId: userId,
-            foreignUserId: foreignUserId
+        var newSocialRelationIndex, newSocialCountOfForeignUser;
+        await Promise.all([fetchSocialRelationIndexObj({
+                userId: userId,
+                foreignUserId: foreignUserId
+            }),
+            fetchSocialCountData(foreignUserId)
+        ]).then((values) => {
+            newSocialRelationIndex = values[0];
+            newSocialCountOfForeignUser = values[1];
         });
 
-        const newSocialCountOfForeignUser = await fetchSocialCountData(foreignUserId);
 
         return res.status(202).json({
             ...newSocialRelationIndex,
@@ -259,10 +264,9 @@ router.post('/remove', async (req, res) => {
 
     try {
 
-
-
-        var newSocialCountOfForeignUser = {};
-
+        var newSocialCountOfForeignUser = {},
+            newSocialRelationIndex = {},
+            promises = [];
 
         if (removeAction === 'unfollow') {
 
@@ -277,7 +281,10 @@ router.post('/remove', async (req, res) => {
         } else if (removeAction === 'unfriend') {
 
             await unfriendUser(_functionParams);
-            newSocialCountOfForeignUser = await fetchSocialCountData(foreignUserId);
+
+            promises.push(fetchSocialCountData(foreignUserId).then((val) => {
+                newSocialCountOfForeignUser = val;
+            }));
 
         } else {
 
@@ -285,12 +292,14 @@ router.post('/remove', async (req, res) => {
         }
 
 
-
-        const newSocialRelationIndex = await fetchSocialRelationIndexObj({
+        promises.push(fetchSocialRelationIndexObj({
             userId: userId,
             foreignUserId: foreignUserId
-        });
+        }).then((val) => {
+            newSocialRelationIndex = val;
+        }));
 
+        await Promise.all(promises);
 
         return res.status(202).json({
             ...newSocialCountOfForeignUser,

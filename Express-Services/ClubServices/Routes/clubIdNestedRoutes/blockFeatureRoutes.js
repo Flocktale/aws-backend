@@ -333,31 +333,32 @@ router.delete('/', async (req, res) => {
                 clubName
             } = await _getClubData(clubId);
 
+            var promises = [];
+
             // send a message through websocket to user.
-            await postBlockMessageToWebsocketUser({
+            promises.push(postBlockMessageToWebsocketUser({
                 clubId: clubId,
                 blockAction: "unblocked",
                 userId: audienceId
-            });
-
+            }));
 
             var notifData = {
                 title: 'No more blocking from  ' + clubName + '. You can listen to it now.',
                 image: Constants.ClubAvatarUrl(clubId),
             }
-            await publishNotification({
+
+            promises.push(publishNotification({
                 userId: audienceId,
                 notifData: notifData
-            });
+            }));
+
+            await Promise.all(promises);
 
             return res.status(202).json('unblocked user');
 
         }
 
     });
-
-
-
 })
 
 module.exports = router;

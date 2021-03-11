@@ -30,12 +30,35 @@ router.get('/relation', async (req, res) => {
 
             lastevaluatedkey = data['lastevaluatedkey'];
             clubOwnerCount += data['clubOwnerCount'];
-            for (var club in data['responseList']) {
+            for (var club of data['responseList']) {
                 responseList.push(club);
             }
         });
 
     } while (clubOwnerCount < 10 && lastevaluatedkey) // either we get atleast 10 clubs or we have explored whole relation list.
+
+
+    // sorting to get clubs in increasing order of scheduleTime prioritized on basis of isLive status.
+    responseList.sort((second, first) => {
+
+        if (first.isLive === true && second.isLive === true) {
+            //if both clubs are live then sort them on basis of no of participants and listeners.
+
+            const firstWeight = first.participants.values.length * 3 + first.estimatedAudience * 2;
+            const secondWeight = second.participants.values.length * 3 + second.estimatedAudience * 2;
+
+            // positive result means first is taken otherwise negative means second is taken.
+            return firstWeight - secondWeight;
+        }
+
+        if (first.isLive) return 1;
+        if (second.isLive) return -1;
+
+        // if none of above condition satisfies then return the club which is scheduled earliest.
+        return second.scheduleTime - first.scheduleTime;
+        // if result is positive then first club is taken otherwise if result is negative second club is taken.
+
+    });
 
     return res.status(200).json({
         clubs: responseList,
@@ -128,11 +151,25 @@ async function _getListOfClubOfRelatedUser(userId, socialRelation, lastevaluated
                         'estimatedAudience', 'participants'
                     ],
                     ScanIndexForward: false,
-                    Limit: 1,
                 };
 
                 const clubs = (await dynamoClient.query(clubQuery).promise())['Items'];
 
+                // sorting clubs in order to get live ones at beginning.
+                clubs.sort((second, first) => {
+
+                    if (first.isLive) return 1; // if first club is live then take it.
+
+                    if (second.isLive) return -1; // if second club is live then take it.
+
+
+                    // if none of above condition satisfies then return the club which is scheduled earliest.
+                    return second.scheduleTime - first.scheduleTime;
+                    // if result is positive then first club is taken otherwise if result is negative second club is taken.
+
+                });
+
+                // get the live or earliest scheduled club.
                 if (clubs && clubs[0]) {
                     responseList.push(clubs[0]);
                     clubOwnerCount++;

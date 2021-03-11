@@ -43,6 +43,11 @@ app.use(express.urlencoded({
 }));
 
 
+app.use((req, res, next) => {
+    // printing the path.
+    console.log(req.path);
+    next();
+})
 
 
 

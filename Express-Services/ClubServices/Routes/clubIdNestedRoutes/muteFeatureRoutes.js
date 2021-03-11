@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
     }
 
 
-
+    const promises = [];
 
     if (who === 'participant') {
         const participantId = req.query.participantId;
@@ -85,23 +85,27 @@ router.post('/', async (req, res) => {
             },
         }
 
-        await dynamoClient.update(_muteUpdateQuery).promise();
+        promises.push(dynamoClient.update(_muteUpdateQuery).promise());
 
         console.log('isMuted: ', isMuted);
 
         //sending message to affected user.
-        await postMuteMessageToParticipantOnly({
+        promises.push(postMuteMessageToParticipantOnly({
             clubId: clubId,
             userId: participantId,
             isMuted: isMuted,
-        });
+        }));
+
 
         // sending message to all users through websocket.
-        await postMuteActionMessageToClubSubscribers({
+        promises.push(postMuteActionMessageToClubSubscribers({
             userIdList: [participantId],
             clubId: clubId,
             isMuted: isMuted,
-        });
+        }));
+
+
+        await Promise.all(promises);
 
         return res.status(200).json(`${muteAction} successfully`);
     }
@@ -156,7 +160,7 @@ router.post('/', async (req, res) => {
     for (var index in participantIds) {
 
         if (index !== 0 && index % 25 === 0) {
-            await dynamoClient.transactWrite(_transactQuery).promise();
+            promises.push(dynamoClient.transactWrite(_transactQuery).promise());
             _transactQuery.TransactItems = []; // emptying the array
         }
 
@@ -179,29 +183,30 @@ router.post('/', async (req, res) => {
     }
 
     // in case, index didn't reach 25x at last iteration.
-    if (_transactQuery.TransactItems[0]) {
+    if (_transactQuery.TransactItems.length) {
         try {
-            await dynamoClient.transactWrite(_transactQuery).promise();
+            promises.push(dynamoClient.transactWrite(_transactQuery).promise());
         } catch (error) {}
     }
 
-    for (var participantId in participantIds) {
+    for (var participantId of participantIds) {
+
         //sending message to affected user.
-        await postMuteMessageToParticipantOnly({
+        promises.push(postMuteMessageToParticipantOnly({
             clubId: clubId,
             userId: participantId,
             isMuted: isMuted,
-        });
-
+        }));
     }
 
-
     // sending message to all through websocket.
-    await postMuteActionMessageToClubSubscribers({
+    promises.push(postMuteActionMessageToClubSubscribers({
         userIdList: participantIds,
         clubId: clubId,
         isMuted: isMuted,
-    });
+    }));
+
+    await Promise.all(promises);
 
     return res.status(200).json(`${muteAction} successfully`);
 });

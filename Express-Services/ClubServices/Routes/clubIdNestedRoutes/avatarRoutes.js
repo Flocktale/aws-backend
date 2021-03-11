@@ -25,21 +25,23 @@ router.post("/", async (req, res) => {
 
     const buffer = Buffer.from(req.body.image, 'base64');
 
-    const _thumbnail = await sharp(buffer).resize(96, 96).jpeg({
+    const sharpParams = {
         quality: 90,
         force: true,
-    }).toBuffer();
+    };
 
+    var _thumbnail, _default, _large;
 
-    const _default = await sharp(buffer).resize(144, 144).jpeg({
-        quality: 90,
-        force: true,
-    }).toBuffer();
+    await Promise.all([
+        sharp(buffer).resize(96, 96).jpeg(sharpParams).toBuffer(),
+        sharp(buffer).resize(144, 144).jpeg(sharpParams).toBuffer(),
+        sharp(buffer).resize(216, 216).jpeg(sharpParams).toBuffer(),
+    ]).then(values => {
+        _thumbnail = values[0];
+        _default = values[1];
+        _large = values[2];
+    });
 
-    const _large = await sharp(buffer).resize(216, 216).jpeg({
-        quality: 90,
-        force: true,
-    }).toBuffer();
 
 
     const uploadPromises = [

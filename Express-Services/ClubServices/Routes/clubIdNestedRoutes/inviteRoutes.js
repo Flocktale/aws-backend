@@ -107,9 +107,13 @@ router.post('/', async (req, res) => {
         notificationObj['data']['title'] = 'Get along with ' + _sponsorData.username + ' on ' + clubData.clubName + ' , their interest might intrigue you too.';
     }
 
+    const promises = [];
+
     // asynchronously sending and saving notifications for all invitee.
     for (var userId of invitation.invitee) {
         notificationObj['userId'] = userId;
+
+        var notifPromise;
 
 
         if (invitation.type === 'participant') {
@@ -123,6 +127,7 @@ router.post('/', async (req, res) => {
                 },
                 AttributesToGet: ['status']
             };
+
 
             const oldAudienceDoc = (await dynamoClient.get(_oldAudienceDocQuery).promise())['Item'];
 
@@ -146,7 +151,10 @@ router.post('/', async (req, res) => {
                 _userData = (await dynamoClient.get(_userQuery).promise())['Item'];
             }
 
-            await _sendAndSaveNotification(notificationObj, async notificationId => {
+
+
+            notifPromise = _sendAndSaveNotification(notificationObj, async notificationId => {
+
 
                 if (oldAudienceDoc) {
                     // updating oldAudienceDoc
@@ -192,21 +200,27 @@ router.post('/', async (req, res) => {
 
                 // sending websocket message to all these invitee about participation type invitation
                 // if any or all of these users are already on app, this way they will be notified by notified and websocket both.
-                await postParticipationInvitationMessageToInvitee({
+
+
+                // pushing this function to main promise list as it is not needed to be completed before other function does. 
+                promises.push(postParticipationInvitationMessageToInvitee({
                     clubId: clubId,
                     userId: userId,
                     invitationId: invitationId,
                     message: notificationObj.data.title
-                });
+                }));
+
 
             });
 
-
         } else {
-            await _sendAndSaveNotification(notificationObj);
+            notifPromise = _sendAndSaveNotification(notificationObj);
         }
+
+        promises.push(notifPromise);
     }
 
+    await Promise.all(promises);
 
     return res.status(202).json('Notifications sent to invitee');
 
@@ -227,25 +241,32 @@ async function _sendAndSaveNotification(notificationObj, callback) {
         Item: notifData,
     }
 
-    await dynamoClient.put(_notificationPutQuery).promise();
+    const promises = [
+        dynamoClient.put(_notificationPutQuery).promise(),
+    ];
+
 
     if (callback) {
         // sending back notificationId for further use.
         callback(notifData.notificationId);
     }
 
-    await publishNotification({
+    promises.push(publishNotification({
         userId: notifData.userId,
         notifData: {
             title: notifData.data.title,
             image: notifData.data.secondaryAvatar
         }
-    });
+    }));
+
+    await Promise.all(promises);
+
 }
 
 // to send audience notification to all followers of sponsor
 // required
 // query parameters - "sponsorId" (the one who is sending invitation)
+
 router.post('/all-followers', async (req, res) => {
     const clubId = req.clubId;
     const sponsorId = req.query.sponsorId;
@@ -330,10 +351,16 @@ router.post('/all-followers', async (req, res) => {
         return S_K.split("RELATION#")[1];
     });
 
+    const promises = [];
+
     for (var userId of _followersIds) {
         notificationObj['userId'] = userId;
-        await _sendAndSaveNotification(notificationObj); // asynchronously sending and saving notifications for all followers.
+
+        // sending and saving notifications for all followers.
+        promises.push(_sendAndSaveNotification(notificationObj));
     }
+
+    await Promise.all(promises);
 
     return res.status(202).json('Notifications sent to all followers');
 
