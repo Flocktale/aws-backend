@@ -64,10 +64,11 @@ router.post('/', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `CLUBMETA#${clubId}`,
             },
-            UpdateExpression: 'SET agoraToken = :token, isLive = :tr',
+            UpdateExpression: 'SET agoraToken = :token, isLive = :tr, scheduleTime = :curr',
             ExpressionAttributeValues: {
                 ':token': agoraToken,
                 ':tr': true,
+                ':curr': Date.now(),
             }
         };
 
