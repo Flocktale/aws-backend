@@ -10,10 +10,14 @@ const {
 
 // required
 // headers - "lastevaluatedkey"  (optional)
+// query parameters - "upcoming" (true/false), to get only upcoming and live clubs of user.
 
 router.get('/:userId/organized', async (req, res) => {
 
     const userId = req.params.userId;
+
+    const upcoming = req.query.upcoming;
+
 
     const query = {
         TableName: myTable,
@@ -24,13 +28,34 @@ router.get('/:userId/organized', async (req, res) => {
                 "AttributeValueList": [`USER#${userId}`]
             },
         },
+
         AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
-            'clubAvatar', 'estimatedAudience', 'tags', 'isLive', 'isConcluded'
+            'clubAvatar', 'tags', 'isLive', 'subCategory',
+            'estimatedAudience', 'participants'
         ],
-        Limit: 10,
         ScanIndexForward: false,
-        ReturnConsumedCapacity: "INDEXES"
     };
+
+    if (upcoming === true) {
+        const currentDate = new Date();
+        currentDate.setHours(currentDate.getHours() - 12); // setting it 12 hours slow (to get all the clubs within last 12 hours , may be in playing state)
+        const thresholdTime = Date.parse(currentDate);
+
+        query['KeyConditions']['scheduleTime'] = {
+            ComparisonOperator: 'GT',
+            AttributeValueList: [thresholdTime]
+        };
+
+        query['QueryFilter'] = {
+            'isConcluded': {
+                ComparisonOperator: 'NE',
+                AttributeValueList: [true]
+            }
+        };
+
+    } else {
+        query['Limit'] = 10;
+    }
 
     if (req.headers.lastevaluatedkey) {
         query['ExclusiveStartKey'] = JSON.parse(req.headers.lastevaluatedkey);
@@ -66,7 +91,6 @@ router.get('/:userId/history', async (req, res) => {
         AttributesToGet: ['clubId'],
         Limit: 10,
         ScanIndexForward: false,
-        ReturnConsumedCapacity: "INDEXES"
     };
 
     if (req.headers.lastevaluatedkey) {
@@ -80,6 +104,8 @@ router.get('/:userId/history', async (req, res) => {
 
             console.log('fetched clubs with only clubId for history timeline', primaryData);
 
+            // TODO: use batchGet instead (for eventual read), transactGet is consistent read therefore consumes twice RCUs.
+
             const _transactItems = [];
 
             primaryData['Items'].forEach((element) => {
@@ -91,8 +117,9 @@ router.get('/:userId/history', async (req, res) => {
                             S_K: `CLUBMETA#${element.clubId}`
                         },
                         AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
-                            'clubAvatar', 'estimatedAudience', 'tags', 'isLive', 'isConcluded'
-                        ]
+                            'clubAvatar', 'tags', 'isLive', 'subCategory',
+                            'estimatedAudience', 'participants'
+                        ],
                     }
                 });
             });

@@ -10,9 +10,9 @@ const {
 
 // required
 // query parameters - "socialRelation"  (valid values => "friend" , "following")
-//                  - "lastevaluatedkey" (optional)
+// headers - "lastevaluatedkey" (optional)
 
-router.get('/related', async (req, res) => {
+router.get('/relation', async (req, res) => {
     const userId = req.userId;
     const socialRelation = req.query.socialRelation;
 
@@ -20,7 +20,7 @@ router.get('/related', async (req, res) => {
         return res.status(400).json("WRONG_QUERY_PARAMETERS");
     }
 
-    var lastevaluatedkey = req.query.lastevaluatedkey;
+    var lastevaluatedkey = req.headers.lastevaluatedkey;
 
     var responseList = [],
         clubOwnerCount = 0;
