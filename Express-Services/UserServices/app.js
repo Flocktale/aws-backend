@@ -66,10 +66,20 @@ app.get('/users/username-availability', async (req, res) => {
         return res.status(400).json('send some username to check for');
     }
 
-    const result = await isUsernameAvailable(username);
-    return res.status(200).json({
-        isAvailable: result
-    });
+    try {
+        const result = await isUsernameAvailable(username);
+        return res.status(200).json({
+            isAvailable: result
+        });
+    } catch (error) {
+        if (error === "INVALID_USERNAME") {
+            return res.status(400).json('INVALID_USERNAME');
+        }
+
+        console.log('unknown error: ', error);
+        return res.status(500).json("INTERNAL_SERVER_ERROR");
+    }
+
 
 });
 

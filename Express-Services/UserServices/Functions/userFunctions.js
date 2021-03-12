@@ -6,40 +6,58 @@ const {
     s3
 } = require('../config');
 
+const {
+    UserNameSchema
+} = require('../Schemas/UserBase')
+
 async function isUsernameAvailable(username) {
     if (!username) return null;
 
     username = username.toLowerCase();
 
-    var lastevaluatedkey;
+    return new Promise(async (resolve, reject) => {
 
-    do {
-        const data = await dynamoClient.query({
-            TableName: myTable,
-            IndexName: searchByUsernameIndex,
-            KeyConditionExpression: 'PublicSearch = :ps and FilterDataName = :fd ',
-            ExpressionAttributeValues: {
-                ":ps": 1,
-                ":fd": `USER#${username}`
-            },
-            ProjectionExpression: 'username',
-            Limit: 1,
-            ExclusiveStartKey: lastevaluatedkey,
-        }).promise();
+        // validating the username with our schema.
+        try {
 
-        const item = data['Items'][0];
-        if (item && item.username === username) {
-            // it means username already exists and not available
-            return false;
+            await UserNameSchema.validateAsync({
+                username: username
+            });
+        } catch (error) {
+            reject('INVALID_USERNAME');
         }
 
-        lastevaluatedkey = data['LastEvaluatedKey'];
+        var lastevaluatedkey;
 
-    }
-    while (lastevaluatedkey)
+        do {
+            const data = await dynamoClient.query({
+                TableName: myTable,
+                IndexName: searchByUsernameIndex,
+                KeyConditionExpression: 'PublicSearch = :ps and FilterDataName = :fd ',
+                ExpressionAttributeValues: {
+                    ":ps": 1,
+                    ":fd": `USER#${username}`
+                },
+                ProjectionExpression: 'username',
+                Limit: 1,
+                ExclusiveStartKey: lastevaluatedkey,
+            }).promise();
 
-    // username is available
-    return true;
+            const item = data['Items'][0];
+            if (item && item.username === username) {
+                // it means username already exists and not available
+                resolve(false);
+            }
+
+            lastevaluatedkey = data['LastEvaluatedKey'];
+
+        }
+        while (lastevaluatedkey)
+
+        // username is available
+        resolve(true);
+    });
+
 }
 
 async function fetchSocialCountData(userId) {

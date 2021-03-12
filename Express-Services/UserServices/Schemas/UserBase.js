@@ -1,9 +1,12 @@
 const Joi = require('joi');
 
-const UserInputSchema = Joi.object({
+const UserNameSchema = Joi.object({
+    username: Joi.string().min(3).max(25).token().lowercase().required(),
+})
+
+const UserInputSchema = UserNameSchema.append({
     //! required fields
     userId: Joi.string().required(),
-    username: Joi.string().min(3).max(25).token().lowercase().required(),
     avatar: Joi.string().required(),
 
     createdOn: Joi.number().default(() => Date.now()),
@@ -56,6 +59,7 @@ const UserBaseCompleteSchema = UserInputSchemaWithDatabaseKeys.append({
 
 });
 
+exports.UserNameSchema = UserNameSchema;
 exports.UserInputSchema = UserInputSchema;
 exports.UserInputSchemaWithDatabaseKeys = UserInputSchemaWithDatabaseKeys;
 exports.UserBaseCompleteSchema = UserBaseCompleteSchema;
