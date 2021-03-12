@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SQS-Lambdas
+
+  Sample SAM Template for SQS-Lambdas
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  WsMsgQueueLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: WsMsgQueueLambdaFunction
+      CodeUri: ws-msg-queue-lambda/
+      Handler: app.lambdaHandler
+      Runtime: nodejs12.x
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            BatchSize: 10
+            Enabled: false
+            Queue: # ARN of queue
+              Fn::Join:
+                - ""
+                - - "arn:aws:sqs:"
+                  - Ref: "AWS::Region"
+                  - ":"
+                  - Ref: "AWS::AccountId"
+                  - ":WsMsgQueue.fifo"
+
+      Policies:
+        - AWSLambdaSQSQueueExecutionRole

@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Creating Queue with Lambda Trigger
+
+Resources:
+  WsMsgQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      ContentBasedDeduplication: false
+      DelaySeconds: 0
+      FifoQueue: true
+      KmsDataKeyReusePeriodSeconds: 86400 # 24 hours, for details
+      # KmsMasterKeyId: String    # default will be used (aws managed)
+      MaximumMessageSize: 10240 # 10 KB
+      MessageRetentionPeriod: 60 # 1 minute
+      QueueName: WsMsgQueue.fifo
+      ReceiveMessageWaitTimeSeconds: 1 # 1 second, For long polling
+      # RedrivePolicy:                    # to attach a dead-letter-queue, this is different DLQ than the one used for fail cases.
+      #   deadLetterTargetArn: String
+      #   maxReceiveCount: Integer
+      # Tags:
+      #   - Tag
+      VisibilityTimeout: 30 # 30 seconds
+
+Outputs:
+  QueueURL:
+    Description: "URL of new Amazon SQS Queue"
+    Value:
+      Ref: WsMsgQueue
+  QueueARN:
+    Description: "ARN of new AmazonSQS Queue"
+    Value:
+      Fn::GetAtt:
+        - WsMsgQueue
+        - Arn
+  QueueName:
+    Description: "Name of new Amazon SQS Queue"
+    Value:
+      Fn::GetAtt:
+        - WsMsgQueue
+        - QueueName
