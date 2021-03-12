@@ -65,7 +65,10 @@ router.post('/', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `CLUBMETA#${clubId}`,
             },
-            UpdateExpression: 'SET agoraToken = :token, status = :stat, scheduleTime = :curr',
+            UpdateExpression: 'SET agoraToken = :token, #status = :stat, scheduleTime = :curr',
+            ExpressionAttributeNames: {
+                '#status': 'status',
+            },
             ExpressionAttributeValues: {
                 ':token': agoraToken,
                 ':stat': Constants.ClubStatus.Live,
