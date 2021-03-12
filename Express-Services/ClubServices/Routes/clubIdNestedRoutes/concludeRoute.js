@@ -4,6 +4,7 @@ const {
     dynamoClient,
     myTable
 } = require('../../config');
+const Constants = require('../../constants');
 
 const {
     postClubConcludedMessageToWebsocketUsers
@@ -26,7 +27,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
         },
-        AttributesToGet: ['isConcluded', 'creator', 'scheduleTime'],
+        AttributesToGet: ['status', 'creator', 'scheduleTime'],
     };
 
     const _clubData = (await dynamoClient.get(_clubQuery).promise())['Item'];
@@ -34,7 +35,7 @@ router.post('/', async (req, res) => {
         return res.status(404).json('no such club exists');
     } else if (_clubData.creator.userId !== creatorId) {
         return res.status(403).json('Only club owner can entertain this request.');
-    } else if (_clubData.isConcluded === true) {
+    } else if (_clubData.status === Constants.ClubStatus.Concluded) {
         return res.status(400).json('This club is already concluded.');
     }
 
@@ -46,13 +47,12 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
         },
-        UpdateExpression: 'SET isLive = :fal, isConcluded = :tr, #duration = :duration REMOVE agoraToken',
+        UpdateExpression: 'SET status = :stat, #duration = :duration REMOVE agoraToken',
         ExpressionAttributeNames: {
             '#duration': 'duration',
         },
         ExpressionAttributeValues: {
-            ':fal': false,
-            ':tr': true,
+            ':stat': Constants.ClubStatus.Concluded,
             ':duration': duration,
         },
     };

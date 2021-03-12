@@ -6,6 +6,7 @@ const {
     timestampSortIndex,
     clubCreatorIdIndex,
 } = require('../../config');
+const Constants = require('../../constants');
 
 
 // required
@@ -41,7 +42,7 @@ router.get('/relation', async (req, res) => {
     // sorting to get clubs in increasing order of scheduleTime prioritized on basis of isLive status.
     responseList.sort((second, first) => {
 
-        if (first.isLive === true && second.isLive === true) {
+        if (first.status === Constants.ClubStatus.Live && second.status === Constants.ClubStatus.Live) {
             //if both clubs are live then sort them on basis of no of participants and listeners.
 
             const firstWeight = first.participants.values.length * 3 + first.estimatedAudience * 2;
@@ -51,8 +52,8 @@ router.get('/relation', async (req, res) => {
             return firstWeight - secondWeight;
         }
 
-        if (first.isLive) return 1;
-        if (second.isLive) return -1;
+        if (first.status === Constants.ClubStatus.Live) return 1;
+        if (second.status === Constants.ClubStatus.Live) return -1;
 
         // if none of above condition satisfies then return the club which is scheduled earliest.
         return second.scheduleTime - first.scheduleTime;
@@ -141,13 +142,13 @@ async function _getListOfClubOfRelatedUser(userId, socialRelation, lastevaluated
                         }
                     },
                     QueryFilter: {
-                        'isConcluded': {
-                            ComparisonOperator: 'NE',
-                            AttributeValueList: [true]
+                        'status': {
+                            ComparisonOperator: 'NE', // status should not be Concluded
+                            AttributeValueList: [Constants.ClubStatus.Concluded]
                         }
                     },
                     AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
-                        'clubAvatar', 'tags', 'isLive', 'subCategory',
+                        'clubAvatar', 'tags', 'status', 'subCategory',
                         'estimatedAudience', 'participants'
                     ],
                     ScanIndexForward: false,
@@ -158,9 +159,9 @@ async function _getListOfClubOfRelatedUser(userId, socialRelation, lastevaluated
                 // sorting clubs in order to get live ones at beginning.
                 clubs.sort((second, first) => {
 
-                    if (first.isLive) return 1; // if first club is live then take it.
+                    if (first.status === Constants.ClubStatus.Live) return 1; // if first club is live then take it.
 
-                    if (second.isLive) return -1; // if second club is live then take it.
+                    if (second.status === Constants.ClubStatus.Live) return -1; // if second club is live then take it.
 
 
                     // if none of above condition satisfies then return the club which is scheduled earliest.

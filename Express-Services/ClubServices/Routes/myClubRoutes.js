@@ -6,6 +6,7 @@ const {
     dynamoClient,
     myTable
 } = require('../config');
+const Constants = require('../constants');
 
 
 // required
@@ -30,7 +31,7 @@ router.get('/:userId/organized', async (req, res) => {
         },
 
         AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
-            'clubAvatar', 'tags', 'isLive', 'subCategory',
+            'clubAvatar', 'tags', 'status', 'subCategory',
             'estimatedAudience', 'participants'
         ],
         ScanIndexForward: false,
@@ -47,9 +48,9 @@ router.get('/:userId/organized', async (req, res) => {
         };
 
         query['QueryFilter'] = {
-            'isConcluded': {
-                ComparisonOperator: 'NE',
-                AttributeValueList: [true]
+            'status': {
+                ComparisonOperator: 'NE', // status should not be "Concluded"
+                AttributeValueList: [Constants.ClubStatus.Concluded]
             }
         };
 
@@ -110,7 +111,7 @@ router.get('/:userId/history', async (req, res) => {
                     'MyTable': {
                         Keys: [],
                         AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
-                            'clubAvatar', 'tags', 'isLive', 'subCategory',
+                            'clubAvatar', 'tags', 'status', 'subCategory',
                             'estimatedAudience', 'participants'
                         ],
                         ConsistentRead: false,

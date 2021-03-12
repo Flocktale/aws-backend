@@ -214,7 +214,7 @@ router.get('/', async (req, res) => {
             S_K: `CLUBMETA#${clubId}`
         },
         AttributesToGet: ['clubId', 'clubName', 'creator', 'agoraToken', 'category',
-            'isLive', 'isConcluded',
+            'status',
             'scheduleTime', 'clubAvatar', 'description', 'isPrivate', 'tags',
         ],
     };

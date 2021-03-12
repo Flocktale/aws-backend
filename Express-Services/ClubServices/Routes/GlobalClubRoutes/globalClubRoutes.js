@@ -5,6 +5,7 @@ const {
     dynamoClient,
     myTable
 } = require('../../config');
+const Constants = require('../../constants');
 
 const categoryData = require('../../static/categoryData.json');
 
@@ -84,13 +85,13 @@ async function _fetchClubsByCategory(category, lastevaluatedkey) {
             }
         },
         QueryFilter: {
-            'isConcluded': {
+            'status': {
                 ComparisonOperator: 'NE',
-                AttributeValueList: [true]
+                AttributeValueList: [Constants.ClubStatus.Concluded]
             }
         },
         AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
-            'clubAvatar', 'tags', 'isLive', 'subCategory',
+            'clubAvatar', 'tags', 'status', 'subCategory',
             'estimatedAudience', 'participants'
         ],
         ScanIndexForward: false,

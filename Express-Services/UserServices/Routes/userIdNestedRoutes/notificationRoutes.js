@@ -288,12 +288,12 @@ router.post("/opened", async (req, res) => {
                         P_K: `CLUB#${clubId}`,
                         S_K: `CLUBMETA#${clubId}`,
                     },
-                    AttributesToGet: ['isLive'],
+                    AttributesToGet: ['status'],
                 }
 
                 const _clubData = (await dynamoClient.get(_clubLiveQuery).promise())['Item'];
 
-                if (!_clubData || (_clubData.isLive !== true)) {
+                if (!_clubData || (_clubData.status !== Constants.ClubStatus.Live)) {
                     return res.status(403).json('NOT_LIVE_YET');
                 }
 

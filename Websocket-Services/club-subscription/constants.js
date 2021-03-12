@@ -4,6 +4,17 @@ const _clubAvatarPrefix = 'clubAvatar/';
 
 class Constants {
 
+    // club data related
+
+    static get ClubStatus() {
+        return {
+            Waiting: "Waiting",
+            Live: "Live",
+            Concluded: "Concluded",
+        };
+    }
+
+
     // audience data related
     static get AudienceStatus() {
         return {
@@ -22,6 +33,8 @@ class Constants {
     static get maxParticipantLimit() {
         return 10;
     }
+
+
 
 
 
