@@ -15,7 +15,19 @@ router.post('/', async (req, res) => {
     }
 
     // removing duplicate items and then converting it to array type.
-    const contacts = Array.from((new Set(req.body.contacts)).values());
+    const contacts = Array.from((new Set(req.body.contacts.map(text => {
+        return text.split(/\s/).join('');
+    }))).values());
+
+    console.log('checking duplicates');
+
+    for (var i = 0; i < contacts.length; i++) {
+        for (var j = i + 1; j < contacts.length; j++) {
+            if (contacts[i] === contacts[j]) {
+                console.log('duplicate: ', contacts[i]);
+            }
+        }
+    }
 
 
 
@@ -25,17 +37,15 @@ router.post('/', async (req, res) => {
         RequestItems: {
             'MyTable': {
                 Keys: [],
-                ProjectionExpression: '#userId, #username, #avatar, P_K',
+                ProjectionExpression: '#userId, #avatar, P_K',
                 ExpressionAttributeNames: {
                     '#userId': 'userId',
-                    '#username': 'username',
                     '#avatar': 'avatar',
                 },
                 ConsistentRead: false,
             }
         }
     };
-
 
 
     for (var phone of contacts) {
@@ -55,7 +65,6 @@ router.post('/', async (req, res) => {
                 responseList.push({
                     phone: Item.P_K.split('#')[1],
                     userId: Item.userId,
-                    username: Item.username,
                     avatar: Item.avatar,
                 });
             });
@@ -74,7 +83,6 @@ router.post('/', async (req, res) => {
                 responseList.push({
                     phone: Item.P_K.split('#')[1],
                     userId: Item.userId,
-                    username: Item.username,
                     avatar: Item.avatar,
                 });
             });
