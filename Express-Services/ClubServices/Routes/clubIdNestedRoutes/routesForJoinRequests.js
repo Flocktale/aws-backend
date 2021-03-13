@@ -22,16 +22,15 @@ const {
     postJoinRequestResponseToWebsocketUser,
 } = require('../../Functions/websocketFunctions');
 
-const {
-    publishNotification
-} = require('../../Functions/notificationFunctions');
+
 const Constants = require('../../constants');
 const {
     decrementAudienceCount,
     getNoOfParticipants
 } = require('../../Functions/clubFunctions');
 const {
-    pushToWsMsgQueue
+    pushToWsMsgQueue,
+    pushToPostNotificationQueue
 } = require('../../Functions/sqsFunctions');
 
 // required
@@ -272,7 +271,8 @@ router.post('/', async (req, res) => {
                 clubId: clubId,
             }),
 
-            publishNotification({
+            pushToPostNotificationQueue({
+                action: Constants.PostNotificationQueueAction.send,
                 userId: creator.userId,
                 notifData: notificationObj
             }),
@@ -516,7 +516,8 @@ router.post('/response', async (req, res) => {
 
             // sending notification
             notificationObj['title'] = 'Congratulations, you are now a panelist on ' + clubName;
-            promises.push(publishNotification({
+            promises.push(pushToPostNotificationQueue({
+                action: Constants.PostNotificationQueueAction.send,
                 userId: audienceId,
                 notifData: notificationObj
             }));
@@ -591,7 +592,8 @@ router.post('/response', async (req, res) => {
                     clubId: clubId
                 });
                 notificationObj['title'] = 'Your request to speak could not be fulfilled on  ' + clubName;
-                promises.push(publishNotification({
+                promises.push(pushToPostNotificationQueue({
+                    action: Constants.PostNotificationQueueAction.send,
                     userId: audienceId,
                     notifData: notificationObj
                 }));

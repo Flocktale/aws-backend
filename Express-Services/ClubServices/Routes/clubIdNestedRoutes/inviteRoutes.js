@@ -15,13 +15,15 @@ const {
     AudienceSchemaWithDatabaseKeys
 } = require('../../Schemas/Audience');
 
-const {
-    publishNotification
-} = require('../../Functions/notificationFunctions');
 const Constants = require('../../constants');
+
 const {
     postParticipationInvitationMessageToInvitee
 } = require('../../Functions/websocketFunctions');
+
+const {
+    pushToPostNotificationQueue
+} = require('../../Functions/sqsFunctions');
 
 
 
@@ -153,7 +155,7 @@ router.post('/', async (req, res) => {
 
 
 
-            notifPromise = _sendAndSaveNotification(notificationObj, async notificationId => {
+            notifPromise = _sendNotifDataToSQS(notificationObj, async notificationId => {
 
 
                 if (oldAudienceDoc) {
@@ -214,7 +216,7 @@ router.post('/', async (req, res) => {
             });
 
         } else {
-            notifPromise = _sendAndSaveNotification(notificationObj);
+            notifPromise = _sendNotifDataToSQS(notificationObj);
         }
 
         promises.push(notifPromise);
@@ -226,40 +228,27 @@ router.post('/', async (req, res) => {
 
 });
 
-async function _sendAndSaveNotification(notificationObj, callback) {
+async function _sendNotifDataToSQS(notificationObj, callback) {
     if (!notificationObj) {
-        console.log('no notificationObj was passed when _sendAndSaveNotification was called');
+        console.log('no notificationObj was passed when _sendNotifDataToSQS was called');
         return;
     }
 
-    // first saving the notification in database.
-
     const notifData = await NotificationSchemaWithDatabaseKeys.validateAsync(notificationObj);
 
-    const _notificationPutQuery = {
-        TableName: myTable,
-        Item: notifData,
-    }
-
-    const promises = [
-        dynamoClient.put(_notificationPutQuery).promise(),
-    ];
-
-
-    if (callback) {
-        // sending back notificationId for further use.
-        callback(notifData.notificationId);
-    }
-
-    promises.push(publishNotification({
+    await pushToPostNotificationQueue({
+        action: Constants.PostNotificationQueueAction.sendAndSave,
         userId: notifData.userId,
         notifData: {
             title: notifData.data.title,
             image: notifData.data.secondaryAvatar
         }
-    }));
+    });
 
-    await Promise.all(promises);
+    if (callback) {
+        // sending back notificationId for further use.
+        callback(notifData.notificationId);
+    }
 
 }
 
@@ -357,7 +346,7 @@ router.post('/all-followers', async (req, res) => {
         notificationObj['userId'] = userId;
 
         // sending and saving notifications for all followers.
-        promises.push(_sendAndSaveNotification(notificationObj));
+        promises.push(_sendNotifDataToSQS(notificationObj));
     }
 
     await Promise.all(promises);

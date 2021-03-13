@@ -6,6 +6,22 @@ class Constants {
 
     //  sqs related
 
+    static get PostNotificationQueueUrl() {
+        return 'https://sqs.ap-south-1.amazonaws.com/524663372903/PostNotificationQueue';
+    }
+
+
+    static get PostNotificationQueueAction() {
+        return {
+            send: "send",
+            sendAndSave: "sendAndSave",
+        }
+    }
+
+    static get WsMsgQueueUrl() {
+        return 'https://sqs.ap-south-1.amazonaws.com/524663372903/WsMsgQueue.fifo';
+    }
+
     static get WsMsgQueueAction() {
         return {
             postParticipantList: "postParticipantList",

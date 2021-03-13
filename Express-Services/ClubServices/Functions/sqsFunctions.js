@@ -5,6 +5,7 @@ const {
 const {
     nanoid
 } = require('nanoid');
+const Constants = require('../constants');
 
 
 /**
@@ -22,7 +23,7 @@ async function pushToWsMsgQueue({
 
     const params = {
         MessageBody: 'message from Club Service Function',
-        QueueUrl: 'https://sqs.ap-south-1.amazonaws.com/524663372903/WsMsgQueue.fifo',
+        QueueUrl: Constants.WsMsgQueueUrl,
 
         MessageAttributes: {
             "action": {
@@ -51,6 +52,54 @@ async function pushToWsMsgQueue({
 
 }
 
+
+
+/**
+ * action => send or sendAndSave.
+ */
+async function pushToPostNotificationQueue({
+    action,
+    userId,
+    notifData,
+}) {
+
+    if (!action) return;
+
+    if (!userId || !notifData) return;
+
+
+
+    const params = {
+        MessageBody: 'message from Club Service Function',
+        QueueUrl: Constants.PostNotificationQueueUrl,
+
+        MessageAttributes: {
+            "action": {
+                DataType: "String",
+                StringValue: action,
+            },
+            "userId": {
+                DataType: "String",
+                StringValue: userId,
+            },
+            "notifData": {
+                DataType: "String",
+                StringValue: JSON.stringify(notifData), // converting into json string.
+            }
+        },
+    };
+
+
+    try {
+        await sqs.sendMessage(params).promise();
+    } catch (err) {
+
+        console.log('error in pushing sqs message for PostNotificationQueue:', err);
+    }
+
+}
+
 module.exports = {
     pushToWsMsgQueue,
+    pushToPostNotificationQueue,
 }

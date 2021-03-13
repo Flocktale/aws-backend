@@ -16,15 +16,14 @@ const {
 } = require('../../Functions/websocketFunctions');
 
 const {
-    publishNotification
-} = require('../../Functions/notificationFunctions');
-const {
     incrementAudienceCount
 } = require('../../Functions/clubFunctions');
 
 const Constants = require('../../constants');
+
 const {
-    pushToWsMsgQueue
+    pushToWsMsgQueue,
+    pushToPostNotificationQueue
 } = require('../../Functions/sqsFunctions');
 
 // required
@@ -158,7 +157,8 @@ router.post('/', async (req, res) => {
             title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
             image: Constants.ClubAvatarUrl(clubId),
         }
-        promises.push(publishNotification({
+        promises.push(pushToPostNotificationQueue({
+            action: Constants.PostNotificationQueueAction.send,
             userId: audienceId,
             notifData: notifData,
         }));

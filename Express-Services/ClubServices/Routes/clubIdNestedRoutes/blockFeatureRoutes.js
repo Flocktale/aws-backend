@@ -14,9 +14,6 @@ const {
     CountParticipantSchema
 } = require('../../Schemas/AtomicCountSchemas');
 
-const {
-    publishNotification
-} = require('../../Functions/notificationFunctions')
 
 
 const {
@@ -30,7 +27,8 @@ const {
     decrementAudienceCount
 } = require('../../Functions/clubFunctions');
 const {
-    pushToWsMsgQueue
+    pushToWsMsgQueue,
+    pushToPostNotificationQueue,
 } = require('../../Functions/sqsFunctions');
 
 
@@ -225,7 +223,11 @@ router.post('/', async (req, res) => {
                 title: 'You are blocked from  ' + clubName,
                 image: Constants.ClubAvatarUrl(clubId),
             }
-            promises.push(publishNotification({
+
+
+
+            promises.push(pushToPostNotificationQueue({
+                action: Constants.PostNotificationQueueAction.send,
                 userId: audienceId,
                 notifData: notifData
             }));
@@ -358,7 +360,8 @@ router.delete('/', async (req, res) => {
                 image: Constants.ClubAvatarUrl(clubId),
             }
 
-            promises.push(publishNotification({
+            promises.push(pushToPostNotificationQueue({
+                action: Constants.PostNotificationQueueAction.send,
                 userId: audienceId,
                 notifData: notifData
             }));

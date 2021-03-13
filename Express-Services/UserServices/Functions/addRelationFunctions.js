@@ -11,7 +11,7 @@ const {
 
 
 const {
-    sendAndSaveNotification
+    sendNotifDataToSQS
 } = require('./notificationFunctions');
 const {
     pushToWsMsgQueue
@@ -238,7 +238,7 @@ async function acceptFriendRequest({
             const promises = [
 
                 // handling notification part
-                sendAndSaveNotification(notificationObj),
+                sendNotifDataToSQS(notificationObj),
 
                 // send updated social counters.
                 pushToWsMsgQueue({
@@ -461,7 +461,7 @@ async function sendFriendRequest({
             const promises = [];
 
             // handling notification part
-            const notifPromise = sendAndSaveNotification(notificationObj, async ({
+            const notifPromise = sendNotifDataToSQS(notificationObj, async ({
                 notificationId,
                 type
             }) => {
@@ -691,7 +691,7 @@ async function followUser({
             const promises = [
 
                 // handling notification part
-                sendAndSaveNotification(notificationObj),
+                sendNotifDataToSQS(notificationObj),
 
 
                 // send updated social counters.

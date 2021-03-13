@@ -3,15 +3,19 @@ const {
     myTable,
     sns
 } = require('../config');
+const Constants = require('../constants');
 
 
 const {
     NotificationSchemaWithDatabaseKeys
-} = require('../Schemas/notificationSchema')
+} = require('../Schemas/notificationSchema');
+const {
+    pushToPostNotificationQueue
+} = require('./sqsFunctions');
 
-async function sendAndSaveNotification(notificationObj, callback) {
+async function sendNotifDataToSQS(notificationObj, callback) {
     if (!notificationObj) {
-        console.log('no notificationObj was passed when _sendAndSaveNotification was called');
+        console.log('no notificationObj was passed when sendNotifDataToSQS was called');
         return;
     }
 
@@ -19,12 +23,15 @@ async function sendAndSaveNotification(notificationObj, callback) {
 
     const notifData = await NotificationSchemaWithDatabaseKeys.validateAsync(notificationObj);
 
-    const _notificationPutQuery = {
-        TableName: myTable,
-        Item: notifData,
-    }
+    await pushToPostNotificationQueue({
+        action: Constants.PostNotificationQueueAction.sendAndSave,
+        userId: notifData.userId,
+        notifData: {
+            title: notifData.data.title,
+            image: notifData.data.avatar
+        }
+    })
 
-    await dynamoClient.put(_notificationPutQuery).promise();
 
     if (callback) {
         callback({
@@ -33,49 +40,8 @@ async function sendAndSaveNotification(notificationObj, callback) {
         });
     }
 
-
-    // fetching endpoint arn to publish notification.
-
-    const _endpointQuery = {
-        TableName: myTable,
-        Key: {
-            P_K: 'SNS_DATA#',
-            S_K: `USER#${notifData.userId}`,
-        },
-        AttributesToGet: ['endpointArn'],
-    };
-
-    const endpointData = (await dynamoClient.get(_endpointQuery).promise())['Item'];
-
-    if (!endpointData) {
-        return console.log('no device token is registered for userId: ', notifData.userId);
-    }
-
-    // now publishing to push notification via sns.
-
-    const snsPushNotificationObj = {
-        GCM: JSON.stringify({
-            notification: {
-                title: notifData.data.title,
-                image: notifData.data.avatar,
-                sound: "default",
-                click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                priority: 'high',
-            },
-        }),
-    };
-
-
-    var notifParams = {
-        Message: JSON.stringify(snsPushNotificationObj),
-        MessageStructure: 'json',
-        TargetArn: endpointData.endpointArn,
-    };
-
-    await sns.publish(notifParams).promise();
-
 }
 
 module.exports = {
-    sendAndSaveNotification
+    sendNotifDataToSQS
 };

@@ -19,7 +19,7 @@ const {
 } = require('../../Functions/sqsFunctions');
 
 const {
-    sendAndSaveNotification
+    sendNotifDataToSQS
 } = require('../../Functions/notificationFunctions');
 const {
     acceptFriendRequest

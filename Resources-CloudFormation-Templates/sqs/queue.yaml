@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Creating Queue with Lambda Trigger
+  Creating Queues
 
 Resources:
   WsMsgQueue:
@@ -22,20 +22,40 @@ Resources:
       #   - Tag
       VisibilityTimeout: 30 # 30 seconds
 
+  PostNotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      KmsDataKeyReusePeriodSeconds: 86400 # 24 hours, for details
+      # KmsMasterKeyId: String    # default will be used (aws managed)
+      MaximumMessageSize: 10240 # 10 KB
+      MessageRetentionPeriod: 6000 # 100 minutes
+      QueueName: PostNotificationQueue
+      ReceiveMessageWaitTimeSeconds: 3 # 3 seconds, For long polling
+      # Tags:
+      # - Tag
+      VisibilityTimeout: 100 # 100 seconds
+
 Outputs:
-  QueueURL:
-    Description: "URL of new Amazon SQS Queue"
+  WsMsgQueueURL:
+    Description: "URL of new FIFO SQS Queue for posting websocket messages"
     Value:
       Ref: WsMsgQueue
-  QueueARN:
-    Description: "ARN of new AmazonSQS Queue"
+  WsMsgQueueARN:
+    Description: "ARN of new FIFO SQS Queue for posting websocket messages"
     Value:
       Fn::GetAtt:
         - WsMsgQueue
         - Arn
-  QueueName:
-    Description: "Name of new Amazon SQS Queue"
+
+  PostNotificationQueueURL:
+    Description: "URL of new Standard SQS Queue for sending notifications"
+    Value:
+      Ref: PostNotificationQueue
+
+  PostNotificationQueueARN:
+    Description: "ARN of new Standard SQS Queue for sending notifications"
     Value:
       Fn::GetAtt:
-        - WsMsgQueue
-        - QueueName
+        - PostNotificationQueue
+        - Arn

@@ -1,13 +1,13 @@
 {
-  "name": "ws-msg-queue-lambda",
+  "name": "post-notification-lambda",
   "version": "1.0.0",
   "description": "Lambda Function code for posting websocket messages",
   "main": "app.js",
-  "dependencies": {},
   "scripts": {},
   "devDependencies": {
     "aws-sdk": "^2.815.0"
   },
+  "keywords": [],
   "author": "Mohit Mangal <mohitmangal.ece18@itbhu.ac.in>",
   "license": "ISC"
 }
