@@ -5,14 +5,14 @@ const {
     myTable,
 } = require('../../config');
 
-const {
-    postClubStartedMessageToWebsocketUsers
-} = require('../../Functions/websocketFunctions');
 
 const {
     generateAgoraToken
 } = require('../../Functions/agoraFunctions');
 const Constants = require('../../constants');
+const {
+    pushToWsMsgQueue
+} = require('../../Functions/sqsFunctions');
 
 
 // required
@@ -81,9 +81,13 @@ router.post('/', async (req, res) => {
 
 
             // sending agoraToken to all user subscribed to this club at this moment
-            await postClubStartedMessageToWebsocketUsers({
-                clubId: clubId,
-                agoraToken: agoraToken
+            await pushToWsMsgQueue({
+                action: Constants.WsMsgQueueAction.clubStarted,
+                MessageGroupId: clubId,
+                attributes: {
+                    clubId: clubId,
+                    agoraToken: agoraToken
+                }
             });
 
             return res.status(201).json({

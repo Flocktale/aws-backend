@@ -18,7 +18,6 @@ const {
 } = require('../../config');
 
 const {
-    postParticipantListToWebsocketUsers,
     postNewJoinRequestToWebsocketUser,
     postJoinRequestResponseToWebsocketUser,
 } = require('../../Functions/websocketFunctions');
@@ -31,6 +30,9 @@ const {
     decrementAudienceCount,
     getNoOfParticipants
 } = require('../../Functions/clubFunctions');
+const {
+    pushToWsMsgQueue
+} = require('../../Functions/sqsFunctions');
 
 // required
 // headers - "lastevaluatedkey"  (optional)
@@ -520,7 +522,13 @@ router.post('/response', async (req, res) => {
             }));
 
             // sending new participant list to all connected users.
-            promises.push(postParticipantListToWebsocketUsers(clubId));
+            promises.push(pushToWsMsgQueue({
+                action: Constants.WsMsgQueueAction.postParticipantList,
+                MessageGroupId: clubId,
+                attributes: {
+                    clubId: clubId,
+                }
+            }));
 
 
 

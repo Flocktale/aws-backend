@@ -4,6 +4,18 @@ const _clubAvatarPrefix = 'clubAvatar/';
 
 class Constants {
 
+
+    // sqs related
+
+    static get WsMsgQueueAction() {
+        return {
+            postParticipantList: "postParticipantList",
+            clubStarted: "clubStarted",
+            clubConcluded: "clubConcluded",
+            postSocialCount: "postSocialCount",
+        };
+    }
+
     // club data related
 
     static get ClubStatus() {

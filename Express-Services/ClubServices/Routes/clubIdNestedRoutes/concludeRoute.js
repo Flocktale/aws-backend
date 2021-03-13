@@ -5,10 +5,11 @@ const {
     myTable
 } = require('../../config');
 const Constants = require('../../constants');
-
 const {
-    postClubConcludedMessageToWebsocketUsers
-} = require('../../Functions/websocketFunctions');
+    pushToWsMsgQueue
+} = require('../../Functions/sqsFunctions');
+
+
 
 
 //required
@@ -61,8 +62,12 @@ router.post('/', async (req, res) => {
     try {
         await dynamoClient.update(_updateQuery).promise();
 
-        await postClubConcludedMessageToWebsocketUsers({
-            clubId: clubId
+        await pushToWsMsgQueue({
+            action: Constants.WsMsgQueueAction.clubConcluded,
+            MessageGroupId: clubId,
+            attributes: {
+                clubId: clubId
+            }
         });
 
         return res.status(202).json('Club is concluded');

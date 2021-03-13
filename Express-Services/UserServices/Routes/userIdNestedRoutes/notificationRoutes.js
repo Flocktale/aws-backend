@@ -15,8 +15,8 @@ const {
 } = require('../../Schemas/snsEndpointSchema');
 
 const {
-    postParticipantListToWebsocketUsers
-} = require('../../Functions/websocketFunctions');
+    pushToWsMsgQueue
+} = require('../../Functions/sqsFunctions');
 
 const {
     sendAndSaveNotification
@@ -354,8 +354,13 @@ router.post("/opened", async (req, res) => {
 
                 await Promise.all([
                     // sending updated participant list to all subscribed users of this club.
-                    postParticipantListToWebsocketUsers(clubId),
-
+                    pushToWsMsgQueue({
+                        action: Constants.WsMsgQueueAction.postParticipantList,
+                        MessageGroupId: clubId,
+                        attributes: {
+                            clubId: clubId,
+                        }
+                    }),
                     //decrementing audience count as this user is converted from audience to participant
                     decrementAudienceCount(clubId),
 

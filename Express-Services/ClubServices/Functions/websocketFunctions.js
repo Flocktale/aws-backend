@@ -8,6 +8,36 @@ const {
     wsUserIdIndex,
 } = require('../config');
 
+async function _postToOneUserConnection(userId, data) {
+
+    const _connectionQuery = {
+        TableName: WsTable,
+        IndexName: wsUserIdIndex,
+        KeyConditionExpression: 'userId = :id',
+        ExpressionAttributeValues: {
+            ':id': userId
+        },
+        ProjectionExpression: 'connectionId',
+
+    };
+    const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
+
+    var promises = [];
+
+    for (var connection of connectionData) {
+        promises.push(apigwManagementApi.postToConnection({
+            ConnectionId: connection.connectionId,
+            Data: JSON.stringify(data)
+        }).promise());
+    }
+
+    await Promise.all(promises);
+
+}
+
+
+
+
 async function _fetchAllConnectionIdsForClub(clubId) {
     if (!clubId) return;
 
@@ -64,76 +94,6 @@ async function _postMessageToAllClubSubscribers(clubId, data, connectionIds) {
 
 }
 
-async function _postToOneUserConnection(userId, data) {
-
-    const _connectionQuery = {
-        TableName: WsTable,
-        IndexName: wsUserIdIndex,
-        KeyConditionExpression: 'userId = :id',
-        ExpressionAttributeValues: {
-            ':id': userId
-        },
-        ProjectionExpression: 'connectionId',
-
-    };
-    const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
-
-    var promises = [];
-
-    for (var connection of connectionData) {
-        promises.push(apigwManagementApi.postToConnection({
-            ConnectionId: connection.connectionId,
-            Data: JSON.stringify(data)
-        }).promise());
-    }
-
-    await Promise.all(promises);
-
-}
-
-async function postParticipantListToWebsocketUsers(clubId) {
-    if (!clubId) return;
-
-    const _participantQuery = {
-        TableName: myTable,
-        IndexName: audienceDynamicDataIndex,
-        KeyConditions: {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`CLUB#${clubId}`]
-            },
-            "AudienceDynamicField": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": [`Participant#`]
-            },
-        },
-        AttributesToGet: ['audience', 'isMuted'],
-    };
-
-    var participantList, connectionIds, promises = [];
-
-    const prtPromise = dynamoClient.query(_participantQuery).promise().then(({
-        Items
-    }) => {
-        participantList = Items;
-    });
-
-    promises.push(prtPromise);
-
-    promises.push(_fetchAllConnectionIdsForClub(clubId).then(ids => {
-        connectionIds = ids;
-    }));
-
-    await Promise.all(promises);
-
-    const data = {
-        what: "participantList",
-        clubId: clubId,
-        participantList: participantList,
-    };
-
-    await _postMessageToAllClubSubscribers(clubId, data, connectionIds);
-}
 
 
 
@@ -240,38 +200,9 @@ async function postNewJoinRequestToWebsocketUser({
 
 }
 
-async function postClubStartedMessageToWebsocketUsers({
-    clubId,
-    agoraToken
-}) {
-    if (!clubId || !agoraToken) return;
-
-    const data = {
-        what: "clubStarted",
-        clubId: clubId,
-        agoraToken: agoraToken,
-    };
-
-    await _postMessageToAllClubSubscribers(clubId, data);
-
-}
 
 
 
-
-async function postClubConcludedMessageToWebsocketUsers({
-    clubId
-}) {
-    if (!clubId) return;
-
-    const data = {
-        what: "clubConcluded",
-        clubId: clubId,
-    };
-
-    await _postMessageToAllClubSubscribers(clubId, data);
-
-}
 
 async function postParticipationInvitationMessageToInvitee({
     clubId,
@@ -279,7 +210,8 @@ async function postParticipationInvitationMessageToInvitee({
     invitationId,
     message,
 }) {
-    if (!clubId || !invitee || !message) return;
+    if (!clubId || !userId || !message || !invitationId) return;
+
     const data = {
         what: 'INV#prt',
         clubId: clubId,
@@ -293,16 +225,12 @@ async function postParticipationInvitationMessageToInvitee({
 
 
 module.exports = {
-    postParticipantListToWebsocketUsers,
+
     postBlockMessageToWebsocketUser,
-
-
     postKickOutMessageToWebsocketUser,
     postJoinRequestResponseToWebsocketUser,
     postNewJoinRequestToWebsocketUser,
 
-    postClubStartedMessageToWebsocketUsers,
-    postClubConcludedMessageToWebsocketUsers,
 
     postMuteMessageToParticipantOnly,
     postMuteActionMessageToClubSubscribers,

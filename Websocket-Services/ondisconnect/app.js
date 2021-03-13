@@ -10,6 +10,7 @@ const {
   dynamoClient,
   wsInvertIndex,
   AWS,
+  sqs,
 } = require('./config');
 
 const Constants = require('./constants');
@@ -74,11 +75,6 @@ exports.handler = async event => {
       //decrementing participant count.
       promises.push(decrementParticipantCount(clubId));
 
-
-      promises.push(_postParticipantListToAllClubSubscribers(apigwManagementApi, clubId));
-
-
-
       // if this participant is owner, then this code won't be executed (handled above)
       // deleting this participant's username from club data.
       const _participantInClubUpdateQuery = {
@@ -136,6 +132,28 @@ exports.handler = async event => {
 
     await Promise.all(promises);
 
+    // calling this after updating database to get recent participants.
+    if (audienceStatus === Constants.AudienceStatus.Participant && _audienceData.isOwner !== true) {
+      const params = {
+        MessageBody: 'message from ondisconnect Function',
+        QueueUrl: 'https://sqs.ap-south-1.amazonaws.com/524663372903/WsMsgQueue.fifo',
+        MessageAttributes: {
+          "action": {
+            DataType: "String",
+            StringValue: Constants.WsMsgQueueAction.postParticipantList,
+          },
+          "clubId": {
+            DataType: "String",
+            StringValue: clubId,
+          },
+        },
+        MessageDeduplicationId: connectionId,
+        MessageGroupId: clubId,
+      };
+
+      await sqs.sendMessage(params).promise();
+    }
+
   }
 
   const deleteParams = {
@@ -185,97 +203,3 @@ exports.handler = async event => {
     body: 'Disconnected.'
   };
 };
-
-async function _postParticipantListToAllClubSubscribers(apigwManagementApi, clubId) {
-
-  if (!clubId) return;
-
-  const connectionIds = await _fetchAllConnectionIdsForClub(clubId);
-
-  var data;
-  await _getParticipantList(clubId, participantData => {
-    data = participantData;
-  });
-
-  const postCalls = connectionIds.map(async connectionId => {
-    try {
-      await apigwManagementApi.postToConnection({
-        ConnectionId: connectionId,
-        Data: JSON.stringify(data)
-      }).promise();
-    } catch (error) {
-      if (error.statusCode === 410) {
-        console.log(`Found stale connection, deleting ${connectionId} from club with clubId: ${clubId}`);
-        await dynamoClient.delete({
-          TableName: WsTable,
-          Key: {
-            connectionId: connectionId
-          }
-        }).promise();
-      } else {
-        console.log(error);
-        throw error;
-      }
-    }
-  });
-
-  await Promise.all(postCalls);
-
-}
-
-async function _fetchAllConnectionIdsForClub(clubId) {
-  if (!clubId) return;
-
-  const _connectionQuery = {
-    TableName: WsTable,
-    IndexName: wsInvertIndex,
-    KeyConditionExpression: 'skey = :skey',
-    ExpressionAttributeValues: {
-      ":skey": `CLUB#${clubId}`,
-    },
-    ProjectionExpression: 'connectionId',
-  };
-
-  const connectionIds = ((await dynamoClient.query(_connectionQuery).promise())['Items']).map(({
-    connectionId
-  }) => connectionId);
-
-  return connectionIds;
-}
-
-
-
-async function _getParticipantList(clubId, callback) {
-  if (!clubId) return;
-
-  const _participantQuery = {
-    TableName: myTable,
-    IndexName: audienceDynamicDataIndex,
-    KeyConditions: {
-      "P_K": {
-        "ComparisonOperator": "EQ",
-        "AttributeValueList": [`CLUB#${clubId}`]
-      },
-      "AudienceDynamicField": {
-        "ComparisonOperator": "BEGINS_WITH",
-        "AttributeValueList": [`Participant#`]
-      },
-    },
-    AttributesToGet: ['audience', 'isMuted'],
-  }
-
-
-  try {
-    const participantList = (await dynamoClient.query(_participantQuery).promise())['Items'];
-    console.log('participantList: ', participantList);
-
-    return callback({
-      what: "participantList",
-      clubId: clubId,
-      participantList: participantList,
-    });
-
-  } catch (error) {
-    console.log('error in fetching participant list: ', error);
-  }
-}

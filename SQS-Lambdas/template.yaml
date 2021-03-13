@@ -7,7 +7,8 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 30
+    Runtime: nodejs12.x
 
 Resources:
   WsMsgQueueLambdaFunction:
@@ -17,12 +18,13 @@ Resources:
       CodeUri: ws-msg-queue-lambda/
       Handler: app.lambdaHandler
       Runtime: nodejs12.x
+      MemorySize: 192
       Events:
         SQSEvent:
           Type: SQS
           Properties:
             BatchSize: 10
-            Enabled: false
+            Enabled: true
             Queue: # ARN of queue
               Fn::Join:
                 - ""
@@ -34,3 +36,12 @@ Resources:
 
       Policies:
         - AWSLambdaSQSQueueExecutionRole
+
+        - DynamoDBReadPolicy: #only read permission
+            TableName: "MyTable"
+
+        - DynamoDBCrudPolicy:
+            TableName: "WsTable"
+
+        # this access also include websocket-channel permissions
+        - AmazonAPIGatewayInvokeFullAccess

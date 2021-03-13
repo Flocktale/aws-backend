@@ -10,6 +10,7 @@ AWS.config.update({
 const dynamoClient = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
 const sns = new AWS.SNS();
+const sqs = new AWS.SQS();
 
 const apigwManagementApi = new AWS.ApiGatewayManagementApi({
     apiVersion: '2018-11-29',
@@ -52,6 +53,7 @@ module.exports = {
     dynamoClient,
     s3,
     sns,
+    sqs,
     imageUploadConstParams,
     platformEndpointCreateParams,
 

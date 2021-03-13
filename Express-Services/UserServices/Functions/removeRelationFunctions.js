@@ -2,9 +2,11 @@ const {
     dynamoClient,
     myTable,
 } = require('../config');
+const Constants = require('../constants');
 const {
-    postSocialCountToBothUser
-} = require('./websocketFunctions');
+    pushToWsMsgQueue
+} = require('./sqsFunctions');
+
 
 
 
@@ -371,9 +373,13 @@ async function unfriendUser({
                 }),
 
                 // send updated social counters.
-                postSocialCountToBothUser({
-                    userId1: userId,
-                    userId2: foreignUserId
+                pushToWsMsgQueue({
+                    action: Constants.WsMsgQueueAction.postSocialCount,
+                    MessageGroupId: userId,
+                    attributes: {
+                        userId1: userId,
+                        userId2: foreignUserId
+                    }
                 })
             ];
 
@@ -504,16 +510,21 @@ async function unfollowUser({
             const promises = [
 
                 // deletion of relation doc itself after updation (if condition satisfies)
-                await _relationDocConditionalDeleteTransaction({
+                _relationDocConditionalDeleteTransaction({
                     userId: userId,
                     foreignUserId: foreignUserId
                 }),
 
                 // send updated social counters.
-                await postSocialCountToBothUser({
-                    userId1: userId,
-                    userId2: foreignUserId
+                pushToWsMsgQueue({
+                    action: Constants.WsMsgQueueAction.postSocialCount,
+                    MessageGroupId: userId,
+                    attributes: {
+                        userId1: userId,
+                        userId2: foreignUserId
+                    }
                 })
+
             ];
 
             await Promise.all(promises);

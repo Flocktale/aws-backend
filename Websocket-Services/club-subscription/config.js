@@ -5,6 +5,7 @@ AWS.config.update({
 });
 
 const dynamoClient = new AWS.DynamoDB.DocumentClient();
+const sqs = new AWS.SQS();
 
 const WsTable = 'WsTable';
 const wsInvertIndex = 'wsInvertIndex';
@@ -16,6 +17,7 @@ const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
 module.exports = {
     dynamoClient,
     AWS,
+    sqs,
 
     WsTable,
     wsInvertIndex,

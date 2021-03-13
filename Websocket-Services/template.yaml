@@ -160,6 +160,15 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: MyTable
 
+        - Statement:
+            - Effect: Allow
+              Action:
+                - "execute-api:ManageConnections"
+              Resource:
+                - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GeneralWebsocket}/*"
+
+        - AmazonSQSFullAccess
+
   OnDisconnectPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -188,6 +197,8 @@ Resources:
                 - "execute-api:ManageConnections"
               Resource:
                 - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GeneralWebsocket}/*"
+
+        - AmazonSQSFullAccess
 
   ClubSubscriptionPermission:
     Type: AWS::Lambda::Permission

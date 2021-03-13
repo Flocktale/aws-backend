@@ -14,8 +14,9 @@ const {
     sendAndSaveNotification
 } = require('./notificationFunctions');
 const {
-    postSocialCountToBothUser
-} = require('./websocketFunctions');
+    pushToWsMsgQueue
+} = require('./sqsFunctions');
+
 
 
 
@@ -240,10 +241,15 @@ async function acceptFriendRequest({
                 sendAndSaveNotification(notificationObj),
 
                 // send updated social counters.
-                postSocialCountToBothUser({
-                    userId1: userId,
-                    userId2: foreignUserId
-                }),
+                pushToWsMsgQueue({
+                    action: Constants.WsMsgQueueAction.postSocialCount,
+                    MessageGroupId: userId,
+                    attributes: {
+                        userId1: userId,
+                        userId2: foreignUserId
+                    }
+                })
+
 
             ];
 
@@ -484,9 +490,13 @@ async function sendFriendRequest({
             promises.push(notifPromise);
 
             // send updated social counters.
-            promises.push(postSocialCountToBothUser({
-                userId1: userId,
-                userId2: foreignUserId
+            promises.push(pushToWsMsgQueue({
+                action: Constants.WsMsgQueueAction.postSocialCount,
+                MessageGroupId: userId,
+                attributes: {
+                    userId1: userId,
+                    userId2: foreignUserId
+                }
             }));
 
 
@@ -685,9 +695,13 @@ async function followUser({
 
 
                 // send updated social counters.
-                postSocialCountToBothUser({
-                    userId1: userId,
-                    userId2: foreignUserId
+                pushToWsMsgQueue({
+                    action: Constants.WsMsgQueueAction.postSocialCount,
+                    MessageGroupId: userId,
+                    attributes: {
+                        userId1: userId,
+                        userId2: foreignUserId
+                    }
                 })
             ];
 

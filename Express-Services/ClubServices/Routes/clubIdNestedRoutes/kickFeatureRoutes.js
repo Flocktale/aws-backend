@@ -12,7 +12,6 @@ const {
 
 
 const {
-    postParticipantListToWebsocketUsers,
     postKickOutMessageToWebsocketUser,
 } = require('../../Functions/websocketFunctions');
 
@@ -24,6 +23,9 @@ const {
 } = require('../../Functions/clubFunctions');
 
 const Constants = require('../../constants');
+const {
+    pushToWsMsgQueue
+} = require('../../Functions/sqsFunctions');
 
 // required
 // query parameters - 
@@ -165,7 +167,13 @@ router.post('/', async (req, res) => {
 
 
     // sending new participant list to all connected users.
-    promises.push(postParticipantListToWebsocketUsers(clubId));
+    promises.push(pushToWsMsgQueue({
+        action: Constants.WsMsgQueueAction.postParticipantList,
+        MessageGroupId: clubId,
+        attributes: {
+            clubId: clubId,
+        }
+    }));
 
 
     // incrmenting audience count as this participant has a become audience now (and club is already in playing state).

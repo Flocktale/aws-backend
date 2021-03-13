@@ -20,13 +20,18 @@ const {
 
 
 const {
-    postParticipantListToWebsocketUsers,
     postBlockMessageToWebsocketUser,
 } = require('../../Functions/websocketFunctions');
+
+
 const Constants = require('../../constants');
+
 const {
     decrementAudienceCount
 } = require('../../Functions/clubFunctions');
+const {
+    pushToWsMsgQueue
+} = require('../../Functions/sqsFunctions');
 
 
 router.get('/', async (req, res) => {
@@ -233,7 +238,13 @@ router.post('/', async (req, res) => {
 
             if (wasParticipant === true) {
                 // send updated participant list to club subscribers.
-                promises.push(postParticipantListToWebsocketUsers(clubId));
+                promises.push(pushToWsMsgQueue({
+                    action: Constants.WsMsgQueueAction.postParticipantList,
+                    MessageGroupId: clubId,
+                    attributes: {
+                        clubId: clubId,
+                    }
+                }));
             }
 
             await Promise.all(promises);

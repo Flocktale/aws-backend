@@ -11,6 +11,7 @@ const {
     dynamoClient,
     wsInvertIndex,
     AWS,
+    sqs,
 } = require('./config');
 
 const Constants = require('./constants');
@@ -149,9 +150,6 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
         promises.push(decrementParticipantCount(clubId));
 
 
-        promises.push(_postParticipantListToAllClubSubscribers(apigwManagementApi, clubId));
-
-
         // if this participant is owner, then this code won't be executed (handled above)
         // deleting this participant's username from club data.
         const _participantInClubUpdateQuery = {
@@ -208,6 +206,28 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
     promises.push(dynamoClient.update(_audienceUpdateQuery).promise());
 
     await Promise.all(promises);
+
+    // calling this after updating database to get recent participants.
+    if (audienceStatus === Constants.AudienceStatus.Participant && _audienceData.isOwner !== true) {
+        const params = {
+            MessageBody: 'message from club-subscription  Function',
+            QueueUrl: 'https://sqs.ap-south-1.amazonaws.com/524663372903/WsMsgQueue.fifo',
+            MessageAttributes: {
+                "action": {
+                    DataType: "String",
+                    StringValue: Constants.WsMsgQueueAction.postParticipantList,
+                },
+                "clubId": {
+                    DataType: "String",
+                    StringValue: clubId,
+                },
+            },
+            MessageDeduplicationId: connectionId,
+            MessageGroupId: clubId,
+        };
+
+        await sqs.sendMessage(params).promise();
+    }
 
 }
 

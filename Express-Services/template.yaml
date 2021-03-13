@@ -32,6 +32,8 @@ Resources:
         # this access also include websocket-channel permissions
         - AmazonAPIGatewayInvokeFullAccess
 
+        - AmazonSQSFullAccess
+
       Events:
         APIRoot:
           Type: Api
@@ -175,6 +177,8 @@ Resources:
 
         # this access also include websocket-channel permissions
         - AmazonAPIGatewayInvokeFullAccess
+
+        - AmazonSQSFullAccess
 
       Events:
         AllClubList:
