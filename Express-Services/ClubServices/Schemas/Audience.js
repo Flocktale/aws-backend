@@ -17,7 +17,7 @@ const AudienceSchema = Joi.object({
         avatar: Joi.string().required(),
     }).required(),
 
-    isMuted: Joi.bool().default(true),
+    isMuted: Joi.bool().default(false),
 
     timestamp: Joi.number().default(() => Date.now()),
 
