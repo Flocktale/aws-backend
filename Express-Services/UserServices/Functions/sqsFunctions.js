@@ -70,6 +70,7 @@ async function pushToPostNotificationQueue({
     const params = {
         MessageBody: 'message from User Service Function',
         QueueUrl: Constants.PostNotificationQueueUrl,
+        MessageGroupId: userId,
 
         MessageAttributes: {
             "action": {

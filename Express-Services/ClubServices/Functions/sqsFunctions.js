@@ -72,6 +72,7 @@ async function pushToPostNotificationQueue({
     const params = {
         MessageBody: 'message from Club Service Function',
         QueueUrl: Constants.PostNotificationQueueUrl,
+        MessageGroupId: userId,
 
         MessageAttributes: {
             "action": {
