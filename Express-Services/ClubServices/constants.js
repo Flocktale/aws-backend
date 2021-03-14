@@ -7,7 +7,7 @@ class Constants {
     //  sqs related
 
     static get PostNotificationQueueUrl() {
-        return 'https://sqs.ap-south-1.amazonaws.com/524663372903/PostNotificationQueue';
+        return 'https://sqs.ap-south-1.amazonaws.com/524663372903/PostNotificationQueue.fifo';
     }
 
     static get PostNotificationQueueAction() {

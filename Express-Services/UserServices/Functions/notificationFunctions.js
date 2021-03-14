@@ -26,10 +26,7 @@ async function sendNotifDataToSQS(notificationObj, callback) {
     await pushToPostNotificationQueue({
         action: Constants.PostNotificationQueueAction.sendAndSave,
         userId: notifData.userId,
-        notifData: {
-            title: notifData.data.title,
-            image: notifData.data.avatar
-        }
+        notifData: notifData
     })
 
 

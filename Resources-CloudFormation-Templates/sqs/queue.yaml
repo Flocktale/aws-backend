@@ -25,12 +25,14 @@ Resources:
   PostNotificationQueue:
     Type: AWS::SQS::Queue
     Properties:
+      ContentBasedDeduplication: true
+      FifoQueue: true
       DelaySeconds: 0
       KmsDataKeyReusePeriodSeconds: 86400 # 24 hours, for details
       # KmsMasterKeyId: String    # default will be used (aws managed)
       MaximumMessageSize: 10240 # 10 KB
-      MessageRetentionPeriod: 6000 # 100 minutes
-      QueueName: PostNotificationQueue
+      MessageRetentionPeriod: 600 # 10 minutes
+      QueueName: PostNotificationQueue.fifo
       ReceiveMessageWaitTimeSeconds: 3 # 3 seconds, For long polling
       # Tags:
       # - Tag
@@ -49,12 +51,12 @@ Outputs:
         - Arn
 
   PostNotificationQueueURL:
-    Description: "URL of new Standard SQS Queue for sending notifications"
+    Description: "URL of new FIFO SQS Queue for sending notifications"
     Value:
       Ref: PostNotificationQueue
 
   PostNotificationQueueARN:
-    Description: "ARN of new Standard SQS Queue for sending notifications"
+    Description: "ARN of new FIFO SQS Queue for sending notifications"
     Value:
       Fn::GetAtt:
         - PostNotificationQueue

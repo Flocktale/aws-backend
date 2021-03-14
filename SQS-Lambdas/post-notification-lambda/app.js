@@ -12,30 +12,35 @@ exports.lambdaHandler = async (event, context) => {
     const promises = [];
 
     for (var msg of event.Records) {
-
         console.log(msg.messageAttributes);
 
-        const action = msg.messageAttributes.action.stringValue;
+        try {
 
-        const userId = msg.messageAttributes.userId.stringValue;
-        const notifData = JSON.parse(msg.messageAttributes.notifData.stringValue);
+            const action = msg.messageAttributes.action.stringValue;
+
+            const userId = msg.messageAttributes.userId.stringValue;
+            const notifData = JSON.parse(msg.messageAttributes.notifData.stringValue);
 
 
-        if (action === Constants.actionName.send) {
+            if (action === Constants.actionName.send) {
 
-            promises.push(publishNotification({
-                userId: userId,
-                notifData: notifData
-            }));
+                promises.push(publishNotification({
+                    userId: userId,
+                    notifData: notifData
+                }));
 
-        } else if (action === Constants.actionName.sendAndSave) {
+            } else if (action === Constants.actionName.sendAndSave) {
 
-            promises.push(publishNotification({
-                userId: userId,
-                notifData: notifData,
-                toSave: true,
-            }));
+                promises.push(publishNotification({
+                    userId: userId,
+                    notifData: notifData,
+                    toSave: true,
+                }));
 
+            }
+
+        } catch (error) {
+            console.log('error catched: ', error);
         }
 
     }

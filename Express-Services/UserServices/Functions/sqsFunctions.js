@@ -5,6 +5,7 @@ const {
 const {
     nanoid
 } = require('nanoid');
+const Constants = require('../constants');
 
 
 /**
@@ -88,7 +89,8 @@ async function pushToPostNotificationQueue({
 
 
     try {
-        await sqs.sendMessage(params).promise();
+        const data = await sqs.sendMessage(params).promise();
+        console.log(data);
     } catch (err) {
 
         console.log('error in pushing sqs message for PostNotificationQueue:', err);

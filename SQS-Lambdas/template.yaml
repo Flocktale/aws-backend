@@ -58,9 +58,8 @@ Resources:
         SQSEvent:
           Type: SQS
           Properties:
-            BatchSize: 100
+            BatchSize: 10
             Enabled: true
-            MaximumBatchingWindowInSeconds: 3 # 3 seconds
             Queue: # ARN of queue
               Fn::Join:
                 - ""
@@ -68,7 +67,7 @@ Resources:
                   - Ref: "AWS::Region"
                   - ":"
                   - Ref: "AWS::AccountId"
-                  - ":PostNotificationQueue"
+                  - ":PostNotificationQueue.fifo"
 
       Policies:
         - AWSLambdaSQSQueueExecutionRole
