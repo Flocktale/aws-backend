@@ -20,7 +20,7 @@ const ClubInputSchema = Joi.object({
 
 
     category: Joi.string().required(), // GSI: ClubCategoryIndex 
-    subCategory: Joi.string().required(),
+    subCategory: Joi.string(),
 
 
     createdOn: Joi.number().default(() => Date.now()),
