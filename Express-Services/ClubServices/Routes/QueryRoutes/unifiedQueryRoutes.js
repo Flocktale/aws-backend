@@ -100,12 +100,12 @@ router.get('/', async (req, res) => {
         if (type === "clubs") {
             const specificData = await getSearchResult(searchString, _query, "CLUB", clubAttributes, req)
             result["clubs"] = specificData["Items"];
-            result["lastevaluatedkey"] = specificData["LastEvaluatedKey"];
+            result["clublastevaluatedkey"] = specificData["LastEvaluatedKey"];
         } else {
             // result["users"] = specificData["Items"];
             const specificData = await getSearchResult(searchString, _query, "USER", userAttributes, req)
             result["users"] = specificData["Items"];
-            result["lastevaluatedkey"] = specificData["LastEvaluatedKey"];
+            result["userlastevaluatedkey"] = specificData["LastEvaluatedKey"];
         }
 
         return res.status(200).json(result);
