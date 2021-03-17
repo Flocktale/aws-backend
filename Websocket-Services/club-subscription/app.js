@@ -204,6 +204,24 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
     if (_audienceData.invitationId) {
         // removing invitation also.
         _audienceUpdateQuery['UpdateExpression'] += ', invitationId';
+
+        const _updateNotificationQuery = {
+            TableName: myTable,
+            Key: {
+                P_K: `USER#${userId}`,
+                S_K: `NOTIFICATION#${_audienceData.invitationId}`,
+            },
+            UpdateExpression: 'SET #data.opened = :tr',
+            ExpressionAttributeNames: {
+                '#data': 'data'
+            },
+            ExpressionAttributeValues: {
+                ":tr": true,
+            }
+        };
+
+        promises.push(dynamoClient.update(_updateNotificationQuery).promise());
+
     }
 
 
