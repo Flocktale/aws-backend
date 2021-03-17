@@ -114,7 +114,7 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
             P_K: `CLUB#${clubId}`,
             S_K: `AUDIENCE#${userId}`
         },
-        AttributesToGet: ['status', 'isOwner', 'audience']
+        AttributesToGet: ['status', 'isOwner', 'audience', 'invitationId']
     };
 
     const _audienceData = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -199,6 +199,11 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
 
         // decrementing audience count 
         promises.push(decrementAudienceCount(clubId));
+    }
+
+    if (_audienceData.invitationId) {
+        // removing invitation also.
+        _audienceUpdateQuery['UpdateExpression'] += ', invitationId';
     }
 
 

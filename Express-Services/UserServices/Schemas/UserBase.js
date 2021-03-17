@@ -21,7 +21,7 @@ const UserInputSchema = UserNameSchema.append({
     // allowing empty string also with max set to 100
     tagline: Joi.string().allow("").max(100),
 
-    bio: Joi.string(),
+    bio: Joi.string().allow(""),
 
     online: Joi.number().default(0), // this field is, "0" when user is online and represent timestamp when user is offline.
 
@@ -30,8 +30,8 @@ const UserInputSchema = UserNameSchema.append({
 
 
     //? these fields require special attention 
-    lngPref: Joi.string(),
-    regionCode: Joi.string(),
+    lngPref: Joi.string().allow(""),
+    regionCode: Joi.string().allow(""),
 
     geoLat: Joi.number(),
     geoLong: Joi.number(),

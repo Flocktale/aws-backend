@@ -49,7 +49,7 @@ exports.handler = async event => {
         P_K: `CLUB#${clubId}`,
         S_K: `AUDIENCE#${userId}`
       },
-      AttributesToGet: ['status', 'isOwner', 'audience']
+      AttributesToGet: ['status', 'isOwner', 'audience', 'invitationId']
     };
 
     const _audienceData = (await dynamoClient.get(_audienceDocQuery).promise())['Item'];
@@ -123,9 +123,16 @@ exports.handler = async event => {
       // this user was just a listener.
       _audienceUpdateQuery['UpdateExpression'] = 'REMOVE TimestampSortField';
 
+
+      if (_audienceData.invitationId) {
+        // removing invitation also.
+        _audienceUpdateQuery['UpdateExpression'] += ', invitationId';
+      }
+
       // decrementing audience count 
       promises.push(decrementAudienceCount(clubId));
     }
+
     if (_audienceUpdateQuery.UpdateExpression) {
       promises.push(dynamoClient.update(_audienceUpdateQuery).promise());
     }
