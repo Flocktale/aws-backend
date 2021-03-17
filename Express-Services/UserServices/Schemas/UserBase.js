@@ -18,7 +18,9 @@ const UserInputSchema = UserNameSchema.append({
     phone: Joi.string().required(),
     email: Joi.string().email(),
 
-    tagline: Joi.string().max(100),
+    // allowing empty string also with max set to 100
+    tagline: Joi.string().allow("").max(100),
+
     bio: Joi.string(),
 
     online: Joi.number().default(0), // this field is, "0" when user is online and represent timestamp when user is offline.
