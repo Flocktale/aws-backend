@@ -23,14 +23,14 @@ const Constants = require('../constants');
 router.post("/", async (req, res) => {
 
     try {
+        req.body['avatar'] = Constants.UserAvatarUrl(req.body.userId);
+        const result = await UserBaseCompleteSchema.validateAsync(req.body);
 
         const _availability = await isUsernameAvailable(result.username);
         if (_availability !== true) {
             return res.status(400).json('username is not available');
         }
 
-        req.body['avatar'] = Constants.UserAvatarUrl(req.body.userId);
-        const result = await UserBaseCompleteSchema.validateAsync(req.body);
 
         const query = {
             TableName: myTable,
@@ -94,6 +94,7 @@ router.post("/", async (req, res) => {
         });
 
     } catch (error) {
+        console.log('unknown error: ', error);
         res.status(400).json(error);
     }
 });
