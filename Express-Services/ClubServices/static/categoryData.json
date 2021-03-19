@@ -8,31 +8,71 @@
         "Health",
         "Finance",
         "Sports",
+        "Media",
+        "Politics",
+        "Business",
+        "Entertainment",
+        "Commerce",
+        "Science",
+        "Art",
+        "Food",
+        "Fashion",
+        "Music",
         "Other"
     ],
     "Entrepreneurship": [
-        "Other"
+        "Entrepreneurship"
     ],
     "Education": [
-        "Other"
+        "Education"
     ],
     "Comedy": [
-        "Other"
+        "Comedy"
     ],
     "Travel": [
-        "Other"
+        "Travel"
     ],
     "Society": [
-        "Other"
+        "Society"
     ],
     "Health": [
-        "Other"
+        "Health"
     ],
     "Finance": [
-        "Other"
+        "Finance"
     ],
     "Sports": [
-        "Other"
+        "Sports"
+    ],
+    "Media": [
+        "Media"
+    ],
+    "Politics": [
+        "Politics"
+    ],
+    "Business": [
+        "Business"
+    ],
+    "Entertainment": [
+        "Entertainment"
+    ],
+    "Commerce": [
+        "Commerce"
+    ],
+    "Science": [
+        "Science"
+    ],
+    "Art": [
+        "Art"
+    ],
+    "Food": [
+        "Food"
+    ],
+    "Fashion": [
+        "Fashion"
+    ],
+    "Music": [
+        "Music"
     ],
     "Other": [
         "Other"

@@ -493,7 +493,6 @@ async function _getOldComments(clubId, callback) {
     try {
 
         const oldComments = (await dynamoClient.query(_commentQuery).promise())['Items'];
-        console.log('old Comments: ', oldComments);
         return callback({
             what: "oldComments",
             clubId: clubId,
