@@ -67,49 +67,12 @@ exports.handler = async event => {
     if (_audienceData.isOwner === true) {
       // no action is needed on audience doc.
     } else if (audienceStatus === Constants.AudienceStatus.Participant) {
-      _audienceUpdateQuery['UpdateExpression'] = 'REMOVE #status, AudienceDynamicField';
-      _audienceUpdateQuery['ExpressionAttributeNames'] = {
-        '#status': 'status'
-      };
 
-      //decrementing participant count.
-      promises.push(decrementParticipantCount(clubId));
+      // disconnect event would not affect status of participant as the reason can be network issue.
+      // so when user re-connect with websocket, his participant status would be intact. in case the user closed app directly,
+      // then on noticing inactivity from participant, owner can remove him also so this can be controlled by owner.
 
-      // if this participant is owner, then this code won't be executed (handled above)
-      // deleting this participant's username from club data.
-      const _participantInClubUpdateQuery = {
-        TableName: myTable,
-        Key: {
-          P_K: `CLUB#${clubId}`,
-          S_K: `CLUBMETA#${clubId}`,
-        },
-        UpdateExpression: 'DELETE participants :prtUser',
-        ExpressionAttributeValues: {
-          ':prtUser': dynamoClient.createSet([_audienceData.audience.username]),
-        }
-      };
-
-      promises.push(dynamoClient.update(_participantInClubUpdateQuery).promise());
-
-
-
-      // decrementing participant counter
-      const _counterUpdateQuery = {
-        TableName: myTable,
-        Key: {
-          P_K: `CLUB#${clubId}`,
-          S_K: 'CountParticipant#',
-        },
-        UpdateExpression: 'ADD #cnt :counter', // decrementing
-        ExpressionAttributeNames: {
-          '#cnt': 'count'
-        },
-        ExpressionAttributeValues: {
-          ':counter': -1,
-        }
-      }
-
-      promises.push(dynamoClient.update(_counterUpdateQuery).promise());
+      // any other status like invitation or active join request will be deleted as they are not needed to be  controlled by owner. 
 
     } else if (audienceStatus === Constants.AudienceStatus.ActiveJoinRequest) {
       _audienceUpdateQuery['UpdateExpression'] = 'REMOVE #status, AudienceDynamicField, TimestampSortField, UsernameSortField';
@@ -157,27 +120,6 @@ exports.handler = async event => {
 
     await Promise.all(promises);
 
-    // calling this after updating database to get recent participants.
-    if (audienceStatus === Constants.AudienceStatus.Participant && _audienceData.isOwner !== true) {
-      const params = {
-        MessageBody: 'message from ondisconnect Function',
-        QueueUrl: 'https://sqs.ap-south-1.amazonaws.com/524663372903/WsMsgQueue.fifo',
-        MessageAttributes: {
-          "action": {
-            DataType: "String",
-            StringValue: Constants.WsMsgQueueAction.postParticipantList,
-          },
-          "clubId": {
-            DataType: "String",
-            StringValue: clubId,
-          },
-        },
-        MessageDeduplicationId: connectionId,
-        MessageGroupId: clubId,
-      };
-
-      await sqs.sendMessage(params).promise();
-    }
 
   }
 

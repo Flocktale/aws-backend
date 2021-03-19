@@ -102,6 +102,8 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
         clubStatus: oldClubStatus,
     } = (await dynamoClient.update(updateParams).promise())['Attributes'];
 
+
+    // important
     if (oldClubStatus !== 'PLAYING') {
         // in events of calling this for just ensuring the stop event.
         return;
@@ -275,15 +277,18 @@ async function _playClub(connectionId, clubId) {
     try {
 
         // this operation will generate error if condition expression fails
-        // which is the case when owner plays the club, for participant, TimestampSortField doesn't exists.
+        // which is the case when owner plays the club or the participant reconnects after disconnect event for any reason.
         const _audienceUpdateQuery = {
             TableName: myTable,
             Key: {
                 P_K: `CLUB#${clubId}`,
                 S_K: `AUDIENCE#${userId}`
             },
-            ConditionExpression: 'attribute_not_exists(isOwner)',
+            ConditionExpression: 'attribute_not_exists(#status)',
             UpdateExpression: 'set TimestampSortField = :tsf',
+            ExpressionAttributeNames: {
+                '#status': 'status',
+            },
             ExpressionAttributeValues: {
                 ':tsf': `AUDIENCE-SORT-TIMESTAMP#${Date.now()}#${userId}`
             },
