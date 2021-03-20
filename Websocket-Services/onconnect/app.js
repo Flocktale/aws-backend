@@ -45,9 +45,11 @@ exports.handler = async event => {
         Expected: {
             'P_K': {
                 Exists: true,
+                Value: `USER#${userId}`,
             },
             'S_K': {
                 Exists: true,
+                Value: `USERMETA#${userId}`,
             },
 
         },

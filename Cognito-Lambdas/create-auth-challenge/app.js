@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk');
 
-let plivo = require('plivo');
-let client = new plivo.Client('MAMWY3ODGXZWY4NJQ1OD', 'Y2ViY2NjYmJjYjUzODM1YjcwMjgyMTQ3NWJmODY4');
+// let plivo = require('plivo');
+// let client = new plivo.Client('MAMWY3ODGXZWY4NJQ1OD', 'Y2ViY2NjYmJjYjUzODM1YjcwMjgyMTQ3NWJmODY4');
 
 const http = require('http');
 
@@ -37,17 +37,17 @@ async function sendSMS(phone, code) {
     // ----------------------------------------------
     //  sending thorough plivo
 
-    try {
-        const message_created = await client.messages.create(
-            '+914151234567', // just random src number
-            params.PhoneNumber, // destination number
-            params.Message + " (Plivo)", // text message
-        );
-        console.log("plivo success", message_created);
+    // try {
+    //     const message_created = await client.messages.create(
+    //         '+914151234567', // just random src number
+    //         params.PhoneNumber, // destination number
+    //         params.Message + " (Plivo)", // text message
+    //     );
+    //     console.log("plivo success", message_created);
 
-    } catch (error) {
-        console.log("plivo error", error);
-    }
+    // } catch (error) {
+    //     console.log("plivo error", error);
+    // }
 
 
 
