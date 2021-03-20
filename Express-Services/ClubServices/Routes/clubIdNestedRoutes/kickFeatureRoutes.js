@@ -154,8 +154,10 @@ router.post('/', async (req, res) => {
         } = await _getClubData(clubId);
 
         var notifData = {
-            title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
-            image: Constants.ClubAvatarUrl(clubId),
+            data: {
+                title: "You are now a listener on " + clubName + '. Remeber, being a great listener is as important as being an orator.',
+                avatar: Constants.ClubAvatarUrl(clubId),
+            }
         }
         promises.push(pushToPostNotificationQueue({
             action: Constants.PostNotificationQueueAction.send,

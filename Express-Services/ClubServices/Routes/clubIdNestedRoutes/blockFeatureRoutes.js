@@ -220,8 +220,10 @@ router.post('/', async (req, res) => {
             } = await _getClubData(clubId);
 
             var notifData = {
-                title: 'You are blocked from  ' + clubName,
-                image: Constants.ClubAvatarUrl(clubId),
+                data: {
+                    title: 'You are blocked from  ' + clubName,
+                    avatar: Constants.ClubAvatarUrl(clubId),
+                }
             }
 
 
@@ -356,8 +358,10 @@ router.delete('/', async (req, res) => {
             }));
 
             var notifData = {
-                title: 'No more blocking from  ' + clubName + '. You can listen to it now.',
-                image: Constants.ClubAvatarUrl(clubId),
+                data: {
+                    title: 'No more blocking from  ' + clubName + '. You can listen to it now.',
+                    avatar: Constants.ClubAvatarUrl(clubId),
+                }
             }
 
             promises.push(pushToPostNotificationQueue({

@@ -257,8 +257,11 @@ router.post('/', async (req, res) => {
         });
 
         // we don't need to save these notifications in database as they are temporary.
-        var notificationObj = {
-            title: 'New join request from ' + audienceDoc.audience.username + ' on' + clubName,
+        var notifData = {
+            data: {
+                title: 'New join request from ' + audienceDoc.audience.username + ' on' + clubName,
+                avatar: Constants.UserAvatarUrl(audienceId),
+            }
         }
 
 
@@ -274,7 +277,7 @@ router.post('/', async (req, res) => {
             pushToPostNotificationQueue({
                 action: Constants.PostNotificationQueueAction.send,
                 userId: creator.userId,
-                notifData: notificationObj
+                notifData: notifData,
             }),
         ];
 
@@ -390,9 +393,11 @@ router.post('/response', async (req, res) => {
     }
 
     // we don't need to save these notifications in database as they are temporary.
-    var notificationObj = {
-        title: 'undefined',
-        image: Constants.ClubAvatarUrl(clubId),
+    var notifData = {
+        data: {
+            title: 'undefined',
+            avatar: Constants.ClubAvatarUrl(clubId),
+        }
     }
 
 
@@ -515,11 +520,12 @@ router.post('/response', async (req, res) => {
             });
 
             // sending notification
-            notificationObj['title'] = 'Congratulations, you are now a panelist on ' + clubName;
+            notifData['data']['title'] = 'Congratulations, you are now a panelist on ' + clubName;
+
             promises.push(pushToPostNotificationQueue({
                 action: Constants.PostNotificationQueueAction.send,
                 userId: audienceId,
-                notifData: notificationObj
+                notifData: notifData
             }));
 
             // sending new participant list to all connected users.
@@ -591,11 +597,12 @@ router.post('/response', async (req, res) => {
                 } = await _getClubData({
                     clubId: clubId
                 });
-                notificationObj['title'] = 'Your request to speak could not be fulfilled on  ' + clubName;
+                notifData['data']['title'] = 'Your request to speak could not be fulfilled on  ' + clubName;
+
                 promises.push(pushToPostNotificationQueue({
                     action: Constants.PostNotificationQueueAction.send,
                     userId: audienceId,
-                    notifData: notificationObj
+                    notifData: notifData,
                 }));
 
                 return res.status(202).json('Cancelled join request');

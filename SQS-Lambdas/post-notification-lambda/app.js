@@ -97,11 +97,18 @@ async function publishNotification({
 
     // now publishing to push notification via sns.
 
+    var image;
+    if (notifData.data.secondaryAvatar) {
+        image = notifData.data.secondaryAvatar;
+    } else {
+        image = notifData.data.avatar;
+    }
+
     const snsPushNotificationObj = {
         GCM: JSON.stringify({
             notification: {
-                title: notifData.title,
-                image: notifData.image,
+                title: notifData.data.title,
+                image: image,
                 sound: "default",
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
                 priority: 'high',

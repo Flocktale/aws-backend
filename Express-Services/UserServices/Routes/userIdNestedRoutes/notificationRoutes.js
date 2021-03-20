@@ -263,14 +263,20 @@ router.post("/opened", async (req, res) => {
                     S_K: `AUDIENCE#${userId}`,
                 },
                 UpdateExpression: 'REMOVE invitationId',
-                ExpressionAttributeNames: {},
-                ExpressionAttributeValues: {},
+
+                // can't leave them empty, generates error if finally remain empty :(,
+
+                // ExpressionAttributeNames: {},
+                // ExpressionAttributeValues: {},
             };
             const _transactQuery = {
                 TransactItems: []
             };
 
             if (action === 'accept') {
+
+                _audienceUpdateQuery['ExpressionAttributeNames'] = {};
+                _audienceUpdateQuery['ExpressionAttributeValues'] = {};
 
                 // first checking the no of participants including owner.
                 const oldParticipantCount = await getNoOfParticipants(clubId);

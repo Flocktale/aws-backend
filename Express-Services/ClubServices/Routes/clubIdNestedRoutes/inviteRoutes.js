@@ -208,7 +208,7 @@ router.post('/', async (req, res) => {
                 promises.push(postParticipationInvitationMessageToInvitee({
                     clubId: clubId,
                     userId: userId,
-                    invitationId: invitationId,
+                    invitationId: notificationId,
                     message: notificationObj.data.title
                 }));
 
@@ -239,10 +239,7 @@ async function _sendNotifDataToSQS(notificationObj, callback) {
     await pushToPostNotificationQueue({
         action: Constants.PostNotificationQueueAction.sendAndSave,
         userId: notifData.userId,
-        notifData: {
-            title: notifData.data.title,
-            image: notifData.data.secondaryAvatar
-        }
+        notifData: notifData,
     });
 
     if (callback) {
