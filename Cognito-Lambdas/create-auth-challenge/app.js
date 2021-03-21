@@ -24,15 +24,20 @@ async function sendSMS(phone, code) {
         }
     }
 
-    const req = http.request(options, res => {
-        console.log(`statusCode: ${res.statusCode}`);
-    })
+    return new Promise((resolve, reject) => {
 
-    req.on('error', error => {
-        console.error(error)
-    })
+        const req = http.request(options, res => {
+            console.log(`statusCode: ${res.statusCode}`);
+            resolve();
+        })
 
-    req.end();
+        req.on('error', error => {
+            console.error(error);
+            reject();
+        })
+
+        req.end();
+    });
 
     // ----------------------------------------------
     //  sending thorough plivo
