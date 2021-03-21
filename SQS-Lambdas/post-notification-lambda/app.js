@@ -108,7 +108,7 @@ async function publishNotification({
         GCM: JSON.stringify({
             notification: {
                 title: notifData.data.title,
-                image: image,
+                image: image + '_large',
                 sound: "default",
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
                 priority: 'high',
