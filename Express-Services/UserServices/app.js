@@ -21,11 +21,6 @@ const cors = require('cors');
 const app = express();
 
 
-const {
-    isUsernameAvailable
-} = require('./Functions/userFunctions');
-
-
 
 app.use(cors());
 app.use(express.json({
@@ -42,10 +37,8 @@ app.use((req, res, next) => {
     next();
 })
 
-const createRouter = require('./Routes/createUserRoutes');
+const globalUserRouter = require('./Routes/GlobalUserRoutes/globalUserRoutes');
 const userIdRouter = require('./Routes/userIdRoutes');
-
-const contactSyncRouter = require('./Routes/contactSyncRoutes');
 
 
 app.get("/", (req, res) => {
@@ -57,35 +50,9 @@ app.get("/users", (req, res) => {
     res.json('You have hit a TODO: Send list of all new users )');
 });
 
-// required
-// query parameters - "username"
-app.get('/users/username-availability', async (req, res) => {
-
-    const username = req.query.username;
-    if (!username) {
-        return res.status(400).json('send some username to check for');
-    }
-
-    try {
-        const result = await isUsernameAvailable(username);
-        return res.status(200).json({
-            isAvailable: result
-        });
-    } catch (error) {
-        if (error === "INVALID_USERNAME") {
-            return res.status(400).json('INVALID_USERNAME');
-        }
-
-        console.log('unknown error: ', error);
-        return res.status(500).json("INTERNAL_SERVER_ERROR");
-    }
 
 
-});
-
-app.use('/users/contacts-sync', contactSyncRouter);
-
-app.use('/users/create', createRouter);
+app.use('/users/global', globalUserRouter);
 
 app.use('/users/:userId',
     (req, res, next) => {

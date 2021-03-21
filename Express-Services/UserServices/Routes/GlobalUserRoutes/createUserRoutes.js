@@ -2,17 +2,17 @@ const router = require('express').Router();
 const fs = require('fs');
 const {
     UserBaseCompleteSchema
-} = require('../Schemas/UserBase');
+} = require('../../Schemas/UserBase');
 const {
     dynamoClient,
     myTable
-} = require('../config');
+} = require('../../config');
 
 const {
     isUsernameAvailable,
     uploadFile
-} = require('../Functions/userFunctions');
-const Constants = require('../constants');
+} = require('../../Functions/userFunctions');
+const Constants = require('../../constants');
 
 
 

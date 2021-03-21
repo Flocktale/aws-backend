@@ -47,22 +47,29 @@ Resources:
             Path: /users
             Method: get
 
+        # No authorization is needed for getting app configs.
+        GetAppConfigs:
+          Type: Api
+          Properties:
+            Path: /users/global/app-configs
+            Method: get
+
         ContactsSync:
           Type: Api
           Properties:
-            Path: /users/contacts-sync
+            Path: /users/global/contacts-sync
             Method: post
 
         CheckUsernameAvailability:
           Type: Api
           Properties:
-            Path: /users/username-availability
+            Path: /users/global/username-availability
             Method: get
 
         CreateUser:
           Type: Api
           Properties:
-            Path: /users/create
+            Path: /users/global/create
             Method: post
 
         GetUserById:

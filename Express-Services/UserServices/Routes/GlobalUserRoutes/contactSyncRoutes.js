@@ -3,7 +3,7 @@ const router = require('express').Router();
 const {
     myTable,
     dynamoClient
-} = require('../config');
+} = require('../../config');
 
 //  required
 // body - {"contacts" : list of phone_numbers}      
