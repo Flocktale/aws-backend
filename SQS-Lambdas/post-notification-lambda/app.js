@@ -110,9 +110,12 @@ async function publishNotification({
                 title: notifData.data.title,
                 image: image + '_large',
                 sound: "default",
+                color: '#fff74040',
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                priority: 'high',
+                icon: 'ic_notification',
             },
+            priority: 'HIGH',
+
         }),
     };
 
