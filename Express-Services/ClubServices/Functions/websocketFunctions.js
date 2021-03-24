@@ -59,45 +59,6 @@ async function _fetchAllConnectionIdsForClub(clubId) {
 }
 
 
-async function _postMessageToAllClubSubscribers(clubId, data, connectionIds) {
-
-    if (!clubId || !data) return;
-
-    if (!connectionIds) {
-        connectionIds = await _fetchAllConnectionIdsForClub(clubId);
-    }
-
-
-    const postCalls = connectionIds.map(async connectionId => {
-        try {
-            await apigwManagementApi.postToConnection({
-                ConnectionId: connectionId,
-                Data: JSON.stringify(data)
-            }).promise();
-        } catch (error) {
-            if (error.statusCode === 410) {
-                console.log(`Found stale connection, deleting ${connectionId} from club with clubId: ${clubId}`);
-                await dynamoClient.delete({
-                    TableName: WsTable,
-                    Key: {
-                        connectionId: connectionId
-                    }
-                }).promise();
-            } else {
-                console.log(error);
-                throw error;
-            }
-        }
-    });
-
-    await Promise.all(postCalls);
-
-}
-
-
-
-
-
 // blockAction can be "blocked" or "unblocked"
 async function postBlockMessageToWebsocketUser({
     clubId,
@@ -133,25 +94,7 @@ async function postMuteMessageToParticipantOnly({
 
 }
 
-async function postMuteActionMessageToClubSubscribers({
-    userIdList,
-    clubId,
-    isMuted
-}) {
 
-    if (!userIdList || !clubId || (isMuted === undefined)) return;
-
-    const _connectionIds = await _fetchAllConnectionIdsForClub(clubId);
-
-    await _postMessageToAllClubSubscribers(clubId, {
-            what: 'muteAction#',
-            clubId: clubId,
-            isMuted: isMuted,
-            participantIdList: userIdList,
-        },
-        _connectionIds
-    );
-}
 
 async function postKickOutMessageToWebsocketUser({
     userId,
@@ -233,7 +176,6 @@ module.exports = {
 
 
     postMuteMessageToParticipantOnly,
-    postMuteActionMessageToClubSubscribers,
 
     postParticipationInvitationMessageToInvitee,
 

@@ -9,7 +9,6 @@ const {
 const Constants = require('../../constants');
 
 const {
-    postMuteActionMessageToClubSubscribers,
     postMuteMessageToParticipantOnly,
 } = require('../../Functions/websocketFunctions');
 
@@ -96,13 +95,6 @@ router.post('/', async (req, res) => {
             isMuted: isMuted,
         }));
 
-
-        // sending message to all users through websocket.
-        promises.push(postMuteActionMessageToClubSubscribers({
-            userIdList: [participantId],
-            clubId: clubId,
-            isMuted: isMuted,
-        }));
 
 
         await Promise.all(promises);
@@ -199,12 +191,6 @@ router.post('/', async (req, res) => {
         }));
     }
 
-    // sending message to all through websocket.
-    promises.push(postMuteActionMessageToClubSubscribers({
-        userIdList: participantIds,
-        clubId: clubId,
-        isMuted: isMuted,
-    }));
 
     await Promise.all(promises);
 
