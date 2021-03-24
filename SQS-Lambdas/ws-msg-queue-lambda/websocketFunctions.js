@@ -34,7 +34,12 @@ async function _postToOneUserConnection(userId, data) {
         }).promise());
     }
 
-    await Promise.all(promises);
+    try {
+        await Promise.all(promises);
+    } catch (error) {
+        console.log('-------------error: ', error);
+    }
+
 
 }
 

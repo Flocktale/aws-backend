@@ -1,4 +1,7 @@
 const {
+    nanoid
+} = require('nanoid');
+const {
     incrementAudienceCount,
     decrementAudienceCount,
     decrementParticipantCount
@@ -247,7 +250,7 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
                     StringValue: clubId,
                 },
             },
-            MessageDeduplicationId: connectionId,
+            MessageDeduplicationId: `${connectionId} ${nanoid()}`,
             MessageGroupId: clubId,
         };
 

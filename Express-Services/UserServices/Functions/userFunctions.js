@@ -8,7 +8,10 @@ const {
 
 const {
     UserNameSchema
-} = require('../Schemas/UserBase')
+} = require('../Schemas/UserBase');
+const {
+    RelationIndexObjectSchema
+} = require('../Schemas/UserRelation');
 
 async function isUsernameAvailable(username) {
     if (!username) return null;
@@ -91,6 +94,12 @@ async function fetchSocialRelationIndexObj({
         AttributesToGet: ['relationIndexObj'],
     }
     const data = (await dynamoClient.get(_query).promise())['Item'];
+    if (!data) {
+        return await RelationIndexObjectSchema.validateAsync({
+            relationIndexObj: {}
+        });
+
+    }
     return data;
 }
 

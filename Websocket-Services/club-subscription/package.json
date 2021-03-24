@@ -9,7 +9,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "nanoid": "^3.1.22"
+  },
   "devDependencies": {
     "aws-sdk": "^2.787.0"
   }

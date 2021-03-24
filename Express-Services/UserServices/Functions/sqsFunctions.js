@@ -71,6 +71,7 @@ async function pushToPostNotificationQueue({
         MessageBody: 'message from User Service Function',
         QueueUrl: Constants.PostNotificationQueueUrl,
         MessageGroupId: userId,
+        MessageDeduplicationId: nanoid(),
 
         MessageAttributes: {
             "action": {

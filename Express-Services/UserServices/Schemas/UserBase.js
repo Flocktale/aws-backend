@@ -23,7 +23,7 @@ const UserInputSchema = UserNameSchema.append({
 
     bio: Joi.string().allow(""),
 
-    online: Joi.number().default(0), // this field is, "0" when user is online and represent timestamp when user is offline.
+    online: Joi.number().default(() => Date.now()), // this field is, "0" when user is online and represent timestamp when user is offline.
 
     termsAccepted: Joi.boolean().equal(true),
     policyAccepted: Joi.boolean().equal(true),

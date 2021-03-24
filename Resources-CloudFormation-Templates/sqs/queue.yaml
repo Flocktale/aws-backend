@@ -25,7 +25,7 @@ Resources:
   PostNotificationQueue:
     Type: AWS::SQS::Queue
     Properties:
-      ContentBasedDeduplication: true
+      ContentBasedDeduplication: false
       FifoQueue: true
       DelaySeconds: 0
       KmsDataKeyReusePeriodSeconds: 86400 # 24 hours, for details

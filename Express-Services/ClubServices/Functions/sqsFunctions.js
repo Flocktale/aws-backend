@@ -73,6 +73,7 @@ async function pushToPostNotificationQueue({
         MessageBody: 'message from Club Service Function',
         QueueUrl: Constants.PostNotificationQueueUrl,
         MessageGroupId: userId,
+        MessageDeduplicationId: nanoid(),
 
         MessageAttributes: {
             "action": {
