@@ -49,6 +49,8 @@
     const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
     const searchByUsernameIndex = "SearchByUsernameIndex";
 
+    const primaryKeyInvertIndex = "PrimaryKeyInvertIndex";
+    const clubCommunityIndex = "ClubCommunityIndex";
 
 
     module.exports = {
@@ -73,6 +75,9 @@
         timestampSortIndex,
         audienceDynamicDataIndex,
         searchByUsernameIndex,
+
+        primaryKeyInvertIndex,
+        clubCommunityIndex,
 
         agoraAppId,
         agoraPrimaryCertificate,

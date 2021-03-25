@@ -20,6 +20,21 @@ app.use((req, res, next) => {
     next();
 });
 
+const myCommunitiesRouter = require('./Routes/myCommunityRoutes');
+
+app.use('/mycommunities', myCommunitiesRouter);
+
+
+
+app.use('/communities/:communityId',
+    (req, res, next) => {
+        req.communityId = req.params.communityId;
+        next();
+    }, communityIdRouter
+);
+
+
+
 
 
 // __________________________________________________________________________________________________________________ //
