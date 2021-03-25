@@ -58,7 +58,7 @@ const ClubInputSchemaWithDatabaseKeys = ClubInputSchema.append({
         }
     }), // GSI: ClubCommunityIndex
 
-    PublicSearch: Joi.number().integer().valid(0, 1).default(1), // GSI : SearchByUsernameIndex
+    PublicSearch: Joi.number().integer().valid(0, 2).default(2), // GSI : SearchByUsernameIndex
     FilterDataName: Joi.string().default(
         (parent, helpers) => {
             return 'CLUB#' + parent.clubName.toLowerCase();

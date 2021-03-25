@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
         KeyConditions: {
             "PublicSearch": {
                 "ComparisonOperator": "EQ",
-                "AttributeValueList": [1]
+                "AttributeValueList": []
             },
             "FilterDataName": {
                 "ComparisonOperator": "BEGINS_WITH",
@@ -73,43 +73,56 @@ router.get('/', async (req, res) => {
 
     const userAttributes = ['userId', 'username', 'tagline', 'name', 'avatar'];
 
+    var result = {};
+
+    const _clubQuery = {
+        ..._query
+    };
+    const _userQuery = {
+        ..._query
+    };
+
+    _clubQuery['KeyConditions']['PublicSearch']['AttributeValueList'] = [2];
+    _userQuery['KeyConditions']['PublicSearch']['AttributeValueList'] = [1];
 
     if (type === "unified") {
 
         var clubData, userData;
 
+
         await Promise.all([
-            getSearchResult(searchString, _query, "CLUB", clubAttributes, req),
-            getSearchResult(searchString, _query, "USER", userAttributes, req)
+            getSearchResult(searchString, _clubQuery, "CLUB", clubAttributes, req),
+            getSearchResult(searchString, _userQuery, "USER", userAttributes, req)
         ]).then(values => {
             clubData = values[0];
             userData = values[1];
         });
 
-
-        return res.status(200).json({
+        result = {
             clubs: clubData['Items'],
             clublastevaluatedkey: clubData["LastEvaluatedKey"],
 
             users: userData['Items'],
             userlastevaluatedkey: userData["LastEvaluatedKey"],
-        });
+        };
+
     } else {
 
-        var result = {};
         if (type === "clubs") {
-            const specificData = await getSearchResult(searchString, _query, "CLUB", clubAttributes, req)
+            const specificData = await getSearchResult(searchString, _clubQuery, "CLUB", clubAttributes, req)
             result["clubs"] = specificData["Items"];
             result["clublastevaluatedkey"] = specificData["LastEvaluatedKey"];
         } else {
             // result["users"] = specificData["Items"];
-            const specificData = await getSearchResult(searchString, _query, "USER", userAttributes, req)
+            const specificData = await getSearchResult(searchString, _userQuery, "USER", userAttributes, req)
             result["users"] = specificData["Items"];
             result["userlastevaluatedkey"] = specificData["LastEvaluatedKey"];
         }
 
-        return res.status(200).json(result);
     }
+
+
+    return res.status(200).json(result);
 });
 
 
