@@ -5,6 +5,10 @@ const {
 
 const router = require('express').Router();
 
+const communityUsersRouter = require('./communityIdNestedRoutes/communityUsersRoutes');
+
+router.use('/users', communityUsersRouter);
+
 
 router.get('/', async (req, res) => {
     const communityId = req.communityId;

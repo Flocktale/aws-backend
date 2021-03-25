@@ -15,7 +15,7 @@ router.get('/:userId', async (req, res) => {
     const userId = req.params.userId;
     const status = req.query.status;
 
-    if (status !== "HOST" || status !== "MEMBER") {
+    if (status !== "HOST" && status !== "MEMBER") {
         return res.status(400).json('invalid status');
     }
 
