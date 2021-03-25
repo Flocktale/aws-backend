@@ -61,7 +61,7 @@ router.post('/', async (req, res) => {
         body['hosts'] = dynamoClient.createSet([_creatorSummaryDoc.avatar]);
         body['liveClubHosts'] = dynamoClient.createSet([]);
 
-        const newCommunity = await CommunityDocSchemaWithDatabaseKeys(body);
+        const newCommunity = await CommunityDocSchemaWithDatabaseKeys.validateAsync(body);
 
         const _createCommunityQuery = {
             TableName: myTable,
@@ -69,7 +69,7 @@ router.post('/', async (req, res) => {
         };
 
 
-        const newCommunityHostDoc = await CommunityHostSchemaWithDatabaseKeys({
+        const newCommunityHostDoc = await CommunityHostSchemaWithDatabaseKeys.validateAsync({
             community: {
                 communityId: communityId,
                 name: newCommunity.name,
