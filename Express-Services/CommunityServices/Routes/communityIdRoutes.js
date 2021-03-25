@@ -30,4 +30,33 @@ router.get('/', async (req, res) => {
 
 });
 
+router.patch('/', async (req, res) => {
+    const communityId = req.communityId;
+
+    if (!req.body || !req.body.description) {
+        return res.status(400).json('body with description is required');
+    }
+
+
+    const description = req.body.description;
+
+
+    const _communityDocUpdateQuery = {
+        TableName: myTable,
+        Key: {
+            P_K: 'COMMUNITY#DATA',
+            S_K: `COMMUNITYMETA#${communityId}`
+        },
+        UpdateExpression: 'set description :dscp',
+        ExpressionAttributeValues: {
+            ':dscp': description,
+        },
+    }
+
+    await dynamoClient.update(_communityDocUpdateQuery).promise();
+
+    return res.status(200).json('decription updated successfully');
+
+});
+
 module.exports = router;
