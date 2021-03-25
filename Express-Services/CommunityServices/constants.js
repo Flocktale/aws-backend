@@ -1,6 +1,8 @@
 const _avatarBucketName = "flocktale-public";
 const _userAvatarPrefix = 'userAvatar/';
 const _clubAvatarPrefix = 'clubAvatar/';
+const _communityAvatarPrefix = 'communityAvatar/';
+const _communityCoverImagePrefix = 'communityCoverImage/'
 
 class Constants {
 
@@ -101,6 +103,41 @@ class Constants {
 
     static ClubAvatarUrl(uniqueKey) {
         return "https://" + _avatarBucketName + ".s3.amazonaws.com/" + _clubAvatarPrefix + uniqueKey;
+    }
+
+    //\// Community Avatar related
+    static s3CommunityAvatarThumbKey(uniqueKey) {
+        return _communityAvatarPrefix + uniqueKey + "_thumb";
+    }
+
+    static s3CommunityAvatarDefaultKey(uniqueKey) {
+        return _communityAvatarPrefix + uniqueKey;
+    }
+
+    static s3CommunityAvatarLargeKey(uniqueKey) {
+        return _communityAvatarPrefix + uniqueKey + "_large";
+    }
+
+    static CommunityAvatarUrl(uniqueKey) {
+        return "https://" + _avatarBucketName + ".s3.amazonaws.com/" + _communityAvatarPrefix + uniqueKey;
+    }
+
+
+    //\// Community Cover Image related
+    static s3CommunityCoverImageThumbKey(uniqueKey) {
+        return _communityCoverImagePrefix + uniqueKey + "_thumb";
+    }
+
+    static s3CommunityCoverImageDefaultKey(uniqueKey) {
+        return _communityCoverImagePrefix + uniqueKey;
+    }
+
+    static s3CommunityCoverImageLargeKey(uniqueKey) {
+        return _communityCoverImagePrefix + uniqueKey + "_large";
+    }
+
+    static CommunityCoverImageUrl(uniqueKey) {
+        return "https://" + _avatarBucketName + ".s3.amazonaws.com/" + _communityCoverImagePrefix + uniqueKey;
     }
 
 }

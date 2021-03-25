@@ -9,6 +9,15 @@ const CommunityDocSchema = Joi.object({
     avatar: Joi.string(),
     coverImage: Joi.string(),
 
+    creator: Joi.object({
+        userId: Joi.string().required(),
+        username: Joi.string().required(),
+        avatar: Joi.string().required(),
+    }).required(),
+
+
+    hosts: Joi.any(), // data type is dynamodb set, contains avatars of allowed hosts
+
 
     liveClubHosts: Joi.any(), // data type is dynamodb set, contains avatars of hosts of live clubs
 

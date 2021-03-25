@@ -36,6 +36,11 @@ const Constants = require('../../constants');
 
 router.post('/', async (req, res) => {
 
+
+    if (!req.body) {
+        return res.status(400).json('body is required');
+    }
+
     const creatorId = req.query.creatorId;
 
     if (!creatorId) {
