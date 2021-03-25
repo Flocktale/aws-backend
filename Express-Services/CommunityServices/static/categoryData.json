@@ -1,0 +1,80 @@
+{
+    "categories": [
+        "Entrepreneurship",
+        "Education",
+        "Comedy",
+        "Travel",
+        "Society",
+        "Health",
+        "Finance",
+        "Sports",
+        "Media",
+        "Politics",
+        "Business",
+        "Entertainment",
+        "Commerce",
+        "Science",
+        "Art",
+        "Food",
+        "Fashion",
+        "Music",
+        "Other"
+    ],
+    "Entrepreneurship": [
+        "Entrepreneurship"
+    ],
+    "Education": [
+        "Education"
+    ],
+    "Comedy": [
+        "Comedy"
+    ],
+    "Travel": [
+        "Travel"
+    ],
+    "Society": [
+        "Society"
+    ],
+    "Health": [
+        "Health"
+    ],
+    "Finance": [
+        "Finance"
+    ],
+    "Sports": [
+        "Sports"
+    ],
+    "Media": [
+        "Media"
+    ],
+    "Politics": [
+        "Politics"
+    ],
+    "Business": [
+        "Business"
+    ],
+    "Entertainment": [
+        "Entertainment"
+    ],
+    "Commerce": [
+        "Commerce"
+    ],
+    "Science": [
+        "Science"
+    ],
+    "Art": [
+        "Art"
+    ],
+    "Food": [
+        "Food"
+    ],
+    "Fashion": [
+        "Fashion"
+    ],
+    "Music": [
+        "Music"
+    ],
+    "Other": [
+        "Other"
+    ]
+}

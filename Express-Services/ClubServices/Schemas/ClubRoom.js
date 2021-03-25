@@ -14,13 +14,16 @@ const ClubInputSchema = Joi.object({
     agoraToken: Joi.string(),
 
 
-    status: Joi.string().valid("Waiting", "Live", "Concluded").default("Waiting"), // default is "Waiting" when club is created as it not played directly.
-
-    timeWindow: Joi.number().integer().default(1800).min(300), // expected duration of club entered at time of creation (default 1800 seconds i.e. 30 minutes)
-
+    status: Joi.string().valid("Waiting", "Live", "Concluded").default("Waiting"), // default is "Waiting" when club is created as it is not played directly.
 
     category: Joi.string().required(), // GSI: ClubCategoryIndex 
     subCategory: Joi.string(),
+
+    community: Joi.object({
+        communityId: Joi.string().required(),
+        name: Joi.string().required(),
+        avatar: Joi.string().required(),
+    }),
 
 
     createdOn: Joi.number().default(() => Date.now()),
@@ -48,6 +51,12 @@ const ClubInputSchemaWithDatabaseKeys = ClubInputSchema.append({
     S_K: Joi.string().default(Joi.expression('CLUBMETA#{{clubId}}')),
 
     ClubCreatorIdField: Joi.string().default(Joi.expression('USER#{{creator.userId}}')), // GSI: ClubCreatorIdIndex
+
+    ClubCommunityField: Joi.string().default((parent, _) => {
+        if (parent.community.communityId) {
+            return 'COMMUNITY#CLUB#' + parent.community.communityId;
+        }
+    }), // GSI: ClubCommunityIndex
 
     PublicSearch: Joi.number().integer().valid(0, 1).default(1), // GSI : SearchByUsernameIndex
     FilterDataName: Joi.string().default(
