@@ -22,6 +22,7 @@ app.use((req, res, next) => {
 
 const myCommunitiesRouter = require('./Routes/myCommunityRoutes');
 const globalCommunityRouter = require('./Routes/GlobalCommunityRoutes/globalCommunityRoutes');
+const communityIdRouter = require('./Routes/communityIdRoutes');
 
 app.use('/mycommunities', myCommunitiesRouter);
 

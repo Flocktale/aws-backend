@@ -5,6 +5,13 @@ const {
 } = require('../../config');
 
 
+
+const createCommunityRouter = require('./createCommunityRoutes');
+
+router.use('/create', createCommunityRouter);
+
+
+
 // headers - "lastevaluatedkey"  (optional) 
 router.get('/', async (req, res) => {
 
@@ -15,7 +22,7 @@ router.get('/', async (req, res) => {
             ':pk': 'COMMUNITY#DATA',
             ':sk': 'COMMUNITYMETA#'
         },
-        ProjectionExpression: 'communityId, #name, description, #avatar, converImage, liveClubHosts,scheduledClubCount,memberCount',
+        ProjectionExpression: 'communityId, #name, description, #avatar, converImage, creator, liveClubHosts,scheduledClubCount,memberCount',
         ExpressionAttributeNames: {
             '#name': 'name',
             '#avatar': 'avatar'
