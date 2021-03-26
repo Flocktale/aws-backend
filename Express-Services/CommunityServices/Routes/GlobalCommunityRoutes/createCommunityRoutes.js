@@ -59,7 +59,6 @@ router.post('/', async (req, res) => {
         body['coverImage'] = Constants.CommunityCoverImageUrl(communityId);
 
         body['hosts'] = dynamoClient.createSet([_creatorSummaryDoc.avatar]);
-        body['liveClubHosts'] = dynamoClient.createSet([]);
 
         const newCommunity = await CommunityDocSchemaWithDatabaseKeys.validateAsync(body);
 

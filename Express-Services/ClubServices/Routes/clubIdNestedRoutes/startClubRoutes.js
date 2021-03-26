@@ -87,10 +87,10 @@ router.post('/', async (req, res) => {
                         P_K: 'COMMUNITY#DATA',
                         S_K: `COMMUNITYMETA#${_clubData.community.communityId}`
                     },
-                    UpdateExpression: 'ADD scheduledClubCount :counter, liveClubHosts :liveHost ',
+                    UpdateExpression: 'ADD scheduledClubCount :counter, liveClubCount :liveHost ',
                     ExpressionAttributeValues: {
                         ':counter': -1,
-                        ':liveHost': _clubData.creator.avatar,
+                        ':liveHost': 1,
                     },
                 }
 

@@ -74,7 +74,7 @@ router.get('/', async (req, res) => {
     const userAttributes = ['userId', 'username', 'tagline', 'name', 'avatar'];
 
     const communityAttributes = ['communityId', 'name', 'description', 'avatar', 'coverImage',
-        'creator', 'hosts', 'liveClubHosts', 'scheduledClubCount', 'memberCount'
+        'creator', 'hosts', 'liveClubCount', 'scheduledClubCount', 'memberCount'
     ];
 
     var result = {};

@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
             S_K: `COMMUNITYMETA#${communityId}`,
         },
         AttributesToGet: ['communityId', 'name', 'description', 'avatar', 'coverImage',
-            'creator', 'hosts', 'liveClubHosts', 'scheduledClubCount', 'memberCount'
+            'creator', 'hosts', 'liveClubCount', 'scheduledClubCount', 'memberCount'
         ],
     };
 

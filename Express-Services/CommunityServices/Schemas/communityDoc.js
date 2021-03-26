@@ -18,8 +18,7 @@ const CommunityDocSchema = Joi.object({
 
     hosts: Joi.any(), // data type is dynamodb set, contains avatars of allowed hosts
 
-
-    liveClubHosts: Joi.any(), // data type is dynamodb set, contains avatars of hosts of live clubs
+    liveClubCount: Joi.number().default(0),
 
     scheduledClubCount: Joi.number().default(0),
 

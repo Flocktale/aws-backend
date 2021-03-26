@@ -67,9 +67,9 @@ router.post('/', async (req, res) => {
                     P_K: 'COMMUNITY#DATA',
                     S_K: `COMMUNITYMETA#${_clubData.community.communityId}`
                 },
-                UpdateExpression: 'DELETE liveClubHosts :liveHost ',
+                UpdateExpression: 'ADD liveClubCount :counter ',
                 ExpressionAttributeValues: {
-                    ':liveHost': _clubData.creator.avatar,
+                    ':counter': -1,
                 },
             }
 
