@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
         ReturnConsumedCapacity: "INDEXES"
     };
 
-    const clubAttributes = ['clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration'];
+    const clubAttributes = ['clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration', 'community'];
 
     const userAttributes = ['userId', 'username', 'tagline', 'name', 'avatar'];
 

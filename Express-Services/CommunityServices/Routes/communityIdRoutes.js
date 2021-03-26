@@ -7,9 +7,11 @@ const router = require('express').Router();
 
 const communityUsersRouter = require('./communityIdNestedRoutes/communityUsersRoutes');
 const imageRouter = require('./communityIdNestedRoutes/imageRoutes');
+const communityClubRouter = require('./communityIdNestedRoutes/communityClubRoutes');
 
 router.use('/users', communityUsersRouter);
 router.use('/image', imageRouter);
+router.use('/clubs', communityClubRouter);
 
 
 router.get('/', async (req, res) => {
