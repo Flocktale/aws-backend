@@ -356,6 +356,92 @@ Resources:
             Path: /clubs/{clubId}/conclude
             Method: post
 
+  CommunityServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CommunityServiceFunction
+      CodeUri: CommunityServices/
+      Handler: handler.handler
+      MemorySize: 192
+      Runtime: nodejs12.x
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: "MyTable"
+
+        - DynamoDBCrudPolicy:
+            TableName: "WsTable"
+
+        - S3CrudPolicy:
+            BucketName: "flocktale-public"
+
+        - AmazonSNSFullAccess
+
+        # this access also include websocket-channel permissions
+        - AmazonAPIGatewayInvokeFullAccess
+
+        - AmazonSQSFullAccess
+
+      Events:
+        AllCommunityList:
+          Type: Api
+          Properties:
+            Path: /communities/global
+            Method: get
+
+        CreateCommunity:
+          Type: Api
+          Properties:
+            Path: /communities/global/create
+            Method: post
+
+        MyCommunities:
+          Type: Api
+          Properties:
+            Path: /mycommunities/{userId}
+            Method: get
+
+        GetCommunityData:
+          Type: Api
+          Properties:
+            Path: /communities/{communityId}
+            Method: get
+
+        PatchCommunityData:
+          Type: Api
+          Properties:
+            Path: /communities/{communityId}
+            Method: patch
+
+        GetCommunityUsers:
+          Type: Api
+          Properties:
+            Path: /communities/{communityId}/users
+            Method: get
+
+        AddCommunityUser:
+          Type: Api
+          Properties:
+            Path: /communities/{communityId}/users
+            Method: post
+
+        RemoveCommunityUser:
+          Type: Api
+          Properties:
+            Path: /communities/{communityId}/users
+            Method: delete
+
+        UploadCommunityImages:
+          Type: Api
+          Properties:
+            Path: /communities/{communityId}/image
+            Method: post
+
+        GetCommunityClubs:
+          Type: Api
+          Properties:
+            Path: /communities/{communityId}/clubs
+            Method: get
+
 Outputs:
   UserServiceAPIs:
     Description: "API Gateway endpoint URL for Prod stage"

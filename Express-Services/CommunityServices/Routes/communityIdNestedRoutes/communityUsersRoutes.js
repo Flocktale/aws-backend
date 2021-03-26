@@ -238,7 +238,7 @@ router.delete('/', async (req, res) => {
         };
 
         _transactQuery['TransactItems'] = [{
-            Delete: newMemberPutQuery
+            Delete: memberDeleteQuery
         }, {
             Update: _communityDocUpdateQuery,
         }];
