@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
             ':pk': 'COMMUNITY#DATA',
             ':sk': 'COMMUNITYMETA#'
         },
-        ProjectionExpression: 'communityId, #name, description, #avatar, converImage, creator, liveClubHosts,scheduledClubCount,memberCount',
+        ProjectionExpression: 'communityId, #name, #avatar, converImage, creator, liveClubHosts,scheduledClubCount,memberCount',
         ExpressionAttributeNames: {
             '#name': 'name',
             '#avatar': 'avatar'

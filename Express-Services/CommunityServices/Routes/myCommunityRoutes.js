@@ -9,13 +9,13 @@ const {
 
 //required
 // query parameters 
-//               status - "HOST" or "MEMBER"
-//               lastevaluatedkey (if status is MEMBER) (optional)
+//               type - "HOST" or "MEMBER"
+//headers -  lastevaluatedkey (if type is MEMBER) (optional)
 router.get('/:userId', async (req, res) => {
     const userId = req.params.userId;
-    const status = req.query.status;
+    const type = req.query.type;
 
-    if (status !== "HOST" && status !== "MEMBER") {
+    if (type !== "HOST" && type !== "MEMBER") {
         return res.status(400).json('invalid status');
     }
 
@@ -25,14 +25,14 @@ router.get('/:userId', async (req, res) => {
         KeyConditionExpression: 'S_K = :sk and begins_with(P_K,:pk)',
         ExpressionAttributeValues: {
             ':sk': `COMMUNITY#USER#${userId}`,
-            ':pk': `COMMUNITY#${status}#`,
+            ':pk': `COMMUNITY#${type}#`,
         },
         ProjectionExpression: 'community',
     };
 
-    if (status == 'MEMBER') {
+    if (type == 'MEMBER') {
         _query['Limit'] = 20;
-        _query['ExclusiveStartKey'] = req.query.lastevaluatedkey;
+        _query['ExclusiveStartKey'] = req.headers.lastevaluatedkey;
     }
 
     const communities = data['Items'].map(({
