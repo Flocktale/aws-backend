@@ -34,7 +34,7 @@ async function getSearchResult(searchString, _query, type, attributes, req) {
 
 
 // required
-// query parameters - "searchString" , "type" (values are - "unified","clubs","users")
+// query parameters - "searchString" , "type" (values are - "unified","clubs","users","communities")
 // headers - "lastevaluatedkey"  (optional)
 router.get('/', async (req, res) => {
 
@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
     const type = req.query.type;
     try {
         await Joi.string().max(25).required().validateAsync(searchString);
-        await Joi.string().valid("unified", "clubs", "users").required().validateAsync(type);
+        await Joi.string().valid("unified", "clubs", "users", "communities").required().validateAsync(type);
     } catch (error) {
         res.status(400).json(error);
         return;
@@ -65,13 +65,17 @@ router.get('/', async (req, res) => {
             },
         },
         // AttributesToGet: [],
-        Limit: 5,
+        Limit: 20,
         ReturnConsumedCapacity: "INDEXES"
     };
 
     const clubAttributes = ['clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration'];
 
     const userAttributes = ['userId', 'username', 'tagline', 'name', 'avatar'];
+
+    const communityAttributes = ['communityId', 'name', 'description', 'avatar', 'coverImage',
+        'creator', 'hosts', 'liveClubHosts', 'scheduledClubCount', 'memberCount'
+    ];
 
     var result = {};
 
@@ -82,20 +86,29 @@ router.get('/', async (req, res) => {
         ..._query
     };
 
+    const _communityQuery = {
+        ..._query
+    };
+
     _clubQuery['KeyConditions']['PublicSearch']['AttributeValueList'] = [2];
     _userQuery['KeyConditions']['PublicSearch']['AttributeValueList'] = [1];
 
+    _communityQuery['KeyConditions']['PublicSearch']['AttributeValueList'] = [3];
+    _communityQuery['Limit'] = 10;
+
     if (type === "unified") {
 
-        var clubData, userData;
+        var clubData, userData, communityData;
 
 
         await Promise.all([
             getSearchResult(searchString, _clubQuery, "CLUB", clubAttributes, req),
-            getSearchResult(searchString, _userQuery, "USER", userAttributes, req)
+            getSearchResult(searchString, _userQuery, "USER", userAttributes, req),
+            getSearchResult(searchString, _communityQuery, "COMMUNITY", communityAttributes, req),
         ]).then(values => {
             clubData = values[0];
             userData = values[1];
+            communityData = values[2];
         });
 
         result = {
@@ -104,6 +117,9 @@ router.get('/', async (req, res) => {
 
             users: userData['Items'],
             userlastevaluatedkey: userData["LastEvaluatedKey"],
+
+            communities: communityData['Items'],
+            communitylastevaluatedkey: communityData["LastEvaluatedKey"],
         };
 
     } else {
@@ -112,11 +128,14 @@ router.get('/', async (req, res) => {
             const specificData = await getSearchResult(searchString, _clubQuery, "CLUB", clubAttributes, req)
             result["clubs"] = specificData["Items"];
             result["clublastevaluatedkey"] = specificData["LastEvaluatedKey"];
-        } else {
-            // result["users"] = specificData["Items"];
+        } else if (type === "users") {
             const specificData = await getSearchResult(searchString, _userQuery, "USER", userAttributes, req)
             result["users"] = specificData["Items"];
             result["userlastevaluatedkey"] = specificData["LastEvaluatedKey"];
+        } else if (type === "communities") {
+            const specificData = await getSearchResult(searchString, _communityQuery, "COMMUNITY", communityAttributes, req)
+            result["communities"] = specificData["Items"];
+            result["communitylastevaluatedkey"] = specificData["LastEvaluatedKey"];
         }
 
     }
