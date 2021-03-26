@@ -36,6 +36,11 @@ const Constants = require('../../constants');
 
 router.post('/', async (req, res) => {
 
+
+    if (!req.body) {
+        return res.status(400).json('body is required');
+    }
+
     const creatorId = req.query.creatorId;
 
     if (!creatorId) {
@@ -113,7 +118,7 @@ router.post('/', async (req, res) => {
         const countJoinRequestObject = await CountJoinRequestSchema.validateAsync(_countBaseObject);
 
 
-        // at max 10 operations are allowed in transactWrite (remember that).
+        // at max 25 operations are allowed in transactWrite (remember that).
         const _transactQuery = {
             TransactItems: [{
                     Put: _createClubQuery
@@ -171,22 +176,37 @@ router.post('/', async (req, res) => {
             else {
 
                 const fileName = clubId;
-
-
                 const _thumbnail = fs.createReadStream('./static/microphone_thumb.jpg');
                 const _default = fs.createReadStream('./static/microphone.jpg');
                 const _large = fs.createReadStream('./static/microphone_large.jpg');
 
-                const uploadPromises = [
+                const promises = [
                     uploadFile(Constants.s3ClubAvatarThumbKey(fileName), _thumbnail),
                     uploadFile(Constants.s3ClubAvatarDefaultKey(fileName), _default),
                     uploadFile(Constants.s3ClubAvatarLargeKey(fileName), _large),
                 ];
 
+                if (newClub.community) {
+                    const _communityDocUpdateQuery = {
+                        TableName: myTable,
+                        Key: {
+                            P_K: 'COMMUNITY#DATA',
+                            S_K: `COMMUNITYMETA#${newClub.community.communityId}`
+                        },
+                        UpdateExpression: 'ADD scheduledClubCount :counter',
+                        ExpressionAttributeValues: {
+                            ':counter': 1,
+                        },
+                    }
+
+                    promises.push(dynamoClient.update(_communityDocUpdateQuery).promise());
+                }
+
+
                 try {
                     await Promise.all(uploadPromises);
                 } catch (error) {
-                    console.log(`Error occured while trying to upload:`, error);
+                    console.log(`Error in resolving promises`, error);
                 }
 
                 res.status(201).json({

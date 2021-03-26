@@ -91,7 +91,7 @@ async function _fetchClubsByCategory(category, lastevaluatedkey) {
             }
         },
         AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
-            'clubAvatar', 'tags', 'status', 'subCategory',
+            'clubAvatar', 'tags', 'status', 'subCategory', 'community',
             'estimatedAudience', 'participants'
         ],
         ScanIndexForward: false,

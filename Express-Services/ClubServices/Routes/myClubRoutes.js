@@ -32,7 +32,7 @@ router.get('/:userId/organized', async (req, res) => {
 
         AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
             'clubAvatar', 'tags', 'status', 'subCategory',
-            'estimatedAudience', 'participants'
+            'estimatedAudience', 'participants', 'community',
         ],
         ScanIndexForward: false,
     };
@@ -112,7 +112,7 @@ router.get('/:userId/history', async (req, res) => {
                         Keys: [],
                         AttributesToGet: ['clubId', 'creator', 'clubName', 'category', 'scheduleTime',
                             'clubAvatar', 'tags', 'status', 'subCategory',
-                            'estimatedAudience', 'participants'
+                            'estimatedAudience', 'participants', 'community',
                         ],
                         ConsistentRead: false,
                     }

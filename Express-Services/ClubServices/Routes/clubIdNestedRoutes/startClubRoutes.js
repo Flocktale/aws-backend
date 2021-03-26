@@ -33,7 +33,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`,
         },
-        AttributesToGet: ['creator', 'agoraToken', 'status'],
+        AttributesToGet: ['creator', 'agoraToken', 'status', 'community'],
     };
 
     try {
@@ -59,6 +59,8 @@ router.post('/', async (req, res) => {
             clubId: clubId
         });
 
+
+
         const _updateDocQuery = {
             TableName: myTable,
             Key: {
@@ -77,8 +79,32 @@ router.post('/', async (req, res) => {
         };
 
         try {
-            await dynamoClient.update(_updateDocQuery).promise();
 
+            if (_clubData.community) {
+                const _communityDocUpdateQuery = {
+                    TableName: myTable,
+                    Key: {
+                        P_K: 'COMMUNITY#DATA',
+                        S_K: `COMMUNITYMETA#${_clubData.community.communityId}`
+                    },
+                    UpdateExpression: 'ADD scheduledClubCount :counter, liveClubHosts :liveHost ',
+                    ExpressionAttributeValues: {
+                        ':counter': -1,
+                        ':liveHost': _clubData.creator.avatar,
+                    },
+                }
+
+                await dynamoClient.transactWrite({
+                    TransactItems: [{
+                        Update: _communityDocUpdateQuery
+                    }, {
+                        Update: _updateDocQuery
+                    }]
+                }).promise();
+
+            } else {
+                await dynamoClient.update(_updateDocQuery).promise();
+            }
 
             // sending agoraToken to all user subscribed to this club at this moment
             await pushToWsMsgQueue({

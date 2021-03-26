@@ -73,6 +73,9 @@ Resources:
         - AttributeName: category
           AttributeType: S
 
+        - AttributeName: ClubCommunityField
+          AttributeType: S
+
         - AttributeName: AudienceDynamicField
           AttributeType: S
 
@@ -90,9 +93,29 @@ Resources:
           KeyType: RANGE
 
       GlobalSecondaryIndexes:
+        - IndexName: PrimaryKeyInvertIndex
+          KeySchema:
+            - AttributeName: S_K
+              KeyType: HASH
+
+            - AttributeName: P_K
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+
         - IndexName: ClubCategoryIndex
           KeySchema:
             - AttributeName: category
+              KeyType: HASH
+
+            - AttributeName: scheduleTime
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+
+        - IndexName: ClubCommunityIndex
+          KeySchema:
+            - AttributeName: ClubCommunityField
               KeyType: HASH
 
             - AttributeName: scheduleTime

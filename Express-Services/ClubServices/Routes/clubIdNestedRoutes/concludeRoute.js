@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
         },
-        AttributesToGet: ['status', 'creator', 'scheduleTime'],
+        AttributesToGet: ['status', 'creator', 'scheduleTime', 'community'],
     };
 
     const _clubData = (await dynamoClient.get(_clubQuery).promise())['Item'];
@@ -60,8 +60,30 @@ router.post('/', async (req, res) => {
     };
 
     try {
-        await dynamoClient.update(_updateQuery).promise();
+        if (_clubData.community) {
+            const _communityDocUpdateQuery = {
+                TableName: myTable,
+                Key: {
+                    P_K: 'COMMUNITY#DATA',
+                    S_K: `COMMUNITYMETA#${_clubData.community.communityId}`
+                },
+                UpdateExpression: 'DELETE liveClubHosts :liveHost ',
+                ExpressionAttributeValues: {
+                    ':liveHost': _clubData.creator.avatar,
+                },
+            }
 
+            await dynamoClient.transactWrite({
+                TransactItems: [{
+                    Update: _communityDocUpdateQuery
+                }, {
+                    Update: _updateQuery
+                }]
+            }).promise();
+
+        } else {
+            await dynamoClient.update(_updateQuery).promise();
+        }
         await pushToWsMsgQueue({
             action: Constants.WsMsgQueueAction.clubConcluded,
             MessageGroupId: clubId,
