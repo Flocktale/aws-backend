@@ -8,14 +8,17 @@ const router = require('express').Router();
 const communityUsersRouter = require('./communityIdNestedRoutes/communityUsersRoutes');
 const imageRouter = require('./communityIdNestedRoutes/imageRoutes');
 const communityClubRouter = require('./communityIdNestedRoutes/communityClubRoutes');
+const Constants = require('../constants');
 
 router.use('/users', communityUsersRouter);
 router.use('/image', imageRouter);
 router.use('/clubs', communityClubRouter);
 
-
+// query parameters - "userId"
 router.get('/', async (req, res) => {
     const communityId = req.communityId;
+    const userId = req.query.userId;
+
 
     const _getQuery = {
         TableName: myTable,
@@ -28,9 +31,37 @@ router.get('/', async (req, res) => {
         ],
     };
 
-    const community = (await dynamoClient.get(_getQuery).promise())['Item'];
 
-    return res.status(200).json(community);
+    const community = (await dynamoClient.get(_getQuery).promise())['Item'];
+    var communityUser;
+
+    if (userId) {
+        var isHost = false;
+        for (var avatar of community.hosts.values) {
+            if (avatar === Constants.UserAvatarUrl(userId)) {
+                isHost = true;
+                break;
+            }
+        }
+
+        const _userQuery = {
+            TableName: myTable,
+            Key: {
+                P_K: `COMMUNITY#MEMBER#${communityId}`, // by default, fetching as member
+                S_K: `COMMUNITY#USER#${userId}`,
+            },
+            AttributesToGet: ['community', 'user', 'type', 'timestamp', 'invited'],
+        };
+        if (isHost === true) {
+            _userQuery['Key']['P_K'] = `COMMUNITY#HOST#${communityId}`;
+        }
+        communityUser = (await dynamoClient.get(_userQuery).promise())['Item'];
+    }
+
+    return res.status(200).json({
+        community: community,
+        communityUser: communityUser,
+    });
 
 });
 

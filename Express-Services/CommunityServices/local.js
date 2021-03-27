@@ -1,11 +1,11 @@
 // const Joi = require('joi');
 
 
-const app = require('./app');
+// const app = require('./app');
 
-app.listen(3000, () => {
-    console.log("Listening on port 3000");
-});
+// app.listen(3000, () => {
+//     console.log("Listening on port 3000");
+// });
 
 const {
     sqs,
@@ -20,19 +20,21 @@ const {
 
 
 async function testing() {
+    const data = (await dynamoClient.get({
+        TableName: myTable,
+        Key: {
+            "P_K": "CLUB#XLR-W5YiBoewQqcn_wSCR",
+            "S_K": "CLUBMETA#XLR-W5YiBoewQqcn_wSCR",
+        },
+        AttributesToGet: ['participants']
+    }).promise())['Item']['participants'];
 
-    const a = {
-        hello: 1,
-        bye: 'bye'
-    };
-    for (var key in a) {
-        console.log(key);
+    for (var a of data.values) {
+        console.log(a);
     }
 
-    for (const [key, value] of Object.entries(a)) {
-        console.log(key, value);
-    }
-
+    console.log(data);
+    console.log(data.values);
 }
 
 

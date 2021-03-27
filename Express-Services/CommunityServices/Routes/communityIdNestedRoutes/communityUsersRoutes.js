@@ -1,6 +1,8 @@
 const {
     myTable,
-    dynamoClient
+    dynamoClient,
+    timestampSortIndex,
+    usernameSortIndex
 } = require('../../config');
 const {
     CommunityHostSchemaWithDatabaseKeys,
@@ -9,36 +11,75 @@ const {
 
 const router = require('express').Router();
 
+const inviteRouter = require('./inviteRoutes');
+
+router.use('/invite', inviteRouter);
+
+
+
 //headers - lastevaluatedkey (optional)
-// query parameters - type - "HOST" or "MEMBER" (required) 
+// query parameters - 
+//                  type - "HOST" or "MEMBER" (required) 
+//                  searchString (optional)(to search members by username, only for member)
 router.get('/', async (req, res) => {
 
     const communityId = req.communityId;
 
     const type = req.query.type;
 
+    var searchString = req.query.searchString;
+
     if (type !== 'HOST' && type !== 'MEMBER') {
         return res.status(400).json('invalid value of type in query parameters');
     }
 
+
     const _query = {
         TableName: myTable,
-        KeyConditionExpression: 'P_K = :pk and begins_with(S_K,:sk)',
-        ExpressionAttributeValues: {
-            ':pk': `COMMUNITY#${type}#${communityId}`,
-            ':sk': 'COMMUNITY#USER#',
-        },
+
         ProjectionExpression: '#user',
         ExpressionAttributeNames: {
             '#user': 'user'
         },
-
         ExclusiveStartKey: req.headers.lastevaluatedkey,
+        ScanIndexForward: true,
         Limit: 20,
+    };
+
+    if (type === "HOST") {
+        _query['KeyConditionExpression'] = 'P_K = :pk and begins_with(S_K,:sk)';
+
+        _query['ExpressionAttributeValues'] = {
+            ':pk': `COMMUNITY#HOST#${communityId}`,
+            ':sk': 'COMMUNITY#USER#',
+        };
+    } else if (searchString) {
+
+        searchString = searchString.toLowerCase();
+        _query['IndexName'] = usernameSortIndex;
+
+        _query['KeyConditionExpression'] = 'P_K = :pk and begins_with(UsernameSortField,:usf)';
+
+        _query['ExpressionAttributeValues'] = {
+            ':pk': `COMMUNITY#MEMBER#${communityId}`,
+            ':usf': 'COMMUNITY-MEMBER-SORT-USERNAME#' + searchString,
+        };
+
+    } else {
+
+        _query['IndexName'] = timestampSortIndex;
+        _query['ScanIndexForward'] = false;
+
+        _query['KeyConditionExpression'] = 'P_K = :pk and begins_with(TimestampSortField,:tsf)';
+
+        _query['ExpressionAttributeValues'] = {
+            ':pk': `COMMUNITY#MEMBER#${communityId}`,
+            ':tsf': 'COMMUNITY-MEMBER-SORT-TIMESTAMP#',
+        };
     }
 
-    const data = await dynamoClient.query(_query).promise();
 
+    const data = await dynamoClient.query(_query).promise();
     const users = data['Items'].map(({
         user
     }) => {
@@ -54,21 +95,16 @@ router.get('/', async (req, res) => {
 });
 
 
+// MEMBER joining
 // query parameters: 
-//              type - "HOST" or "MEMBER" (required) 
 //              userId  (required) 
 router.post('/', async (req, res) => {
 
     const communityId = req.communityId;
-    const type = req.query.type;
     const userId = req.query.userId;
 
     if (!userId) {
         return res.status(400).json('userId is required in query parameters');
-    }
-
-    if (type !== 'HOST' && type !== 'MEMBER') {
-        return res.status(400).json('invalid value of type in query parameters');
     }
 
     const _userSummaryQuery = {
@@ -102,67 +138,36 @@ router.post('/', async (req, res) => {
         TransactItems: [],
     };
 
-
-    if (type === 'HOST') {
-
-
-        const newHost = await CommunityHostSchemaWithDatabaseKeys.validateAsync(communityUser);
-        const newHostPutQuery = {
-            TableName: myTable,
-            Item: newHost,
-        };
-
-        const _communityDocUpdateQuery = {
-            TableName: myTable,
-            Key: {
-                P_K: 'COMMUNITY#DATA',
-                S_K: `COMMUNITYMETA#${communityId}`
-            },
-            UpdateExpression: 'ADD hosts :host',
-            ExpressionAttributeValues: {
-                ':host': _userSummaryDoc.avatar
-            },
-        }
-
-
-        _transactQuery['TransactItems'] = [{
-            Put: newHostPutQuery
-        }, {
-            Update: _communityDocUpdateQuery
-        }];
-
-    } else if (type === 'MEMBER') {
-        const newMember = await CommunityMemberSchemaWithDatabaseKeys.validateAsync(communityUser);
-        const newMemberPutQuery = {
-            TableName: myTable,
-            Item: newMember,
-        }
-
-        const _communityDocUpdateQuery = {
-            TableName: myTable,
-            Key: {
-                P_K: 'COMMUNITY#DATA',
-                S_K: `COMMUNITYMETA#${communityId}`
-            },
-            UpdateExpression: 'ADD memberCount :counter',
-            ExpressionAttributeValues: {
-                ':counter': 1,
-            },
-        };
-
-        _transactQuery['TransactItems'] = [{
-            Put: newMemberPutQuery
-        }, {
-            Update: _communityDocUpdateQuery,
-        }];
+    const newMember = await CommunityMemberSchemaWithDatabaseKeys.validateAsync(communityUser);
+    const newMemberPutQuery = {
+        TableName: myTable,
+        Item: newMember,
     }
+
+    const _communityDocUpdateQuery = {
+        TableName: myTable,
+        Key: {
+            P_K: 'COMMUNITY#DATA',
+            S_K: `COMMUNITYMETA#${communityId}`
+        },
+        UpdateExpression: 'ADD memberCount :counter',
+        ExpressionAttributeValues: {
+            ':counter': 1,
+        },
+    };
+
+    _transactQuery['TransactItems'] = [{
+        Put: newMemberPutQuery
+    }, {
+        Update: _communityDocUpdateQuery,
+    }];
+
 
     await dynamoClient.transactWrite(_transactQuery).promise();
 
     return res.status(200).json('successful');
 
 });
-
 
 
 // query parameters: 

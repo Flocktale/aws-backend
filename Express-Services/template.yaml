@@ -418,7 +418,7 @@ Resources:
             Path: /communities/{communityId}/users
             Method: get
 
-        AddCommunityUser:
+        AddCommunityMember:
           Type: Api
           Properties:
             Path: /communities/{communityId}/users
@@ -429,6 +429,18 @@ Resources:
           Properties:
             Path: /communities/{communityId}/users
             Method: delete
+
+        InviteCommunityMemberToBecomeHost:
+          Type: Api
+          Properties:
+            Path: /communities/{communityId}/users/invite
+            Method: post
+
+        RespondToCommunityInvitation:
+          Type: Api
+          Properties:
+            Path: /communities/{communityId}/users/invite/response
+            Method: post
 
         UploadCommunityImages:
           Type: Api

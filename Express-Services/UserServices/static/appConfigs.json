@@ -1,3 +1,35 @@
 {
-    "minAppVersion": "0.0.1"
+    "minAppVersion": "0.0.1",
+    "communityHostLimit": [
+        {
+            "start": 0,
+            "end": 999,
+            "limit": 7
+        },
+        {
+            "start": 1000,
+            "end": 9999,
+            "limit": 10
+        },
+        {
+            "start": 10000,
+            "end": 99999,
+            "limit": 13
+        },
+        {
+            "start": 100000,
+            "end": 499999,
+            "limit": 17
+        },
+        {
+            "start": 500000,
+            "end": 999999,
+            "limit": 20
+        },
+        {
+            "start": 1000000,
+            "end": 9999999999,
+            "limit": 25
+        }
+    ]
 }
