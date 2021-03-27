@@ -20,7 +20,8 @@ const {
 } = require('../../Schemas/communityUserSchema');
 
 const {
-    uploadFile
+    uploadFile,
+    subscribeUserToCommunityTopic
 } = require('../../Functions/communityFunctions');
 
 // required
@@ -97,10 +98,10 @@ router.post('/', async (req, res) => {
 
         await Promise.all([
             // uploading community placeholder images 
-            setCommunityImages(),
+            setCommunityImages(communityId),
 
             // creating topic
-            setCommunityTopic(),
+            setCommunityTopicAndSubscribeCreator(communityId, creatorId),
         ]);
 
         return res.status(201).json({
@@ -114,11 +115,20 @@ router.post('/', async (req, res) => {
 
 });
 
-async function setCommunityTopic(communityId) {
+
+async function setCommunityTopicAndSubscribeCreator(communityId, creatorId) {
     await sns.createTopic({
         Name: communityId,
     }).promise();
+
+    await subscribeUserToCommunityTopic({
+        communityId: communityId,
+        userId: creatorId,
+        type: 'HOST',
+    });
+
 }
+
 
 async function setCommunityImages(communityId) {
 

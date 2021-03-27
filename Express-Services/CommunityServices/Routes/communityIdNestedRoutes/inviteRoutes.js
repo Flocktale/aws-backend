@@ -85,7 +85,8 @@ router.post('/response', async (req, res) => {
 
         const newHost = await CommunityHostSchemaWithDatabaseKeys.validateAsync({
             community: data.community,
-            user: data.user
+            user: data.user,
+            subscriptionArn: data.subscriptionArn,
         });
 
         const newHostPutQuery = {

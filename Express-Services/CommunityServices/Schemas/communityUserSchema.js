@@ -11,6 +11,10 @@ const CommunityUserSchema = Joi.object({
         username: Joi.string().required(),
         avatar: Joi.string().required(),
     }).required(),
+
+
+    // ARN of subscription point in SNS
+    subscriptionArn: Joi.string(),
 });
 
 // -----------------------------------------------------------------------------------------

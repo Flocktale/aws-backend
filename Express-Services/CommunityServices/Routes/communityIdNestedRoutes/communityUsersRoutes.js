@@ -5,6 +5,10 @@ const {
     usernameSortIndex
 } = require('../../config');
 const {
+    subscribeUserToCommunityTopic,
+    unsubscribeUserFromCommunityTopic
+} = require('../../Functions/communityFunctions');
+const {
     CommunityHostSchemaWithDatabaseKeys,
     CommunityMemberSchemaWithDatabaseKeys
 } = require('../../Schemas/communityUserSchema');
@@ -165,6 +169,13 @@ router.post('/', async (req, res) => {
 
     await dynamoClient.transactWrite(_transactQuery).promise();
 
+    // subscribing this user to communityTopic
+    await subscribeUserToCommunityTopic({
+        communityId: communityId,
+        userId: userId,
+        type: "MEMBER",
+    });
+
     return res.status(200).json('successful');
 
 });
@@ -248,6 +259,14 @@ router.delete('/', async (req, res) => {
             Update: _communityDocUpdateQuery,
         }];
     }
+
+
+    // first unsubscribing user from community topic.
+    await unsubscribeUserFromCommunityTopic({
+        communityId: communityId,
+        userId: userId,
+        type: type
+    });
 
     await dynamoClient.transactWrite(_transactQuery).promise();
 
