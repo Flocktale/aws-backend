@@ -54,6 +54,7 @@
 
 
     module.exports = {
+
         dynamoClient,
         s3,
         sns,

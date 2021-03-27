@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const {
     dynamoClient,
-    myTable
+    myTable,
+    sns,
 } = require('../../config');
 
 const fs = require("fs");
@@ -94,31 +95,13 @@ router.post('/', async (req, res) => {
 
 
 
-        const _Avatarthumbnail = fs.createReadStream('./static/communityAvatar_thumb.jpg');
-        const _Avatardefault = fs.createReadStream('./static/communityAvatar.jpg');
-        const _Avatarlarge = fs.createReadStream('./static/communityAvatar_large.jpg');
+        await Promise.all([
+            // uploading community placeholder images 
+            setCommunityImages(),
 
-
-        const _Coverthumbnail = fs.createReadStream('./static/communityCoverImage_thumb.jpg');
-        const _Coverdefault = fs.createReadStream('./static/communityCoverImage.jpg');
-        const _Coverlarge = fs.createReadStream('./static/communityCoverImage_large.jpg');
-
-        const uploadPromises = [
-            uploadFile(Constants.s3CommunityAvatarThumbKey(communityId), _Avatarthumbnail),
-            uploadFile(Constants.s3CommunityAvatarDefaultKey(communityId), _Avatardefault),
-            uploadFile(Constants.s3CommunityAvatarLargeKey(communityId), _Avatarlarge),
-
-            uploadFile(Constants.s3CommunityCoverImageThumbKey(communityId), _Coverthumbnail),
-            uploadFile(Constants.s3CommunityCoverImageDefaultKey(communityId), _Coverdefault),
-            uploadFile(Constants.s3CommunityCoverImageLargeKey(communityId), _Coverlarge),
-        ];
-
-        try {
-            await Promise.all(uploadPromises);
-        } catch (error) {
-            console.log(`Error occured while trying to upload:`, error);
-        }
-
+            // creating topic
+            setCommunityTopic(),
+        ]);
 
         return res.status(201).json({
             communityId: communityId
@@ -130,5 +113,39 @@ router.post('/', async (req, res) => {
     }
 
 });
+
+async function setCommunityTopic(communityId) {
+    await sns.createTopic({
+        Name: communityId,
+    }).promise();
+}
+
+async function setCommunityImages(communityId) {
+
+    const _Avatarthumbnail = fs.createReadStream('./static/communityAvatar_thumb.jpg');
+    const _Avatardefault = fs.createReadStream('./static/communityAvatar.jpg');
+    const _Avatarlarge = fs.createReadStream('./static/communityAvatar_large.jpg');
+
+
+    const _Coverthumbnail = fs.createReadStream('./static/communityCoverImage_thumb.jpg');
+    const _Coverdefault = fs.createReadStream('./static/communityCoverImage.jpg');
+    const _Coverlarge = fs.createReadStream('./static/communityCoverImage_large.jpg');
+
+    const uploadPromises = [
+        uploadFile(Constants.s3CommunityAvatarThumbKey(communityId), _Avatarthumbnail),
+        uploadFile(Constants.s3CommunityAvatarDefaultKey(communityId), _Avatardefault),
+        uploadFile(Constants.s3CommunityAvatarLargeKey(communityId), _Avatarlarge),
+
+        uploadFile(Constants.s3CommunityCoverImageThumbKey(communityId), _Coverthumbnail),
+        uploadFile(Constants.s3CommunityCoverImageDefaultKey(communityId), _Coverdefault),
+        uploadFile(Constants.s3CommunityCoverImageLargeKey(communityId), _Coverlarge),
+    ];
+
+    try {
+        await Promise.all(uploadPromises);
+    } catch (error) {
+        console.log(`Error occured while trying to upload:`, error);
+    }
+}
 
 module.exports = router;

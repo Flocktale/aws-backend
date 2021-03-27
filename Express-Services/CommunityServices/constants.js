@@ -4,7 +4,16 @@ const _clubAvatarPrefix = 'clubAvatar/';
 const _communityAvatarPrefix = 'communityAvatar/';
 const _communityCoverImagePrefix = 'communityCoverImage/'
 
+const awsAccountId = "524663372903";
+const awsRegion = "ap-south-1";
+
 class Constants {
+
+    // sns related
+
+    static snsTopicArn(name) {
+        return "arn:aws:sns:" + awsRegion + ":" + awsAccountId + ":" + name;
+    }
 
     //  sqs related
 
