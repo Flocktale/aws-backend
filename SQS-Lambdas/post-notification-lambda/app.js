@@ -79,7 +79,7 @@ async function publishNotification({
             P_K: 'SNS_DATA#',
             S_K: `USER#${userId}`,
         },
-        AttributesToGet: ['endpointArn'],
+        AttributesToGet: ['endpointArn', 'enabled'],
     };
 
     promises.push(dynamoClient.get(_endpointQuery).promise().then(({
@@ -93,6 +93,8 @@ async function publishNotification({
 
     if (!endpointData) {
         return console.log('no device token is registered for userId: ', userId);
+    } else if (!endpointData.enabled) {
+        return console.log('endpoint is disabled');
     }
 
     // now publishing to push notification via sns.
