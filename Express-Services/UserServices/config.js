@@ -17,7 +17,6 @@ const apigwManagementApi = new AWS.ApiGatewayManagementApi({
     endpoint: 'https://0pxxpxq71b.execute-api.ap-south-1.amazonaws.com' + '/' + 'Dev'
 });
 
-
 const imageUploadConstParams = {
     ACL: 'public-read',
     Bucket: Constants.avatarBucketName,
@@ -25,50 +24,62 @@ const imageUploadConstParams = {
     // Key:             populate it
 };
 
-// (using platform application - "flocktale-fcm" which is GCM (FCM) enabled ) (AWS region is Mumbai (ap-south-1))
-const platformEndpointCreateParams = {
-    PlatformApplicationArn: 'arn:aws:sns:ap-south-1:524663372903:app/GCM/flocktale-fcm',
-    // Token:               (deviceToken) populate it
 
-};
+const agoraAppId = "f58d5e866a87498988cd3c138759bb2a";
+const agoraPrimaryCertificate = "a420f033ec69472c885af6775c861701";
 
 
 const myTable = "MyTable";
-const searchByUsernameIndex = "SearchByUsernameIndex";
 
-const clubCreatorIdIndex = "ClubCreatorIdIndex";
-
-const timestampSortIndex = "TimestampSortIndex";
-const usernameSortIndex = "UsernameSortIndex";
-
-
-const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
 
 const WsTable = 'WsTable';
 const wsInvertIndex = 'wsInvertIndex';
 const wsUserIdIndex = 'wsUserIdIndex';
 
 
+
+const clubCategoryIndex = "ClubCategoryIndex";
+
+const clubCreatorIdIndex = "ClubCreatorIdIndex";
+
+const sortKeyWithTimestampIndex = "SortKeyWithTimestampIndex";
+
+const usernameSortIndex = "UsernameSortIndex";
+const timestampSortIndex = "TimestampSortIndex";
+const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
+const searchByUsernameIndex = "SearchByUsernameIndex";
+
+const primaryKeyInvertIndex = "PrimaryKeyInvertIndex";
+const clubCommunityIndex = "ClubCommunityIndex";
+
+
 module.exports = {
+
     dynamoClient,
     s3,
     sns,
     sqs,
-    imageUploadConstParams,
-    platformEndpointCreateParams,
-
-    myTable,
-    searchByUsernameIndex,
-
-    clubCreatorIdIndex,
-
-    usernameSortIndex,
-    timestampSortIndex,
-
-    audienceDynamicDataIndex,
     apigwManagementApi,
+
+    imageUploadConstParams,
+    myTable,
 
     WsTable,
     wsInvertIndex,
     wsUserIdIndex,
+
+    clubCategoryIndex,
+    clubCreatorIdIndex,
+    sortKeyWithTimestampIndex,
+
+    usernameSortIndex,
+    timestampSortIndex,
+    audienceDynamicDataIndex,
+    searchByUsernameIndex,
+
+    primaryKeyInvertIndex,
+    clubCommunityIndex,
+
+    agoraAppId,
+    agoraPrimaryCertificate,
 };

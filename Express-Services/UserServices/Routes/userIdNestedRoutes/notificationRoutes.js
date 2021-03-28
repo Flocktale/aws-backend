@@ -49,20 +49,21 @@ router.post("/device-token", async (req, res) => {
             P_K: 'SNS_DATA#',
             S_K: `USER#${userId}`
         },
-        AttributesToGet: ['deviceToken', 'endpointArn'],
+        AttributesToGet: ['deviceToken', 'endpointArn', 'enabled'],
     }
-    var oldDeviceToken, oldEndpoint;
+    var oldDeviceToken, oldEndpoint, enabled;
     try {
         const oldData = (await dynamoClient.get(_tokenQuery).promise())['Item'];
         if (oldData) {
             oldDeviceToken = oldData['deviceToken'];
             oldEndpoint = oldData['endpointArn'];
+            enabled = oldData['enabled'];
         }
     } catch (error) {
         console.log('error while fetching old token data: ', error);
     }
 
-    if (oldDeviceToken === deviceToken) {
+    if (oldDeviceToken === deviceToken && enabled) {
         console.log('device token is already registered');
         return res.status(201).json('Token registered successfully');
     }
@@ -76,28 +77,47 @@ router.post("/device-token", async (req, res) => {
 
     try {
 
-        // if this user already had a platform endpoint then delete it first.
+        // if this user already had a platform endpoint, update it.
         if (oldEndpoint) {
-            await sns.deleteEndpoint({
-                EndpointArn: oldEndpoint
+
+            await sns.setEndpointAttributes({
+                EndpointArn: oldEndpoint,
+                Attributes: {
+                    Enabled: 'true',
+                    Token: deviceToken,
+                }
             }).promise();
+
+            if (enabled !== true) {
+                await dynamoClient.update({
+                    TableName: myTable,
+                    Key: {
+                        P_K: 'SNS_DATA#',
+                        S_K: `USER#${userId}`
+                    },
+                    UpdateExpression: 'set enabled = :tr',
+                    ExpressionAttributeValues: {
+                        ':tr': true,
+                    },
+                }).promise();
+            }
+
+        } else {
+
+            const endpointArn = (await sns.createPlatformEndpoint(params).promise()).EndpointArn;
+
+            const snsData = await SNSEndpointSchemaWithDatabaseKeys.validateAsync({
+                userId: userId,
+                deviceToken: deviceToken,
+                endpointArn: endpointArn,
+            });
+
+            await dynamoClient.put({
+                TableName: myTable,
+                Item: snsData,
+            }).promise();
+
         }
-
-
-        const endpointArn = (await sns.createPlatformEndpoint(params).promise()).EndpointArn;
-        const snsData = await SNSEndpointSchemaWithDatabaseKeys.validateAsync({
-            userId: userId,
-            deviceToken: deviceToken,
-            endpointArn: endpointArn,
-        });
-
-        const _putQuery = {
-            TableName: myTable,
-            Item: snsData,
-        }
-
-        await dynamoClient.put(_putQuery).promise();
-
         return res.status(201).json('Token registered successfully');
 
     } catch (error) {
@@ -107,23 +127,33 @@ router.post("/device-token", async (req, res) => {
 
 });
 
+
 router.delete("/device-token", async (req, res) => {
     const userId = req.userId;
 
-    const _tokenDeleteQuery = {
+    const _tokenDisableQuery = {
         TableName: myTable,
         Key: {
             P_K: 'SNS_DATA#',
             S_K: `USER#${userId}`
         },
-        ReturnValues: 'ALL_OLD',
+        UpdateExpression: 'set enabled = :fal',
+        ExpressionAttributeValues: {
+            ':fal': false,
+        },
+        ReturnValues: 'ALL_NEW',
     }
     try {
-        const oldData = (await dynamoClient.delete(_tokenDeleteQuery).promise())['Attributes'];
+        const oldData = (await dynamoClient.update(_tokenDisableQuery).promise())['Attributes'];
+
         if (oldData) {
             const oldEndpoint = oldData['endpointArn'];
-            await sns.deleteEndpoint({
-                EndpointArn: oldEndpoint
+
+            await sns.setEndpointAttributes({
+                EndpointArn: oldEndpoint,
+                Attributes: {
+                    Enabled: 'false',
+                }
             }).promise();
 
         }

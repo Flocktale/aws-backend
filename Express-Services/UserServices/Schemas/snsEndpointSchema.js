@@ -6,7 +6,8 @@ const SNSEndpointSchema = Joi.object({
     deviceToken: Joi.string().required(),
     endpointArn: Joi.string().required(),
 
-    topics: Joi.array().items(Joi.string()),
+    enabled: Joi.boolean().default(true),
+
 });
 
 const SNSEndpointSchemaWithDatabaseKeys = SNSEndpointSchema.append({

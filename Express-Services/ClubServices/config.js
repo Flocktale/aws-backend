@@ -1,79 +1,85 @@
-    const AWS = require('aws-sdk');
-    const Constants = require('./constants');
+const AWS = require('aws-sdk');
+const Constants = require('./constants');
 
-    AWS.config.update({
-        region: "ap-south-1",
-        // endpoint: "http://localhost:3000"        //this endpoint is used in case of local dynamodb on pc.
-        // endpoint: "http://dynamodb.ap-south-1.amazonaws.com"  // by default it is set according to region
-    });
+AWS.config.update({
+    region: "ap-south-1",
+    // endpoint: "http://localhost:3000"        //this endpoint is used in case of local dynamodb on pc.
+    // endpoint: "http://dynamodb.ap-south-1.amazonaws.com"  // by default it is set according to region
+});
 
-    const dynamoClient = new AWS.DynamoDB.DocumentClient();
-    const s3 = new AWS.S3();
-    const sns = new AWS.SNS();
-    const sqs = new AWS.SQS();
+const dynamoClient = new AWS.DynamoDB.DocumentClient();
+const s3 = new AWS.S3();
+const sns = new AWS.SNS();
+const sqs = new AWS.SQS();
 
-    const apigwManagementApi = new AWS.ApiGatewayManagementApi({
-        apiVersion: '2018-11-29',
-        endpoint: 'https://0pxxpxq71b.execute-api.ap-south-1.amazonaws.com' + '/' + 'Dev'
-    });
+const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+    apiVersion: '2018-11-29',
+    endpoint: 'https://0pxxpxq71b.execute-api.ap-south-1.amazonaws.com' + '/' + 'Dev'
+});
 
-    const imageUploadConstParams = {
-        ACL: 'public-read',
-        Bucket: Constants.avatarBucketName,
-        // Body:            populate it 
-        // Key:             populate it
-    };
-
-
-    const agoraAppId = "f58d5e866a87498988cd3c138759bb2a";
-    const agoraPrimaryCertificate = "a420f033ec69472c885af6775c861701";
+const imageUploadConstParams = {
+    ACL: 'public-read',
+    Bucket: Constants.avatarBucketName,
+    // Body:            populate it 
+    // Key:             populate it
+};
 
 
-    const myTable = "MyTable";
+const agoraAppId = "f58d5e866a87498988cd3c138759bb2a";
+const agoraPrimaryCertificate = "a420f033ec69472c885af6775c861701";
 
 
-    const WsTable = 'WsTable';
-    const wsInvertIndex = 'wsInvertIndex';
-    const wsUserIdIndex = 'wsUserIdIndex';
+const myTable = "MyTable";
 
 
-
-    const clubCategoryIndex = "ClubCategoryIndex";
-
-    const clubCreatorIdIndex = "ClubCreatorIdIndex";
-
-    const sortKeyWithTimestampIndex = "SortKeyWithTimestampIndex";
-
-    const usernameSortIndex = "UsernameSortIndex";
-    const timestampSortIndex = "TimestampSortIndex";
-    const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
-    const searchByUsernameIndex = "SearchByUsernameIndex";
+const WsTable = 'WsTable';
+const wsInvertIndex = 'wsInvertIndex';
+const wsUserIdIndex = 'wsUserIdIndex';
 
 
 
-    module.exports = {
-        dynamoClient,
-        s3,
-        sns,
-        sqs,
-        apigwManagementApi,
+const clubCategoryIndex = "ClubCategoryIndex";
 
-        imageUploadConstParams,
-        myTable,
+const clubCreatorIdIndex = "ClubCreatorIdIndex";
 
-        WsTable,
-        wsInvertIndex,
-        wsUserIdIndex,
+const sortKeyWithTimestampIndex = "SortKeyWithTimestampIndex";
 
-        clubCategoryIndex,
-        clubCreatorIdIndex,
-        sortKeyWithTimestampIndex,
+const usernameSortIndex = "UsernameSortIndex";
+const timestampSortIndex = "TimestampSortIndex";
+const audienceDynamicDataIndex = "AudienceDynamicDataIndex";
+const searchByUsernameIndex = "SearchByUsernameIndex";
 
-        usernameSortIndex,
-        timestampSortIndex,
-        audienceDynamicDataIndex,
-        searchByUsernameIndex,
+const primaryKeyInvertIndex = "PrimaryKeyInvertIndex";
+const clubCommunityIndex = "ClubCommunityIndex";
 
-        agoraAppId,
-        agoraPrimaryCertificate,
-    };
+
+module.exports = {
+
+    dynamoClient,
+    s3,
+    sns,
+    sqs,
+    apigwManagementApi,
+
+    imageUploadConstParams,
+    myTable,
+
+    WsTable,
+    wsInvertIndex,
+    wsUserIdIndex,
+
+    clubCategoryIndex,
+    clubCreatorIdIndex,
+    sortKeyWithTimestampIndex,
+
+    usernameSortIndex,
+    timestampSortIndex,
+    audienceDynamicDataIndex,
+    searchByUsernameIndex,
+
+    primaryKeyInvertIndex,
+    clubCommunityIndex,
+
+    agoraAppId,
+    agoraPrimaryCertificate,
+};
