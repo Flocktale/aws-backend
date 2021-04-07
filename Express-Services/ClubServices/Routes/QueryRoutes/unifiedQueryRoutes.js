@@ -6,7 +6,9 @@ const {
     dynamoClient,
     myTable
 } = require('../../config');
-
+const {
+    cloneObj
+} = require('../../Functions/customFunctions');
 
 
 async function getSearchResult(searchString, _query, type, attributes, req) {
@@ -57,7 +59,7 @@ router.get('/', async (req, res) => {
         KeyConditions: {
             "PublicSearch": {
                 "ComparisonOperator": "EQ",
-                "AttributeValueList": []
+                // "AttributeValueList": []
             },
             "FilterDataName": {
                 "ComparisonOperator": "BEGINS_WITH",
@@ -66,7 +68,6 @@ router.get('/', async (req, res) => {
         },
         // AttributesToGet: [],
         Limit: 20,
-        ReturnConsumedCapacity: "INDEXES"
     };
 
     const clubAttributes = ['clubId', 'clubName', 'creator', 'category', 'scheduleTime', 'clubAvatar', 'tags', 'duration', 'community'];
@@ -79,22 +80,20 @@ router.get('/', async (req, res) => {
 
     var result = {};
 
-    const _clubQuery = {
-        ..._query
-    };
-    const _userQuery = {
-        ..._query
-    };
+    const _clubQuery = cloneObj(_query);
+    const _userQuery = cloneObj(_query);
 
-    const _communityQuery = {
-        ..._query
-    };
+    const _communityQuery = cloneObj(_query);
+
 
     _clubQuery['KeyConditions']['PublicSearch']['AttributeValueList'] = [2];
+
     _userQuery['KeyConditions']['PublicSearch']['AttributeValueList'] = [1];
+
 
     _communityQuery['KeyConditions']['PublicSearch']['AttributeValueList'] = [3];
     _communityQuery['Limit'] = 10;
+
 
     if (type === "unified") {
 
@@ -139,7 +138,6 @@ router.get('/', async (req, res) => {
         }
 
     }
-
 
     return res.status(200).json(result);
 });
