@@ -4,7 +4,11 @@ const CommunityDocSchema = Joi.object({
     communityId: Joi.string().required(),
 
     name: Joi.string().required(),
-    description: Joi.string().required(),
+
+    // allowing empty string also with max set to 100
+    tagline: Joi.string().allow("").max(100),
+
+    description: Joi.string(),
 
     avatar: Joi.string(),
     coverImage: Joi.string(),
@@ -27,7 +31,7 @@ const CommunityDocSchema = Joi.object({
 });
 
 const CommunityDocSchemaWithDatabaseKeys = CommunityDocSchema.append({
-    P_K: Joi.string().default(Joi.expression('COMMUNITY#DATA')),
+    P_K: Joi.string().default(Joi.expression('COMMUNITY#{{communityId}}')),
     S_K: Joi.string().default(Joi.expression('COMMUNITYMETA#{{communityId}}')),
 
 
@@ -37,6 +41,9 @@ const CommunityDocSchemaWithDatabaseKeys = CommunityDocSchema.append({
             return 'COMMUNITY#' + parent.name.toLowerCase();
         }
     ), // GSI : SearchByUsernameIndex
+
+    // based on popularity, activity and etc.
+    Weight: Joi.number().default(1), // GSI: WeightIndex
 });
 
 exports.CommunityDocSchema = CommunityDocSchema;

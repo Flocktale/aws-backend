@@ -97,7 +97,7 @@ router.post('/response', async (req, res) => {
         const _communityDocUpdateQuery = {
             TableName: myTable,
             Key: {
-                P_K: 'COMMUNITY#DATA',
+                P_K: `COMMUNITY#${communityId}`,
                 S_K: `COMMUNITYMETA#${communityId}`
             },
             UpdateExpression: 'ADD hosts :host, memberCount :counter',

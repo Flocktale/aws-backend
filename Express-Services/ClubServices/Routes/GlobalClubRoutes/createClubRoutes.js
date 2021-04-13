@@ -190,7 +190,7 @@ router.post('/', async (req, res) => {
                     const _communityDocUpdateQuery = {
                         TableName: myTable,
                         Key: {
-                            P_K: 'COMMUNITY#DATA',
+                            P_K: `COMMUNITY#${newClub.community.communityId}`,
                             S_K: `COMMUNITYMETA#${newClub.community.communityId}`
                         },
                         UpdateExpression: 'ADD scheduledClubCount :counter',

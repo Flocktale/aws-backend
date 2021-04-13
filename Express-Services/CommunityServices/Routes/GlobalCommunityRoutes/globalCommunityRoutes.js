@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const {
     dynamoClient,
-    myTable
+    myTable,
+    weightIndex
 } = require('../../config');
 
 
@@ -17,24 +18,24 @@ router.get('/', async (req, res) => {
 
     const _query = {
         TableName: myTable,
-        KeyConditionExpression: 'P_K = :pk and begins_with(S_K,:sk)',
+        IndexName: weightIndex, // sorted in decreasing order of weight attribute
+        KeyConditionExpression: 'PublicSearch = :pk',
         ExpressionAttributeValues: {
-            ':pk': 'COMMUNITY#DATA',
-            ':sk': 'COMMUNITYMETA#'
+            ':pk': 3,
         },
-        ProjectionExpression: 'communityId, #name, #avatar, converImage, creator, liveClubCount,scheduledClubCount,memberCount',
+        ProjectionExpression: 'communityId, #name, #avatar, coverImage, creator, liveClubCount,scheduledClubCount,memberCount',
         ExpressionAttributeNames: {
             '#name': 'name',
             '#avatar': 'avatar'
         },
-
+        ScanIndexForward: false,
         ExclusiveStartKey: req.headers.lastevaluatedkey,
         Limit: 10,
     };
 
     const data = await dynamoClient.query(_query).promise();
 
-    return res.status({
+    return res.status(200).json({
         communities: data['Items'],
         lastevaluatedkey: data['LastEvaluatedKey'],
     });

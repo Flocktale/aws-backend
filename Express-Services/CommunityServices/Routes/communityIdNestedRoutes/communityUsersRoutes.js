@@ -125,7 +125,7 @@ router.post('/', async (req, res) => {
     const _communitySummaryQuery = {
         TableName: myTable,
         Key: {
-            P_K: 'COMMUNITY#DATA',
+            P_K: `COMMUNITY#${communityId}`,
             S_K: `COMMUNITYMETA#${communityId}`
         },
         AttributesToGet: ['communityId', 'name', 'avatar'],
@@ -151,7 +151,7 @@ router.post('/', async (req, res) => {
     const _communityDocUpdateQuery = {
         TableName: myTable,
         Key: {
-            P_K: 'COMMUNITY#DATA',
+            P_K: `COMMUNITY#${communityId}`,
             S_K: `COMMUNITYMETA#${communityId}`
         },
         UpdateExpression: 'ADD memberCount :counter',
@@ -216,7 +216,7 @@ router.delete('/', async (req, res) => {
         const _communityDocUpdateQuery = {
             TableName: myTable,
             Key: {
-                P_K: 'COMMUNITY#DATA',
+                P_K: `COMMUNITY#${communityId}`,
                 S_K: `COMMUNITYMETA#${communityId}`
             },
             UpdateExpression: 'DELETE hosts :host',
@@ -244,7 +244,7 @@ router.delete('/', async (req, res) => {
         const _communityDocUpdateQuery = {
             TableName: myTable,
             Key: {
-                P_K: 'COMMUNITY#DATA',
+                P_K: `COMMUNITY#${communityId}`,
                 S_K: `COMMUNITYMETA#${communityId}`
             },
             UpdateExpression: 'ADD memberCount :counter',

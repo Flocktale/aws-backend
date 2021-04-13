@@ -45,6 +45,10 @@ const UserInputSchemaWithDatabaseKeys = UserInputSchema.append({
     PublicSearch: Joi.number().integer().valid(0, 1).default(1), // GSI : SearchByUsernameIndex
     FilterDataName: Joi.string().default(Joi.expression('USER#{{username}}')), // GSI : SearchByUsernameIndex
 
+
+    // based on popularity, activity and etc.
+    Weight: Joi.number().default(1), // GSI: WeightIndex
+
 });
 
 const UserBaseCompleteSchema = UserInputSchemaWithDatabaseKeys.append({

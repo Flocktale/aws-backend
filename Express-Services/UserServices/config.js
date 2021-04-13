@@ -52,6 +52,8 @@ const searchByUsernameIndex = "SearchByUsernameIndex";
 const primaryKeyInvertIndex = "PrimaryKeyInvertIndex";
 const clubCommunityIndex = "ClubCommunityIndex";
 
+const weightIndex = "WeightIndex";
+
 
 module.exports = {
 
@@ -79,6 +81,8 @@ module.exports = {
 
     primaryKeyInvertIndex,
     clubCommunityIndex,
+
+    weightIndex,
 
     agoraAppId,
     agoraPrimaryCertificate,

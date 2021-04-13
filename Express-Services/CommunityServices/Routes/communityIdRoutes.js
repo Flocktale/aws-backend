@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
     const _getQuery = {
         TableName: myTable,
         Key: {
-            P_K: 'COMMUNITY#DATA',
+            P_K: `COMMUNITY#${communityId}`,
             S_K: `COMMUNITYMETA#${communityId}`,
         },
         AttributesToGet: ['communityId', 'name', 'description', 'avatar', 'coverImage',
@@ -79,7 +79,7 @@ router.patch('/', async (req, res) => {
     const _communityDocUpdateQuery = {
         TableName: myTable,
         Key: {
-            P_K: 'COMMUNITY#DATA',
+            P_K: `COMMUNITY#${communityId}`,
             S_K: `COMMUNITYMETA#${communityId}`
         },
         UpdateExpression: 'set description :dscp',

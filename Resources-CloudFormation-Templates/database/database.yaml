@@ -85,6 +85,9 @@ Resources:
         - AttributeName: scheduleTime
           AttributeType: N
 
+        - AttributeName: Weight
+          AttributeType: N
+
       KeySchema:
         - AttributeName: P_K
           KeyType: HASH
@@ -182,3 +185,14 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields
+
+        - IndexName: WeightIndex
+          KeySchema:
+            - AttributeName: PublicSearch
+              KeyType: HASH
+
+            - AttributeName: Weight
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+
