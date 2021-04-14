@@ -14,13 +14,17 @@ const {
 ///     prt - invitation for being participant
 ///     adc - invitation for being audience
 
+// COMMUNITY#INV#
+///     host - invitation to become host in community
+
+
 const NotificationSchema = Joi.object({
     userId: Joi.string().required(),
     notificationId: Joi.string().default(() => nanoid()),
 
     data: Joi.object({
 
-        type: Joi.string().valid('FR#new', 'FR#accepted', 'FLW#new', 'CLUB#INV#prt', 'CLUB#INV#adc').required(),
+        type: Joi.string().valid('FR#new', 'FR#accepted', 'FLW#new', 'CLUB#INV#prt', 'CLUB#INV#adc', 'COMMUNITY#INV#host').required(),
         title: Joi.string().required(),
         avatar: Joi.string().required(),
         timestamp: Joi.number().required(),

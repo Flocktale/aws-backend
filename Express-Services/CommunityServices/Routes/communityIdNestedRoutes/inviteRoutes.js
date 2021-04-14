@@ -1,7 +1,16 @@
 const {
+    NotificationSchemaWithDatabaseKeys
+} = require('../../Schemas/notificationSchema');
+
+const {
     myTable,
-    dynamoClient
+    dynamoClient,
+    sns
 } = require('../../config');
+const Constants = require('../../constants');
+const {
+    pushToPostNotificationQueue
+} = require('../../Functions/sqsFunctions');
 const {
     CommunityHostSchemaWithDatabaseKeys
 } = require('../../Schemas/communityUserSchema');
@@ -29,11 +38,27 @@ router.post('/', async (req, res) => {
         UpdateExpression: 'SET invited = :inv',
         ExpressionAttributeValues: {
             ':inv': true,
-        }
+        },
+        ReturnValues: 'ALL_NEW'
     };
-    await dynamoClient.update(_memberUpdateQuery).promise();
+    const communityData = (await dynamoClient.update(_memberUpdateQuery).promise())['Attributes']['community'];
 
-    //TODO: send notification to affected user.
+    const notifData = await NotificationSchemaWithDatabaseKeys.validateAsync({
+        userId: memberId,
+        data: {
+            type: 'COMMUNITY#INV#host',
+            title: 'Invitation: Become a host on ' + communityData.name + '.',
+            avatar: communityData.avatar,
+            timestamp: Date.now(),
+            targetResourceId: communityId,
+        }
+    });
+
+    await pushToPostNotificationQueue({
+        action: Constants.PostNotificationQueueAction.sendAndSave,
+        userId: memberId,
+        notifData: notifData,
+    });
 
     return res.status(200).json('successful');
 
@@ -117,6 +142,29 @@ router.post('/response', async (req, res) => {
 
 
         await dynamoClient.transactWrite(_transactQuery).promise();
+
+        // publishing notification to community topic
+
+        const snsPushNotificationObj = {
+            GCM: JSON.stringify({
+                notification: {
+                    title: `Welcome ${data.user.username} as new host on ${data.community.name}`,
+                    image: data.community.avatar + '_large',
+                    sound: "default",
+                    color: '#fff74040',
+                    click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                    icon: 'ic_notification',
+                },
+                priority: 'HIGH',
+
+            }),
+        };
+
+        await sns.publish({
+            Message: JSON.stringify(snsPushNotificationObj),
+            MessageStructure: 'json',
+            TopicArn: Constants.snsTopicArn(communityId),
+        }).promise();
 
         return res.status(200).json({
             community: data.community,
