@@ -21,7 +21,8 @@ const {
 
 const {
     dynamoClient,
-    myTable
+    myTable,
+    sns
 } = require('../../config');
 
 const {
@@ -200,11 +201,33 @@ router.post('/', async (req, res) => {
                     }
 
                     promises.push(dynamoClient.update(_communityDocUpdateQuery).promise());
+
+
+                    // sending notification to all community members via community topic
+
+                    const snsPushNotificationObj = {
+                        GCM: JSON.stringify({
+                            notification: {
+                                title: `${newClub.clubName} by ${newClub.creator.username} in ${newClub.community.name}, join ${getTimeTitle(newClub.scheduleTime)}`,
+                                image: newClub.avatar + '_large',
+                                sound: "default",
+                                color: '#fff74040',
+                                click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                                icon: 'ic_notification',
+                            },
+                            priority: 'HIGH',
+                        }),
+                    };
+                    promises.push(sns.publish({
+                        Message: JSON.stringify(snsPushNotificationObj),
+                        MessageStructure: 'json',
+                        TopicArn: Constants.snsTopicArn(newClub.community.communityId),
+                    }).promise());
                 }
 
 
                 try {
-                    await Promise.all(uploadPromises);
+                    await Promise.all(promises);
                 } catch (error) {
                     console.log(`Error in resolving promises`, error);
                 }
@@ -219,5 +242,26 @@ router.post('/', async (req, res) => {
         res.status(400).json(error);
     }
 });
+
+function getTimeTitle(scheduleTime) {
+    const now = new Date();
+    const scheduled = new Date(scheduleTime);
+
+    const diffHours = (scheduled - now) / (1000 * 60 * 60);
+
+    if (diffHours <= 48 && (scheduled.getDate() - now.getDate()) <= 1) {
+        var title = `at ${scheduled.getHours()}.${scheduled.getMinutes()} `;
+        if (scheduled.getDate() - now.getDate() == 1) {
+            return title + 'tomorrow';
+        } else return title + 'today';
+    } else {
+        const month = scheduled.toLocaleString('default', {
+            month: 'long'
+        })
+        var title = `on ${month} ${scheduled.getDate()} at ${scheduled.getHours()}.${scheduled.getMinutes()} `;
+        return title;
+    }
+
+}
 
 module.exports = router;

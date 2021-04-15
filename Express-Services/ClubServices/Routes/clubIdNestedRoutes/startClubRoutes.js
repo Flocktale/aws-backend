@@ -3,6 +3,7 @@ const router = require('express').Router();
 const {
     dynamoClient,
     myTable,
+    sns,
 } = require('../../config');
 
 
@@ -33,7 +34,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`,
         },
-        AttributesToGet: ['creator', 'agoraToken', 'status', 'community'],
+        AttributesToGet: ['clubName', 'creator', 'agoraToken', 'status', 'community'],
     };
 
     try {
@@ -106,15 +107,49 @@ router.post('/', async (req, res) => {
                 await dynamoClient.update(_updateDocQuery).promise();
             }
 
+            const promises = [];
+
             // sending agoraToken to all user subscribed to this club at this moment
-            await pushToWsMsgQueue({
+            promises.push(pushToWsMsgQueue({
                 action: Constants.WsMsgQueueAction.clubStarted,
                 MessageGroupId: clubId,
                 attributes: {
                     clubId: clubId,
                     agoraToken: agoraToken
                 }
-            });
+            }));
+
+            if (_clubData.community) {
+
+                // sending notification to all community members via community topic
+
+                const snsPushNotificationObj = {
+                    GCM: JSON.stringify({
+                        notification: {
+                            title: `LIVE Now : ${_clubData.clubName} by ${_clubData.creator.username} in ${_clubData.community.name}, hurry & join now`,
+                            image: _clubData.avatar + '_large',
+                            sound: "default",
+                            color: '#fff74040',
+                            click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                            icon: 'ic_notification',
+                        },
+                        priority: 'HIGH',
+                    }),
+                };
+                promises.push(sns.publish({
+                    Message: JSON.stringify(snsPushNotificationObj),
+                    MessageStructure: 'json',
+                    TopicArn: Constants.snsTopicArn(_clubData.community.communityId),
+                }).promise());
+            }
+
+            try {
+                await Promise.all(promises);
+            } catch (error) {
+                console.log(`Error in resolving promises`, error);
+            }
+
+
 
             return res.status(201).json({
                 "agoraToken": agoraToken,
