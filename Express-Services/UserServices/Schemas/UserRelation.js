@@ -62,7 +62,7 @@ const UserRelationSchema = RelationIndexObjectSchema.append({
 
     //requestId only exists when user has a pending primary user has a friend request from foreign user.
     // otherwise it is deleted/non-existent.
-    requestId: Joi.string(),
+    requestId: Joi.string().allow(null),
 
 });
 

@@ -11,13 +11,12 @@ const ClubInputSchema = Joi.object({
         avatar: Joi.string().required(),
     }).required(),
 
-    agoraToken: Joi.string(),
-
+    agoraToken: Joi.string().allow(null),
 
     status: Joi.string().valid("Waiting", "Live", "Concluded").default("Waiting"), // default is "Waiting" when club is created as it is not played directly.
 
     category: Joi.string().required(), // GSI: ClubCategoryIndex 
-    subCategory: Joi.string(),
+    subCategory: Joi.string().allow(null),
 
     community: Joi.object({
         communityId: Joi.string().required(),
@@ -34,8 +33,11 @@ const ClubInputSchema = Joi.object({
 
     //normal fields
 
-    clubAvatar: Joi.string(),
-    description: Joi.string(),
+    clubAvatar: Joi.string().allow(null),
+    description: Joi.string().allow(null),
+
+    // to redirect to any article, product or movie etc.
+    externalUrl: Joi.array().items(Joi.string()),
 
     isLocal: Joi.boolean().default(true),
     isGlobal: Joi.boolean().default(false),
@@ -58,6 +60,10 @@ const ClubInputSchemaWithDatabaseKeys = ClubInputSchema.append({
         }
     }), // GSI: ClubCommunityIndex
 
+
+    // to connect news and commerce and etc related content with club. 
+    ClubContentField: Joi.string().allow(null), // GSI: ClubContentIndex
+
     PublicSearch: Joi.number().integer().valid(0, 2).default(2), // GSI : SearchByUsernameIndex
     FilterDataName: Joi.string().default(
         (parent, helpers) => {
@@ -65,6 +71,8 @@ const ClubInputSchemaWithDatabaseKeys = ClubInputSchema.append({
         }
 
     ), // GSI : SearchByUsernameIndex
+
+
 
 });
 

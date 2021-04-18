@@ -88,6 +88,9 @@ Resources:
         - AttributeName: Weight
           AttributeType: N
 
+        - AttributeName: ClubContentField
+          AttributeType: S
+
       KeySchema:
         - AttributeName: P_K
           KeyType: HASH
@@ -192,6 +195,16 @@ Resources:
               KeyType: HASH
 
             - AttributeName: Weight
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL #TODO: only project required fields
+
+        - IndexName: ClubContentIndex
+          KeySchema:
+            - AttributeName: ClubContentField
+              KeyType: HASH
+
+            - AttributeName: status
               KeyType: RANGE
           Projection:
             ProjectionType: ALL #TODO: only project required fields

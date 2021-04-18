@@ -8,7 +8,7 @@
         "Health",
         "Finance",
         "Sports",
-        "Media",
+        "News",
         "Politics",
         "Business",
         "Entertainment",
@@ -44,8 +44,8 @@
     "Sports": [
         "Sports"
     ],
-    "Media": [
-        "Media"
+    "News": [
+        "News"
     ],
     "Politics": [
         "Politics"

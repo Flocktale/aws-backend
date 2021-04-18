@@ -8,10 +8,10 @@ const CommunityDocSchema = Joi.object({
     // allowing empty string also with max set to 100
     tagline: Joi.string().allow("").max(100),
 
-    description: Joi.string(),
+    description: Joi.string().allow(null),
 
-    avatar: Joi.string(),
-    coverImage: Joi.string(),
+    avatar: Joi.string().allow(null),
+    coverImage: Joi.string().allow(null),
 
     creator: Joi.object({
         userId: Joi.string().required(),

@@ -14,7 +14,7 @@ const CommunityUserSchema = Joi.object({
 
 
     // ARN of subscription point in SNS
-    subscriptionArn: Joi.string(),
+    subscriptionArn: Joi.string().allow(null),
 });
 
 // -----------------------------------------------------------------------------------------

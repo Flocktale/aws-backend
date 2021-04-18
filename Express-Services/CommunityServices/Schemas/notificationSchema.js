@@ -36,14 +36,14 @@ const NotificationSchema = Joi.object({
         targetResourceId: Joi.string().required(),
 
         // for use cases for eg :  user react/comment on a club then (avatar - user, secondarySvatar - club) 
-        secondaryAvatar: Joi.string(),
+        secondaryAvatar: Joi.string().allow(null),
 
         // it indicated if user has clicked/opened the notification.
         opened: Joi.bool().default(false),
 
         extraData: Joi.object({
             scheduleTime: Joi.number(), // in case of CLUB#
-            category: Joi.string(), // in case of CLUB#
+            category: Joi.string().allow(null), // in case of CLUB#
         }),
 
     }).required(),

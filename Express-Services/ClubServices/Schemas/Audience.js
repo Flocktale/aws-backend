@@ -7,7 +7,7 @@ const AudienceSchema = Joi.object({
     // exists only for owner
     isOwner: Joi.boolean(),
 
-    status: Joi.string(),
+    status: Joi.string().allow(null),
 
     joinRequestAttempts: Joi.number().default(0),
 
@@ -23,7 +23,7 @@ const AudienceSchema = Joi.object({
 
 
     //invitationId exists when user has a pending invitation for participation in club, otherwise it is deleted/non-existent. 
-    invitationId: Joi.string(),
+    invitationId: Joi.string().allow(null),
 
 });
 

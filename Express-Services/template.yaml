@@ -206,6 +206,12 @@ Resources:
             Path: /clubs/global/create
             Method: post
 
+        GetContentData:
+          Type: Api
+          Properties:
+            Path: /clubs/global/content-data
+            Method: get
+
         GetCategoryData:
           Type: Api
           Properties:
