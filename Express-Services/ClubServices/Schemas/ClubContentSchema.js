@@ -10,6 +10,8 @@ const ClubContentSchema = Joi.object({
     description: Joi.string().allow(null),
     avatar: Joi.string().allow(null),
 
+    timestamp: Joi.number(),
+
 });
 
 
