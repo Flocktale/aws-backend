@@ -3,7 +3,7 @@ const Joi = require('joi');
 const ClubInputSchema = Joi.object({
     //! required fields
     clubId: Joi.string().required(),
-    clubName: Joi.string().min(3).max(25).required(),
+    clubName: Joi.string().required(),
 
     creator: Joi.object({
         userId: Joi.string().required(),
@@ -81,7 +81,7 @@ const ClubRoomCompleteSchema = ClubInputSchemaWithDatabaseKeys.append({
 
     estimatedAudience: Joi.number().integer().default(0), // used for rough estimation of total audience
 
-    participants: Joi.any(), // data type is dynamodb set, contains username of participants
+    participants: Joi.any(), // data type is dynamodb set, contains avatar of participants
 
 });
 

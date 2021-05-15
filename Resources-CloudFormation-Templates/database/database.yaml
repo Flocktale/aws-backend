@@ -91,6 +91,9 @@ Resources:
         - AttributeName: ClubContentField
           AttributeType: S
 
+        - AttributeName: status
+          AttributeType: S
+
       KeySchema:
         - AttributeName: P_K
           KeyType: HASH

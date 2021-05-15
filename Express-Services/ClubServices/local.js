@@ -3,8 +3,8 @@
 
 // const app = require('./app');
 
-// app.listen(3000, () => {
-//     console.log("Listening on port 3000");
+// app.listen(4000, () => {
+//     console.log("Listening on port 4000");
 // });
 
 const {
@@ -51,6 +51,7 @@ async function updateNewsContent() {
 
     const newsContent = [];
     if (data.status === "ok") {
+        console.log('articles: ', data.articles.length);
         const articles = data.articles;
         for (var article of articles) {
             try {

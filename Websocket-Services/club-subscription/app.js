@@ -165,7 +165,7 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
             },
             UpdateExpression: 'DELETE participants :prtUser',
             ExpressionAttributeValues: {
-                ':prtUser': dynamoClient.createSet([_audienceData.audience.username]),
+                ':prtUser': dynamoClient.createSet([_audienceData.audience.avatar]),
             }
         };
 

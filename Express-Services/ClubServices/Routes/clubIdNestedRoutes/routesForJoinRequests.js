@@ -482,7 +482,7 @@ router.post('/response', async (req, res) => {
             },
             UpdateExpression: 'ADD participants :prtUser',
             ExpressionAttributeValues: {
-                ':prtUser': dynamoClient.createSet([audienceDoc.audience.username]),
+                ':prtUser': dynamoClient.createSet([audienceDoc.audience.avatar]),
             }
         };
 

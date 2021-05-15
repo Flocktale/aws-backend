@@ -31,6 +31,8 @@ const {
 const Constants = require('../../constants');
 
 
+const NewsContentData = require('../../static/NewsContentData.json');
+
 //required
 // query parameters - 
 //                "creatorId"
@@ -48,6 +50,7 @@ const Constants = require('../../constants');
 
 router.post('/', async (req, res) => {
 
+
     const type = req.query.type;
     const creatorId = req.query.creatorId;
 
@@ -64,6 +67,8 @@ router.post('/', async (req, res) => {
             const contentUrl = req.query.contentUrl;
             const contentType = req.query.contentType;
             var contentData;
+
+
 
             if (contentType === "news") {
                 for (var article of NewsContentData) {
@@ -83,8 +88,6 @@ router.post('/', async (req, res) => {
                 clubId: clubId,
 
                 clubName: contentData.title,
-                creator: _creatorSummaryDoc,
-
                 category: "News",
 
                 clubAvatar: contentData.avatar,
@@ -94,7 +97,9 @@ router.post('/', async (req, res) => {
                 ClubContentField: contentData.url,
             };
 
+
             const newClub = await _createClub(creatorId, body);
+
 
             return res.status(201).json({
                 clubId: clubId
@@ -182,7 +187,6 @@ router.post('/', async (req, res) => {
 });
 
 async function _createClub(creatorId, body, communityId) {
-
     const clubId = body.clubId;
 
     const summaryDocPromises = [];
@@ -198,14 +202,18 @@ async function _createClub(creatorId, body, communityId) {
         }));
     }
 
+
     await Promise.all(summaryDocPromises);
+
 
     const newClub = await ClubRoomCompleteSchema.validateAsync({
         ...body,
 
         /// adding creator in list of participants
-        participants: dynamoClient.createSet([_creatorSummaryDoc.username]),
+        participants: dynamoClient.createSet([body.creator.avatar]),
     });
+
+    console.log(newClub);
 
     const _createClubQuery = {
         TableName: myTable,

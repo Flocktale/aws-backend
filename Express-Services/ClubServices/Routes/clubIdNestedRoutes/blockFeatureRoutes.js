@@ -186,7 +186,7 @@ router.post('/', async (req, res) => {
             },
             UpdateExpression: 'DELETE participants :prtUser',
             ExpressionAttributeValues: {
-                ':prtUser': dynamoClient.createSet([audienceDoc.audience.username]),
+                ':prtUser': dynamoClient.createSet([audienceDoc.audience.avatar]),
             }
         };
 
