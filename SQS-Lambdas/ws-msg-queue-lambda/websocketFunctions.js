@@ -143,13 +143,15 @@ async function postParticipantListToWebsocketUsers(clubId, subAction, user) {
                     "AttributeValueList": [`Participant#`]
                 },
             },
-            AttributesToGet: ['audience', 'isMuted'],
+            AttributesToGet: ['audience'],
         };
 
         var participantList, connectionIds;
 
         await Promise.all([dynamoClient.query(_participantQuery).promise(), _fetchAllConnectionIdsForClub(clubId)]).then(values => {
-            participantList = values[0].Items;
+            participantList = values[0].Items.map(({
+                audience
+            }) => audience);
             connectionIds = values[1];
         });
 
