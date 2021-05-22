@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
         },
-        UpdateExpression: 'SET #status = :stat, #duration = :duration REMOVE agoraToken',
+        UpdateExpression: 'SET #status = :stat, #duration = :duration, participants :prtUser REMOVE agoraToken ',
         ExpressionAttributeNames: {
             '#duration': 'duration',
             '#status': 'status',
@@ -56,6 +56,7 @@ router.post('/', async (req, res) => {
         ExpressionAttributeValues: {
             ':stat': Constants.ClubStatus.Concluded,
             ':duration': duration,
+            ':prtUser': dynamoClient.createSet([_clubData.creator.avatar]),
         },
     };
 

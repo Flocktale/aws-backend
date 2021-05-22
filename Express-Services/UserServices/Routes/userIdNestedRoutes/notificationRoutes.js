@@ -342,25 +342,8 @@ router.post("/opened", async (req, res) => {
                 _audienceUpdateQuery['ExpressionAttributeValues'][':adf'] = Constants.AudienceStatus.Participant + '#' + Date.now() + '#' + userId;
 
 
-                const _updateParticipantCounterQuery = {
-                    TableName: myTable,
-                    Key: {
-                        P_K: `CLUB#${clubId}`,
-                        S_K: `CountParticipant#`,
-                    },
-                    UpdateExpression: 'ADD #cnt :counter', // incrementing
-                    ExpressionAttributeNames: {
-                        '#cnt': 'count'
-                    },
-                    ExpressionAttributeValues: {
-                        ':counter': 1,
-                    }
-                }
-                _transactQuery.TransactItems.push({
-                    Update: _updateParticipantCounterQuery,
-                });
 
-                // inserting this new participant's username in club data.
+                // inserting this new participant's avatar in club data.
                 const _participantInClubUpdateQuery = {
                     TableName: myTable,
                     Key: {
@@ -389,12 +372,14 @@ router.post("/opened", async (req, res) => {
             if (action === 'accept') {
 
                 await Promise.all([
-                    // sending updated participant list to all subscribed users of this club.
+                    // sending new participant  to all subscribed users of this club.
                     pushToWsMsgQueue({
                         action: Constants.WsMsgQueueAction.postParticipantList,
                         MessageGroupId: clubId,
                         attributes: {
                             clubId: clubId,
+                            subAction: "Add",
+                            user: _audienceData.audience,
                         }
                     }),
                     //decrementing audience count as this user is converted from audience to participant

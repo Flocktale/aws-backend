@@ -6,7 +6,6 @@ const {
     AudienceSchema
 } = require('../../Schemas/Audience');
 const {
-    CountParticipantSchema,
     CountJoinRequestSchema
 } = require('../../Schemas/AtomicCountSchemas');
 
@@ -454,26 +453,9 @@ router.post('/response', async (req, res) => {
         }
 
 
-        const counterDoc = await CountParticipantSchema.validateAsync({
-            clubId: clubId
-        });
 
-        const _counterUpdateQuery = {
-            TableName: myTable,
-            Key: {
-                P_K: counterDoc.P_K,
-                S_K: counterDoc.S_K
-            },
-            UpdateExpression: 'ADD #cnt :counter', //incrementing
-            ExpressionAttributeNames: {
-                '#cnt': 'count'
-            },
-            ExpressionAttributeValues: {
-                ':counter': 1,
-            }
-        };
 
-        // inserting this new participant's username in club data.
+        // inserting this new participant's avatar in club data.
         const _participantInClubUpdateQuery = {
             TableName: myTable,
             Key: {
@@ -490,9 +472,6 @@ router.post('/response', async (req, res) => {
         const _transactQuery = {
             TransactItems: [{
                     Update: _audienceUpdateQuery
-                },
-                {
-                    Update: _counterUpdateQuery
                 },
                 {
                     Update: _participantInClubUpdateQuery
@@ -534,6 +513,8 @@ router.post('/response', async (req, res) => {
                 MessageGroupId: clubId,
                 attributes: {
                     clubId: clubId,
+                    subAction: "Add",
+                    user: audienceDoc.audience,
                 }
             }));
 

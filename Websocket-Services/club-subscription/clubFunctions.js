@@ -68,33 +68,9 @@ async function decrementAudienceCount(clubId) {
     });
 }
 
-async function decrementParticipantCount(clubId) {
-    return new Promise(async (resolve, reject) => {
-
-        const _updateParticipantCounterQuery = {
-            TableName: myTable,
-            Key: {
-                P_K: `CLUB#${clubId}`,
-                S_K: `CountParticipant#`,
-            },
-            UpdateExpression: 'ADD #cnt :counter', // decrementing
-            ExpressionAttributeNames: {
-                '#cnt': 'count'
-            },
-            ExpressionAttributeValues: {
-                ':counter': -1,
-            }
-        }
-        await dynamoClient.update(_updateParticipantCounterQuery).promise();
-        resolve();
-    });
-}
-
-
 
 
 module.exports = {
     incrementAudienceCount,
     decrementAudienceCount,
-    decrementParticipantCount,
 };

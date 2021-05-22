@@ -1,6 +1,5 @@
 const {
   decrementAudienceCount,
-  decrementParticipantCount
 } = require('./clubFunctions');
 
 const {
@@ -13,15 +12,20 @@ const {
   sqs,
 } = require('./config');
 
+const {
+  nanoid
+} = require('nanoid');
 const Constants = require('./constants');
 
 exports.handler = async event => {
-  const connectionId = event.requestContext.connectionId;
-
   const apigwManagementApi = new AWS.ApiGatewayManagementApi({
     apiVersion: '2018-11-29',
     endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
   });
+
+  console.log(event);
+
+  const connectionId = event.requestContext.connectionId;
 
   const _userIdQuery = {
     TableName: WsTable,
@@ -31,12 +35,26 @@ exports.handler = async event => {
     AttributesToGet: ['userId', 'skey', 'clubStatus']
   };
   const data = (await dynamoClient.get(_userIdQuery).promise())['Item'];
+
+  if (!data) {
+    // this disconnection event is produced in attemp of reconnection 
+    // (only then data would not exist as it would have been deleted earlier) 
+    return {
+      statusCode: 200,
+      body: 'Disconnected.'
+    };
+  }
+
   const userId = data.userId;
   const skey = data.skey;
 
+  const disconnectStatusCode = event.requestContext.disconnectStatusCode;
 
+  // if disconnectStatusCode => 1001 then disconnection resulted due to idle timeout from server side (10 mins for aws apiGW) or client side (pingInterval=> few seconds or more) 
+  // in that case we don't modify club related attributes for user.
   // if clubStatus is STOPPED then all necessary operations must have been resolved already.
-  if (skey && (data.clubStatus === 'PLAYING')) {
+
+  if (disconnectStatusCode != 1001 && (skey && (data.clubStatus === 'PLAYING'))) {
     // this case can arise when, user cleared ram or swithced off phone or uninstalled the app or due to internet connection.
 
     var promises = [];
@@ -64,15 +82,17 @@ exports.handler = async event => {
       // UpdateExpression: '',
     };
 
-    if (_audienceData.isOwner === true) {
-      // no action is needed on audience doc.
-    } else if (audienceStatus === Constants.AudienceStatus.Participant) {
+    if (audienceStatus === Constants.AudienceStatus.Participant) {
 
-      // disconnect event would not affect status of participant as the reason can be network issue.
-      // so when user re-connect with websocket, his participant status would be intact. in case the user closed app directly,
-      // then on noticing inactivity from participant, owner can remove him also so this can be controlled by owner.
+      _audienceUpdateQuery['UpdateExpression'] = 'REMOVE #status, AudienceDynamicField, TimestampSortField, UsernameSortField';
+      _audienceUpdateQuery['ExpressionAttributeNames'] = {
+        '#status': 'status'
+      };
 
-      // any other status like invitation or active join request will be deleted as they are not needed to be  controlled by owner. 
+
+      promises.push(
+        _sendParticipantActionToSqs(clubId, "Remove", _audienceData.audience)
+      );
 
     } else if (audienceStatus === Constants.AudienceStatus.ActiveJoinRequest) {
       _audienceUpdateQuery['UpdateExpression'] = 'REMOVE #status, AudienceDynamicField, TimestampSortField, UsernameSortField';
@@ -86,29 +106,6 @@ exports.handler = async event => {
       // this user was just a listener.
       _audienceUpdateQuery['UpdateExpression'] = 'REMOVE TimestampSortField';
 
-
-      if (_audienceData.invitationId) {
-        // removing invitation also.
-        _audienceUpdateQuery['UpdateExpression'] += ', invitationId';
-
-        const _updateNotificationQuery = {
-          TableName: myTable,
-          Key: {
-            P_K: `USER#${userId}`,
-            S_K: `NOTIFICATION#${_audienceData.invitationId}`,
-          },
-          UpdateExpression: 'SET #data.opened = :tr',
-          ExpressionAttributeNames: {
-            '#data': 'data'
-          },
-          ExpressionAttributeValues: {
-            ":tr": true,
-          }
-        };
-
-        promises.push(dynamoClient.update(_updateNotificationQuery).promise());
-
-      }
 
       // decrementing audience count 
       promises.push(decrementAudienceCount(clubId));
@@ -172,3 +169,34 @@ exports.handler = async event => {
     body: 'Disconnected.'
   };
 };
+
+
+
+async function _sendParticipantActionToSqs(clubId, subAction, user) {
+  const params = {
+    MessageBody: 'message from club-subscription  Function',
+    QueueUrl: 'https://sqs.ap-south-1.amazonaws.com/524663372903/WsMsgQueue.fifo',
+    MessageAttributes: {
+      "action": {
+        DataType: "String",
+        StringValue: Constants.WsMsgQueueAction.postParticipantList,
+      },
+      "clubId": {
+        DataType: "String",
+        StringValue: clubId,
+      },
+      "subAction": {
+        DataType: "String",
+        StringValue: subAction,
+      },
+      "user": {
+        DataType: "String",
+        StringValue: JSON.stringify(user),
+      },
+    },
+    MessageDeduplicationId: nanoid(),
+    MessageGroupId: clubId,
+  };
+
+  await sqs.sendMessage(params).promise();
+}

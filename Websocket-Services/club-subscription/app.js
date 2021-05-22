@@ -65,7 +65,7 @@ exports.handler = async event => {
             };
         }
     } else if (toggleMethod === 'play') {
-        await _playClub(connectionId, clubId);
+        await _playClub(apigwManagementApi, connectionId, clubId);
         return {
             statusCode: 200,
             body: 'Successful',
@@ -83,6 +83,8 @@ exports.handler = async event => {
 
     }
 };
+
+
 
 async function _stopClub(apigwManagementApi, connectionId, clubId) {
 
@@ -156,7 +158,7 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
 
 
         // if this participant is owner, then this code won't be executed (handled above)
-        // deleting this participant's username from club data.
+        // deleting this participant's avatar from club data.
         const _participantInClubUpdateQuery = {
             TableName: myTable,
             Key: {
@@ -171,23 +173,11 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
 
         promises.push(dynamoClient.update(_participantInClubUpdateQuery).promise());
 
-        // decrementing participant counter
-        const _counterUpdateQuery = {
-            TableName: myTable,
-            Key: {
-                P_K: `CLUB#${clubId}`,
-                S_K: 'CountParticipant#',
-            },
-            UpdateExpression: 'ADD #cnt :counter', // decrementing
-            ExpressionAttributeNames: {
-                '#cnt': 'count'
-            },
-            ExpressionAttributeValues: {
-                ':counter': -1,
-            }
-        }
+        // sending remove participant message to all connected users.
+        promises.push(
+            _sendParticipantActionToSqs(clubId, "Remove", _audienceData.audience)
+        );
 
-        promises.push(dynamoClient.update(_counterUpdateQuery).promise());
 
     } else if (audienceStatus === Constants.AudienceStatus.ActiveJoinRequest) {
         _audienceUpdateQuery['UpdateExpression'] = 'REMOVE #status, AudienceDynamicField, TimestampSortField, UsernameSortField';
@@ -235,31 +225,10 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
 
     await Promise.all(promises);
 
-    // calling this after updating database to get recent participants.
-    if (audienceStatus === Constants.AudienceStatus.Participant && _audienceData.isOwner !== true) {
-        const params = {
-            MessageBody: 'message from club-subscription  Function',
-            QueueUrl: 'https://sqs.ap-south-1.amazonaws.com/524663372903/WsMsgQueue.fifo',
-            MessageAttributes: {
-                "action": {
-                    DataType: "String",
-                    StringValue: Constants.WsMsgQueueAction.postParticipantList,
-                },
-                "clubId": {
-                    DataType: "String",
-                    StringValue: clubId,
-                },
-            },
-            MessageDeduplicationId: `${connectionId} ${nanoid()}`,
-            MessageGroupId: clubId,
-        };
-
-        await sqs.sendMessage(params).promise();
-    }
-
 }
 
-async function _playClub(connectionId, clubId) {
+
+async function _playClub(apigwManagementApi, connectionId, clubId) {
     var promises = [];
 
     const updateParams = {
@@ -295,15 +264,56 @@ async function _playClub(connectionId, clubId) {
             ExpressionAttributeValues: {
                 ':tsf': `AUDIENCE-SORT-TIMESTAMP#${Date.now()}#${userId}`
             },
+            ReturnValues: 'ALL_NEW',
+
         };
 
-        await dynamoClient.update(_audienceUpdateQuery).promise();
 
-        // incementing audience count 
-        promises.push(incrementAudienceCount(clubId));
+        const audienceData = await dynamoClient.update(_audienceUpdateQuery).promise();
 
+        if (audienceData.isOwner === true) {
+            const _ownerUpdateQuery = {
+                TableName: myTable,
+                Key: {
+                    P_K: `CLUB#${clubId}`,
+                    S_K: `AUDIENCE#${userId}`
+                },
+                UpdateExpression: 'set #status = :status, AudienceDynamicField = :adf REMOVE TimestampSortField',
+                ExpressionAttributeNames: {
+                    '#status': 'status',
+                },
+                ExpressionAttributeValues: {
+                    ':status': Constants.AudienceStatus.Participant,
+                    ':adf': Constants.AudienceStatus.Participant + `#${Date.now()}#${userId}`,
+                },
+            };
+
+            promises.push(dynamoClient.update(_ownerUpdateQuery).promise());
+
+            const _participantInClubUpdateQuery = {
+                TableName: myTable,
+                Key: {
+                    P_K: `CLUB#${clubId}`,
+                    S_K: `CLUBMETA#${clubId}`,
+                },
+                UpdateExpression: 'ADD participants :prtUser',
+                ExpressionAttributeValues: {
+                    ':prtUser': dynamoClient.createSet([audienceData.audience.avatar]),
+                }
+            };
+
+            promises.push(dynamoClient.update(_participantInClubUpdateQuery).promise());
+
+            // sending owner as new participant to all connected users.
+            promises.push(
+                _sendParticipantActionToSqs(clubId, "Add", audienceData.audience)
+            );
+
+        } else { // incementing audience count 
+            promises.push(incrementAudienceCount(clubId));
+        }
     } catch (error) {
-        console.log('error while updating Timestamp Sort Field in playing club: ', error);
+        console.log('error in playing club ', error);
     }
 
 
@@ -386,63 +396,6 @@ async function _enterClub(connectionId, clubId) {
     }
 }
 
-async function _postParticipantListToAllClubSubscribers(apigwManagementApi, clubId) {
-
-    if (!clubId) return;
-
-    const connectionIds = await _fetchAllConnectionIdsForClub(clubId);
-
-    var data;
-    await _getParticipantList(clubId, participantData => {
-        data = participantData;
-    });
-
-    const postCalls = connectionIds.map(async connectionId => {
-        try {
-            await apigwManagementApi.postToConnection({
-                ConnectionId: connectionId,
-                Data: JSON.stringify(data)
-            }).promise();
-        } catch (error) {
-            if (error.statusCode === 410) {
-                console.log(`Found stale connection, deleting ${connectionId} from club with clubId: ${clubId}`);
-                await dynamoClient.delete({
-                    TableName: WsTable,
-                    Key: {
-                        connectionId: connectionId
-                    }
-                }).promise();
-            } else {
-                console.log(error);
-                throw error;
-            }
-        }
-    });
-
-    await Promise.all(postCalls);
-
-}
-
-async function _fetchAllConnectionIdsForClub(clubId) {
-    if (!clubId) return;
-
-    const _connectionQuery = {
-        TableName: WsTable,
-        IndexName: wsInvertIndex,
-        KeyConditionExpression: 'skey= :skey',
-        ExpressionAttributeValues: {
-            ":skey": `CLUB#${clubId}`,
-        },
-        ProjectionExpression: 'connectionId',
-    };
-
-    const connectionIds = ((await dynamoClient.query(_connectionQuery).promise())['Items']).map(({
-        connectionId
-    }) => connectionId);
-
-    return connectionIds;
-}
-
 
 async function _getParticipantList(clubId, callback) {
     if (!clubId) return;
@@ -470,6 +423,7 @@ async function _getParticipantList(clubId, callback) {
 
         return callback({
             what: "participantList",
+            subAction: 'All',
             clubId: clubId,
             participantList: participantList,
         });
@@ -556,4 +510,33 @@ async function _getAudienceCount(clubId, callback) {
         clubId: clubId,
         count: doc.count,
     });
+}
+
+async function _sendParticipantActionToSqs(clubId, subAction, user) {
+    const params = {
+        MessageBody: 'message from club-subscription  Function',
+        QueueUrl: 'https://sqs.ap-south-1.amazonaws.com/524663372903/WsMsgQueue.fifo',
+        MessageAttributes: {
+            "action": {
+                DataType: "String",
+                StringValue: Constants.WsMsgQueueAction.postParticipantList,
+            },
+            "clubId": {
+                DataType: "String",
+                StringValue: clubId,
+            },
+            "subAction": {
+                DataType: "String",
+                StringValue: subAction,
+            },
+            "user": {
+                DataType: "String",
+                StringValue: JSON.stringify(user),
+            },
+        },
+        MessageDeduplicationId: nanoid(),
+        MessageGroupId: clubId,
+    };
+
+    await sqs.sendMessage(params).promise();
 }

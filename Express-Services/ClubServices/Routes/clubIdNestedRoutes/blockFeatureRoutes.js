@@ -11,12 +11,6 @@ const {
 } = require('../../Schemas/Audience');
 
 const {
-    CountParticipantSchema
-} = require('../../Schemas/AtomicCountSchemas');
-
-
-
-const {
     postBlockMessageToWebsocketUser,
 } = require('../../Functions/websocketFunctions');
 
@@ -153,31 +147,8 @@ router.post('/', async (req, res) => {
     };
 
     if (wasParticipant === true) {
-        // decrementing participant counter
-        const counterDoc = await CountParticipantSchema.validateAsync({
-            clubId: clubId
-        });
 
-        const _counterUpdateQuery = {
-            TableName: myTable,
-            Key: {
-                P_K: counterDoc.P_K,
-                S_K: counterDoc.S_K
-            },
-            UpdateExpression: 'ADD #cnt :counter', // decrementing
-            ExpressionAttributeNames: {
-                '#cnt': 'count'
-            },
-            ExpressionAttributeValues: {
-                ':counter': -1,
-            }
-        }
-
-        _transactQuery.TransactItems.push({
-            Update: _counterUpdateQuery
-        });
-
-        // deleting this participant's username from club data.
+        // deleting this participant's avatar from club data.
         const _participantInClubUpdateQuery = {
             TableName: myTable,
             Key: {
@@ -247,6 +218,8 @@ router.post('/', async (req, res) => {
                     MessageGroupId: clubId,
                     attributes: {
                         clubId: clubId,
+                        subAction: "Remove",
+                        user: audienceDoc.audience,
                     }
                 }));
             }

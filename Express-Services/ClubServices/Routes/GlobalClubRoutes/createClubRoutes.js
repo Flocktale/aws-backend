@@ -14,7 +14,6 @@ const {
     CountCommentSchema,
     CountReactionSchema,
     CountReportSchema,
-    CountParticipantSchema,
     CountAudienceSchema,
     CountJoinRequestSchema
 } = require('../../Schemas/AtomicCountSchemas');
@@ -209,8 +208,7 @@ async function _createClub(creatorId, body, communityId) {
     const newClub = await ClubRoomCompleteSchema.validateAsync({
         ...body,
 
-        /// adding creator in list of participants
-        participants: dynamoClient.createSet([body.creator.avatar]),
+        participants: dynamoClient.createSet([]),
     });
 
     console.log(newClub);
@@ -228,7 +226,6 @@ async function _createClub(creatorId, body, communityId) {
             username: newClub.creator.username,
             avatar: newClub.creator.avatar,
         },
-        status: Constants.AudienceStatus.Participant,
         timestamp: newClub.scheduleTime,
     });
 
@@ -243,20 +240,11 @@ async function _createClub(creatorId, body, communityId) {
     };
 
     const countCommentObject = await CountCommentSchema.validateAsync(_countBaseObject);
-    const countReactionObject_0 = await CountReactionSchema.validateAsync({
-        clubId: clubId,
-        indexValue: 0
-    });
-    const countReactionObject_1 = await CountReactionSchema.validateAsync({
-        clubId: clubId,
-        indexValue: 1
-    });
     const countReactionObject_2 = await CountReactionSchema.validateAsync({
         clubId: clubId,
         indexValue: 2
     });
     const countReportObject = await CountReportSchema.validateAsync(_countBaseObject);
-    const countParticipantObject = await CountParticipantSchema.validateAsync(_countBaseObject);
     const countAudienceObject = await CountAudienceSchema.validateAsync(_countBaseObject);
     const countJoinRequestObject = await CountJoinRequestSchema.validateAsync(_countBaseObject);
 
@@ -278,27 +266,12 @@ async function _createClub(creatorId, body, communityId) {
             {
                 Put: {
                     TableName: myTable,
-                    Item: countReactionObject_0
-                }
-            }, {
-                Put: {
-                    TableName: myTable,
-                    Item: countReactionObject_1
-                }
-            }, {
-                Put: {
-                    TableName: myTable,
                     Item: countReactionObject_2
                 }
             }, {
                 Put: {
                     TableName: myTable,
                     Item: countReportObject
-                }
-            }, {
-                Put: {
-                    TableName: myTable,
-                    Item: countParticipantObject
                 }
             }, {
                 Put: {

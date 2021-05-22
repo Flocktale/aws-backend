@@ -117,37 +117,44 @@ async function _fetchAllConnectionIdsForClub(clubId) {
 }
 
 
-async function postParticipantListToWebsocketUsers(clubId) {
+async function postParticipantListToWebsocketUsers(clubId, subAction, user) {
     if (!clubId) return;
-
-    const _participantQuery = {
-        TableName: myTable,
-        IndexName: audienceDynamicDataIndex,
-        KeyConditions: {
-            "P_K": {
-                "ComparisonOperator": "EQ",
-                "AttributeValueList": [`CLUB#${clubId}`]
-            },
-            "AudienceDynamicField": {
-                "ComparisonOperator": "BEGINS_WITH",
-                "AttributeValueList": [`Participant#`]
-            },
-        },
-        AttributesToGet: ['audience', 'isMuted'],
-    };
-
-    var participantList, connectionIds;
-
-    await Promise.all([dynamoClient.query(_participantQuery).promise(), _fetchAllConnectionIdsForClub(clubId)]).then(values => {
-        participantList = values[0].Items;
-        connectionIds = values[1];
-    });
 
     const data = {
         what: Constants.whatType.participantList,
         clubId: clubId,
-        participantList: participantList,
+        subAction: subAction,
     };
+
+    if (subAction === 'Add' || subAction === 'Remove') {
+        data['user'] = JSON.parse(user);
+    } else if (subAction === 'All') {
+
+        const _participantQuery = {
+            TableName: myTable,
+            IndexName: audienceDynamicDataIndex,
+            KeyConditions: {
+                "P_K": {
+                    "ComparisonOperator": "EQ",
+                    "AttributeValueList": [`CLUB#${clubId}`]
+                },
+                "AudienceDynamicField": {
+                    "ComparisonOperator": "BEGINS_WITH",
+                    "AttributeValueList": [`Participant#`]
+                },
+            },
+            AttributesToGet: ['audience', 'isMuted'],
+        };
+
+        var participantList, connectionIds;
+
+        await Promise.all([dynamoClient.query(_participantQuery).promise(), _fetchAllConnectionIdsForClub(clubId)]).then(values => {
+            participantList = values[0].Items;
+            connectionIds = values[1];
+        });
+
+        data['participantList'] = participantList;
+    }
 
     await _postMessageToAllClubSubscribers(clubId, data, connectionIds);
 }

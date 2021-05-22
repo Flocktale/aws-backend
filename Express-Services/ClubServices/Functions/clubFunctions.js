@@ -92,14 +92,14 @@ async function getNoOfParticipants(clubId) {
         TableName: myTable,
         Key: {
             P_K: `CLUB#${clubId}`,
-            S_K: 'CountParticipant#',
+            S_K: `CLUBMETA#${clubId}`,
         },
-        AttributesToGet: ['count'],
+        AttributesToGet: ['participants'],
     };
 
     const data = (await dynamoClient.get(_numberParticipantsQuery).promise())['Item'];
     if (data) {
-        return data.count;
+        return data.participants.values.length;
     } else return;
 }
 

@@ -1,8 +1,6 @@
 const router = require('express').Router();
 
-const {
-    CountParticipantSchema
-} = require('../../Schemas/AtomicCountSchemas');
+
 
 const {
     audienceDynamicDataIndex,
@@ -85,31 +83,9 @@ router.post('/', async (req, res) => {
         }
     }
 
-    var counterDoc;
-    try {
-        counterDoc = await CountParticipantSchema.validateAsync({
-            clubId: clubId
-        });
-    } catch (error) {
-        res.status(400).json(`error in  validation of CountParticipantSchema: ${error}`);
-    }
 
-    const _counterUpdateQuery = {
-        TableName: myTable,
-        Key: {
-            P_K: counterDoc.P_K,
-            S_K: counterDoc.S_K
-        },
-        UpdateExpression: 'ADD #cnt :counter', // decrementing
-        ExpressionAttributeNames: {
-            '#cnt': 'count'
-        },
-        ExpressionAttributeValues: {
-            ':counter': -1,
-        }
-    }
 
-    // deleting this participant's username from club data.
+    // deleting this participant's avatar from club data.
     const _participantInClubUpdateQuery = {
         TableName: myTable,
         Key: {
@@ -126,9 +102,6 @@ router.post('/', async (req, res) => {
     const _transactQuery = {
         TransactItems: [{
                 Update: _audienceKickedQuery
-            },
-            {
-                Update: _counterUpdateQuery
             },
             {
                 Update: _participantInClubUpdateQuery
@@ -174,6 +147,8 @@ router.post('/', async (req, res) => {
         MessageGroupId: clubId,
         attributes: {
             clubId: clubId,
+            subAction: "Remove",
+            user: _oldAudienceData.audience,
         }
     }));
 

@@ -24,10 +24,6 @@ const CountReportSchema = countBaseSchema.append({
 });
 
 
-const CountParticipantSchema = countBaseSchema.append({
-    S_K: Joi.string().default('CountParticipant#'),
-});
-
 
 const CountAudienceSchema = countBaseSchema.append({
     S_K: Joi.string().default('CountAudience#'),
@@ -41,6 +37,5 @@ const CountJoinRequestSchema = countBaseSchema.append({
 exports.CountCommentSchema = CountCommentSchema;
 exports.CountReactionSchema = CountReactionSchema;
 exports.CountReportSchema = CountReportSchema;
-exports.CountParticipantSchema = CountParticipantSchema;
 exports.CountAudienceSchema = CountAudienceSchema;
 exports.CountJoinRequestSchema = CountJoinRequestSchema;

@@ -28,7 +28,12 @@ exports.lambdaHandler = async (event, context) => {
             if (action === Constants.actionName.postParticipantList) {
 
                 const clubId = msg.messageAttributes.clubId.stringValue;
-                promises.push(postParticipantListToWebsocketUsers(clubId));
+                const subAction = msg.messageAttributes.subAction.stringValue;
+                var user;
+                try {
+                    user = msg.messageAttributes.user.stringValue;
+                } catch (_) {}
+                promises.push(postParticipantListToWebsocketUsers(clubId, subAction, user));
 
             } else if (action === Constants.actionName.clubStarted) {
 

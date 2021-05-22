@@ -37,9 +37,14 @@ async function pushToWsMsgQueue({
 
 
     for (const [key, value] of Object.entries(attributes)) {
+        var val = value;
+        try {
+            val = JSON.stringify(val);
+        } catch (_) {}
+
         params.MessageAttributes[key] = {
             DataType: "String",
-            StringValue: value,
+            StringValue: val,
         }
     }
 
