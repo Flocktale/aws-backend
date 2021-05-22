@@ -413,7 +413,7 @@ async function _getParticipantList(clubId, callback) {
                 "AttributeValueList": [`Participant#`]
             },
         },
-        AttributesToGet: ['audience', 'isMuted'],
+        AttributesToGet: ['audience'],
     }
 
 
@@ -425,7 +425,9 @@ async function _getParticipantList(clubId, callback) {
             what: "participantList",
             subAction: 'All',
             clubId: clubId,
-            participantList: participantList,
+            participantList: participantList.map(({
+                audience
+            }) => audience),
         });
 
     } catch (error) {
