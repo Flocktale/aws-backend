@@ -4,7 +4,6 @@ const {
 const {
     incrementAudienceCount,
     decrementAudienceCount,
-    decrementParticipantCount
 } = require('./clubFunctions');
 const {
     WsTable,
@@ -31,6 +30,8 @@ exports.handler = async event => {
     const body = JSON.parse(event.body);
     const toggleMethod = body.toggleMethod;
     const clubId = body.clubId;
+
+    console.log('body:', body);
 
     if ((!toggleMethod) || (!(toggleMethod === 'enter' || toggleMethod === 'exit' || toggleMethod === 'play' || toggleMethod === 'stop')) || (!clubId)) {
         return {
@@ -153,9 +154,6 @@ async function _stopClub(apigwManagementApi, connectionId, clubId) {
             '#status': 'status'
         };
 
-        //decrementing participant count.
-        promises.push(decrementParticipantCount(clubId));
-
 
         // if this participant is owner, then this code won't be executed (handled above)
         // deleting this participant's avatar from club data.
@@ -249,7 +247,7 @@ async function _playClub(apigwManagementApi, connectionId, clubId) {
     try {
 
         // this operation will generate error if condition expression fails
-        // which is the case when owner plays the club or the participant reconnects after disconnect event for any reason.
+        // which is the case when  participant reconnects after disconnect event for any reason.
         const _audienceUpdateQuery = {
             TableName: myTable,
             Key: {
@@ -269,9 +267,11 @@ async function _playClub(apigwManagementApi, connectionId, clubId) {
         };
 
 
-        const audienceData = await dynamoClient.update(_audienceUpdateQuery).promise();
+        const audienceData = (await dynamoClient.update(_audienceUpdateQuery).promise())['Attributes'];
+
 
         if (audienceData.isOwner === true) {
+            // if this is owner and he is not a participant then
             const _ownerUpdateQuery = {
                 TableName: myTable,
                 Key: {
@@ -309,6 +309,8 @@ async function _playClub(apigwManagementApi, connectionId, clubId) {
                 _sendParticipantActionToSqs(clubId, "Add", audienceData.audience)
             );
 
+
+
         } else { // incementing audience count 
             promises.push(incrementAudienceCount(clubId));
         }
@@ -318,7 +320,9 @@ async function _playClub(apigwManagementApi, connectionId, clubId) {
 
 
     await Promise.all(promises);
+
 }
+
 
 async function _exitClub(connectionId, clubId) {
     const updateParams = {
@@ -364,13 +368,11 @@ async function _enterClub(connectionId, clubId) {
         promises.push(dynamoClient.update(updateParams).promise())
 
 
-        for (var i = 0; i <= 2; i++) {
-            promises.push(_getReactionCount(clubId, i, async (err, data) => {
-                if (data) {
-                    messageList.push(data);
-                }
-            }));
-        }
+        promises.push(_getReactionCount(clubId, 2, async (err, data) => {
+            if (data) {
+                messageList.push(data);
+            }
+        }));
 
 
         promises.push(_getAudienceCount(clubId, async data => {
@@ -380,7 +382,7 @@ async function _enterClub(connectionId, clubId) {
 
         promises.push(_getParticipantList(clubId, async data => {
             messageList.push(data)
-        }))
+        }));
 
         promises.push(_getOldComments(clubId, async data => {
             messageList.push(data)

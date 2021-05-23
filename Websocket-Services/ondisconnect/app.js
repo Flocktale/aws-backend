@@ -89,6 +89,19 @@ exports.handler = async event => {
         '#status': 'status'
       };
 
+      const _participantInClubUpdateQuery = {
+        TableName: myTable,
+        Key: {
+          P_K: `CLUB#${clubId}`,
+          S_K: `CLUBMETA#${clubId}`,
+        },
+        UpdateExpression: 'DELETE participants :prtUser',
+        ExpressionAttributeValues: {
+          ':prtUser': dynamoClient.createSet([_audienceData.audience.avatar]),
+        }
+      };
+
+      promises.push(dynamoClient.update(_participantInClubUpdateQuery).promise());
 
       promises.push(
         _sendParticipantActionToSqs(clubId, "Remove", _audienceData.audience)

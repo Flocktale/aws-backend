@@ -207,8 +207,6 @@ async function _createClub(creatorId, body, communityId) {
 
     const newClub = await ClubRoomCompleteSchema.validateAsync({
         ...body,
-
-        participants: dynamoClient.createSet([]),
     });
 
     console.log(newClub);

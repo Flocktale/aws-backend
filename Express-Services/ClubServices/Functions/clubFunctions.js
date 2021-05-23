@@ -98,9 +98,13 @@ async function getNoOfParticipants(clubId) {
     };
 
     const data = (await dynamoClient.get(_numberParticipantsQuery).promise())['Item'];
-    if (data) {
-        return data.participants.values.length;
-    } else return;
+    try {
+        const count = data.participants.values.length;
+        if (!count) return 0;
+        else return count;
+    } catch (error) {
+        return 0;
+    }
 }
 
 
