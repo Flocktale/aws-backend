@@ -11,7 +11,7 @@ const Constants = require('../constants');
 /**
  * action => postParticipantList, clubStarted etc.
  * MessageGroupId can be "clubId".
- * attributes may include clubId, agoraToken etc. (according to action)
+ * attributes may include clubId etc. (according to action)
  */
 async function pushToWsMsgQueue({
     action,

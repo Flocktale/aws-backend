@@ -7,9 +7,6 @@ const {
 } = require('../../config');
 
 
-const {
-    generateAgoraToken
-} = require('../../Functions/agoraFunctions');
 const Constants = require('../../constants');
 const {
     pushToWsMsgQueue
@@ -34,7 +31,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`,
         },
-        AttributesToGet: ['clubName', 'creator', 'agoraToken', 'status', 'community'],
+        AttributesToGet: ['clubName', 'creator', 'status', 'community'],
     };
 
     try {
@@ -44,21 +41,11 @@ router.post('/', async (req, res) => {
             res.status(404).json('No such club exists');
             return;
         } else if (_clubData.creator.userId !== userId) {
-            res.status(403).json('This user is not the owner of club, hence can not generate token');
+            res.status(403).json('This user is not the owner of club, hence can not start club');
             return;
         } else if (_clubData.status === Constants.ClubStatus.Concluded) {
             return res.status(400).json('This club is already concluded, can not start again!!!');
-        } else if (_clubData.agoraToken) {
-            res.status(200).json({
-                "token": _clubData.agoraToken
-            });
-            return;
         }
-
-        // generating new token for this club
-        const agoraToken = await generateAgoraToken({
-            clubId: clubId
-        });
 
 
 
@@ -68,12 +55,11 @@ router.post('/', async (req, res) => {
                 P_K: `CLUB#${clubId}`,
                 S_K: `CLUBMETA#${clubId}`,
             },
-            UpdateExpression: 'SET agoraToken = :token, #status = :stat, scheduleTime = :curr',
+            UpdateExpression: 'SET  #status = :stat, scheduleTime = :curr',
             ExpressionAttributeNames: {
                 '#status': 'status',
             },
             ExpressionAttributeValues: {
-                ':token': agoraToken,
                 ':stat': Constants.ClubStatus.Live,
                 ':curr': Date.now(),
             }
@@ -109,13 +95,12 @@ router.post('/', async (req, res) => {
 
             const promises = [];
 
-            // sending agoraToken to all user subscribed to this club at this moment
+            // sending club started event to all user subscribed to this club at this moment
             promises.push(pushToWsMsgQueue({
                 action: Constants.WsMsgQueueAction.clubStarted,
                 MessageGroupId: clubId,
                 attributes: {
                     clubId: clubId,
-                    agoraToken: agoraToken
                 }
             }));
 
@@ -151,20 +136,18 @@ router.post('/', async (req, res) => {
 
 
 
-            return res.status(201).json({
-                "agoraToken": agoraToken,
-            });
+            return res.status(201).json({});
 
         } catch (error) {
             console.log(error);
-            return res.status(400).json(`Error in updating token in club: ${error}`);
+            return res.status(400).json(`Error starting in club: ${error}`);
 
         }
 
 
     } catch (error) {
-        console.log(`Some error in /token/create ${error}`);
-        return res.status(400).json(`Some error in /token/create ${error}`);
+        console.log(`Some error  ${error}`);
+        return res.status(400).json(`Some error`);
     }
 });
 

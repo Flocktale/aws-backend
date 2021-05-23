@@ -11,7 +11,6 @@ const ClubInputSchema = Joi.object({
         avatar: Joi.string().required(),
     }).required(),
 
-    agoraToken: Joi.string().allow(null),
 
     status: Joi.string().valid("Waiting", "Live", "Concluded").default("Waiting"), // default is "Waiting" when club is created as it is not played directly.
 

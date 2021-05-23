@@ -236,6 +236,12 @@ Resources:
             Path: /clubs/{clubId}
             Method: get
 
+        GetClubToken:
+          Type: Api
+          Properties:
+            Path: /clubs/{clubId}/token
+            Method: get
+
         UploadAvatar:
           Type: Api
           Properties:

@@ -163,14 +163,12 @@ async function postParticipantListToWebsocketUsers(clubId, subAction, user) {
 
 async function postClubStartedMessageToWebsocketUsers({
     clubId,
-    agoraToken
 }) {
-    if (!clubId || !agoraToken) return;
+    if (!clubId) return;
 
     const data = {
         what: Constants.whatType.clubStarted,
         clubId: clubId,
-        agoraToken: agoraToken,
     };
 
     await _postMessageToAllClubSubscribers(clubId, data);

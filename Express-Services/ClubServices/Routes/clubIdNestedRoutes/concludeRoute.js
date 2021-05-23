@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
         },
-        UpdateExpression: 'SET #status = :stat, #duration = :duration, REMOVE agoraToken DELETE participants :prtUser ',
+        UpdateExpression: 'SET #status = :stat, #duration = :duration DELETE participants :prtUser ',
         ExpressionAttributeNames: {
             '#duration': 'duration',
             '#status': 'status',

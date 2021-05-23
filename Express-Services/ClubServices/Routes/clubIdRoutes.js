@@ -49,8 +49,9 @@ const {
     AudienceSchema
 } = require('../Schemas/Audience');
 const Constants = require('../constants');
-
-
+const {
+    generateAgoraToken
+} = require('../Functions/agoraFunctions');
 
 async function fetchAndRegisterAudience({
     clubId,
@@ -213,7 +214,7 @@ router.get('/', async (req, res) => {
             P_K: `CLUB#${clubId}`,
             S_K: `CLUBMETA#${clubId}`
         },
-        AttributesToGet: ['clubId', 'clubName', 'creator', 'agoraToken', 'category',
+        AttributesToGet: ['clubId', 'clubName', 'creator', 'category',
             'status', 'community',
             'scheduleTime', 'clubAvatar', 'description', 'isPrivate', 'tags',
         ],
@@ -259,6 +260,25 @@ router.get('/', async (req, res) => {
         reactionIndexValue: _reactionIndexValue,
     });
 
+});
+
+// get agoraToken for this club
+// required query parameters - 
+//                  integer uid (converted from username and should be same always)
+router.get('/token', async (req, res) => {
+    const uid = Number(req.query.uid);
+
+    if (!uid) return res.status(404).json('valid integer uid is required');
+
+    const clubId = req.clubId;
+    const agoraToken = generateAgoraToken({
+        clubId: clubId,
+        uid: uid
+    });
+
+    return res.status(200).json({
+        agoraToken: agoraToken
+    });
 });
 
 

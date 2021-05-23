@@ -38,11 +38,9 @@ exports.lambdaHandler = async (event, context) => {
             } else if (action === Constants.actionName.clubStarted) {
 
                 const clubId = msg.messageAttributes.clubId.stringValue;
-                const agoraToken = msg.messageAttributes.agoraToken.stringValue;
 
                 promises.push(postClubStartedMessageToWebsocketUsers({
                     clubId: clubId,
-                    agoraToken: agoraToken
                 }));
 
             } else if (action === Constants.actionName.clubConcluded) {
