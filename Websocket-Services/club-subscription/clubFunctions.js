@@ -52,19 +52,21 @@ async function _updateAudienceCount(clubId, value) {
 
     }
 
+    return estimatedAudience;
+
 }
 
 async function incrementAudienceCount(clubId) {
     return new Promise(async (resolve, reject) => {
-        await _updateAudienceCount(clubId, 1);
-        resolve();
+        const count = await _updateAudienceCount(clubId, 1);
+        resolve(count);
     });
 }
 
 async function decrementAudienceCount(clubId) {
     return new Promise(async (resolve, reject) => {
-        await _updateAudienceCount(clubId, -1);
-        resolve();
+        const count = await _updateAudienceCount(clubId, -1);
+        resolve(count);
     });
 }
 

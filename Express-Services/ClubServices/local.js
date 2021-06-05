@@ -77,16 +77,9 @@ async function updateNewsContent() {
 }
 async function testing() {
 
-    // await updateNewsContent();
+    await updateNewsContent();
 
-    try {
-        console.log(JSON.stringify('hello'));
-        console.log(JSON.stringify({
-            'hello': 1
-        }));
-    } catch (error) {
-        console.log('error: ', error);
-    }
+
 }
 
 
