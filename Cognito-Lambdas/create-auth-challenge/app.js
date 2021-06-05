@@ -16,7 +16,7 @@ async function sendSMS(phone, code) {
     // sending voice message through 2factor
     const options = {
         hostname: '2factor.in',
-        path: `/API/V1/d398fdc2-8116-11eb-a9bc-0200cd936042/VOICE/${phone.substr(3,10)}/${code}`,
+        path: `/API/V1/d398fdc2-8116-11eb-a9bc-0200cd936042/SMS/${phone}/${code}/customTemp`,
         method: 'GET',
         headers: {
             'content-type': 'application/x-www-form-urlencoded',
@@ -65,7 +65,6 @@ async function sendSMS(phone, code) {
     //     }
     // }).promise()
 
-    // params.Message += " (aws sns)";
 
     // return sns.publish(params).promise();
 }
