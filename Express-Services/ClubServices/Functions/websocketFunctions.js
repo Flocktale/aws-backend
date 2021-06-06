@@ -22,14 +22,38 @@ async function _postToOneUserConnection(userId, data) {
     };
     const connectionData = (await dynamoClient.query(_connectionQuery).promise())['Items'];
 
+
     var promises = [];
 
+
     for (var connection of connectionData) {
-        promises.push(apigwManagementApi.postToConnection({
-            ConnectionId: connection.connectionId,
-            Data: JSON.stringify(data)
-        }).promise());
+        promises.push(new Promise(async (resolve, rej) => {
+            try {
+
+                await
+                apigwManagementApi.postToConnection({
+                    ConnectionId: connection.connectionId,
+                    Data: JSON.stringify(data)
+                }).promise();
+            } catch (error) {
+                if (error.statusCode === 410) {
+                    console.log(`Found stale connection, deleting ${connection.connectionId} of data:  ${data} `);
+                    await dynamoClient.delete({
+                        TableName: WsTable,
+                        Key: {
+                            connectionId: connection.connectionId
+                        }
+                    }).promise();
+                } else {
+                    rej(error);
+                }
+            }
+            resolve();
+        }));
+
     }
+
+
 
     await Promise.all(promises);
 
