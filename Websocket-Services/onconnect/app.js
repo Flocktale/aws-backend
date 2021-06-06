@@ -12,6 +12,7 @@ const wsUserIdIndex = 'wsUserIdIndex';
 // key in headers are automatically transformed in lowercase
 //required userid in headers
 
+
 exports.handler = async event => {
 
     console.log(event);
@@ -37,13 +38,14 @@ exports.handler = async event => {
 
     const promises = [];
 
-    if (reconnect) {
+    if (reconnect === true || reconnect === 'true' || reconnect === 'True' || reconnect === 'TRUE') {
         // in this case, delete all old stored connection ids and data in WsTable.
         const oldData = (await dynamoClient.query({
             TableName: WsTable,
             IndexName: wsUserIdIndex,
-            Key: {
-                userId: userId
+            KeyConditionExpression: 'userId = :id',
+            ExpressionAttributeValues: {
+                ':id': userId
             },
         }).promise())['Items'];
 
