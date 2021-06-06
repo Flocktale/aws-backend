@@ -116,6 +116,9 @@ async function publishNotification({
                 click_action: 'FLUTTER_NOTIFICATION_CLICK',
                 icon: 'ic_notification',
             },
+            data: {
+                'toSave': toSave == true ? true : false,
+            },
             priority: 'HIGH',
 
         }),
