@@ -25,6 +25,14 @@ const imageUploadConstParams = {
 };
 
 
+// (using platform application - "flocktale-fcm" which is GCM (FCM) enabled ) (AWS region is Mumbai (ap-south-1))
+const platformEndpointCreateParams = {
+    PlatformApplicationArn: 'arn:aws:sns:ap-south-1:524663372903:app/GCM/flocktale-fcm',
+    // Token:               (deviceToken) populate it
+
+};
+
+
 const agoraAppId = "f58d5e866a87498988cd3c138759bb2a";
 const agoraPrimaryCertificate = "a420f033ec69472c885af6775c861701";
 
@@ -65,6 +73,8 @@ module.exports = {
     sqs,
     apigwManagementApi,
 
+    platformEndpointCreateParams,
+
     imageUploadConstParams,
     myTable,
 
@@ -89,4 +99,6 @@ module.exports = {
 
     agoraAppId,
     agoraPrimaryCertificate,
+
+
 };
